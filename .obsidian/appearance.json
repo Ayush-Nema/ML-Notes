@@ -4,5 +4,6 @@
     "horizontal-rule",
     "highlights"
   ],
-  "theme": "system"
+  "theme": "system",
+  "translucency": false
 }
