@@ -1,0 +1,8 @@
+{
+  "cssTheme": "Primary",
+  "enabledCssSnippets": [
+    "horizontal-rule",
+    "highlights"
+  ],
+  "theme": "system"
+}

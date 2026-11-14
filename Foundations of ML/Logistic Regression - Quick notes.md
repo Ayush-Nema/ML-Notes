@@ -1,0 +1,10 @@
+- Logistic regression (LR) is similar to linear regression, except LR predicts whether something is True or False, instead of predicting something continuous like size. 
+- Also, instead of fitting a line to the data, LR fits an "S" shaped "logistic function". The curve goes from 0 to 1 (on y-axis). That means that the curve tells the probability of target based on features.
+- Although LR tells the probability of target, it's usually used for classification. 
+- Just like with linear regression, we can make simple models (1 feature and 1 target) or complicated models (1 target with multiple features)
+- just like linear regression, LR can work with continuous and discrete data
+- We can also test to see if each variable is useful for predicting target. However, unlike normal regression, we can't easily compare the complicated model to the simple model. Instead, we just test to see if a variable's effect on the prediction is significantly different from 0. If not, it means the variable is not helping the prediction (wald's test).
+- LR's ability to provide probabilities and classify new samples using continuous and discrete measurements makes it a popular ML method.
+- One big difference between linear regression and LR is how the line is fit to the data. 
+	- with linear regression, we fit the line using "least squares" i.e. we find the line that maximises the sum of the squares of residuals. We also use the residuals to calculate $R^2$ and to compare simple models to complicated models.
+	- LR doesn't have the same concept of a "residual", so it can't use least squares and it can't calculate $R^2$. Instead, it uses something called "maximum likelihood". In a nutshell, you pick a probability scaled by feature, of observing the target and you use that to calculate the likelihood of observing a target (with low probability) with feature. We find the likelihood of individual points and multiply all of those to get the likelihood of the data given by sigmoid function (logistic line). Then you shift the line iteratively and calculate the new likelihood of the data. Finally, the curve with maximum likelihood is selected.

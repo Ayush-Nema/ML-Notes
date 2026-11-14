@@ -1,0 +1,271 @@
+{
+  "main": {
+    "id": "3d0ce01911c9a77b",
+    "type": "split",
+    "children": [
+      {
+        "id": "1463e222f36e6fca",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d7947ad499bde891",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Foundations of ML/Linear Regression.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Linear Regression"
+            }
+          },
+          {
+            "id": "616239c6728a8e7e",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Foundations of ML/Logistic Regression - Quick notes.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Logistic Regression - Quick notes"
+            }
+          },
+          {
+            "id": "3569066d62b0e906",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Foundations of ML/Logistic Regression.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Logistic Regression"
+            }
+          }
+        ],
+        "currentTab": 2
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "de267880cdc47eea",
+    "type": "split",
+    "children": [
+      {
+        "id": "1a5fd02e76508650",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "99df4c4c16aadb09",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "5cf17faf34ae3bd1",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "ebcd6d4ed2e9a2e1",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "right": {
+    "id": "9979a6eb589001b5",
+    "type": "split",
+    "children": [
+      {
+        "id": "202754376a75b0e4",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "84aa2299391b6542",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Statistics - overview/Bayes theorem-ex1.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for Bayes theorem-ex1"
+            }
+          },
+          {
+            "id": "adcafe88f5788553",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Statistics - overview/Bayes theorem-ex1.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from Bayes theorem-ex1"
+            }
+          },
+          {
+            "id": "cae9de8376779442",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "60e33ffe49e7a915",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "fdfc8cf035eb59fd",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Statistics - overview/Bayes theorem-ex1.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of Bayes theorem-ex1"
+            }
+          },
+          {
+            "id": "65746970b9fd0856",
+            "type": "leaf",
+            "state": {
+              "type": "advanced-tables-toolbar",
+              "state": {},
+              "icon": "lucide-ghost",
+              "title": "advanced-tables-toolbar"
+            }
+          }
+        ],
+        "currentTab": 5
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false,
+      "obsidian-excalidraw-plugin:New drawing": false,
+      "obsidian-advanced-slides:Show Slide Preview": false,
+      "table-editor-obsidian:Advanced Tables Toolbar": false,
+      "github-sync:Sync with Remote": false
+    }
+  },
+  "active": "3569066d62b0e906",
+  "lastOpenFiles": [
+    "Foundations of ML/Linear Regression.md",
+    "Foundations of ML/Binary cross entropy.md",
+    "Foundations of ML/Logistic Regression.md",
+    "Foundations of ML/Introduction to Machine Learning.md",
+    "Foundations of ML/Logistic Regression - Quick notes.md",
+    "Foundations of ML/Syllabus.md",
+    "Foundations of ML/Linear regression - context.md",
+    "Statistics - overview/Hypothesis testing.md",
+    "Foundations of ML/Feature engineering.md",
+    "Understanding data/Pearson and Spearman corr coeff.md",
+    "Foundations of ML",
+    "Overview + QAs.md",
+    "Statistics - overview/Hypothesis testing - notes.md",
+    "Statistics - overview/Hypothesis testing - summary.md",
+    "Foundation.md",
+    "Understanding data/Drawing 2026-10-26 15.52.08.excalidraw.md",
+    "Understanding data/Drawing 2026-10-22 19.21.45.excalidraw.md",
+    "Pasted Image 20261022201921_829.png",
+    "Understanding data/Outlier detection and treatment.md",
+    "Pasted Image 20261022202126_237.png",
+    "Understanding data/Outlier_Detection_and_Treatment.md",
+    "Statistics - overview/AB testing and ANOVA.md",
+    "Understanding data/Pearson and Spearman Correlation Coefficient.md",
+    "Understanding data",
+    "Statistics - overview/ANOVA and A-B testing.md",
+    "Statistics - overview/Probability distribution/Normal.md",
+    "Statistics - overview/Probability distribution/Normal dist & confidence intervals.md",
+    "Statistics - overview/Untitled",
+    "Statistics - overview/Probability distribution/Binomial Vs Poisson.md",
+    "Statistics - overview/Probability distribution/Poisson.md",
+    "Statistics - overview/Probability distribution/Binomial.md",
+    "Statistics - overview/Probability distribution",
+    "Customizations",
+    "Statistics - overview",
+    "Excalidraw"
+  ]
+}
