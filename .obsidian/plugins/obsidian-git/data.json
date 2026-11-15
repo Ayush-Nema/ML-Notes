@@ -1,0 +1,13 @@
+{
+  "commitMessage": "auto-commit {{date}}",
+  "autoCommitMessage": "auto-commit {{date}}",
+  "commitDateFormat": "YYYY-MM-DD HH:mm:ss",
+  "autoSaveInterval": 0,
+  "autoPushInterval": 0,
+  "autoPullInterval": 0,
+  "autoPullOnBoot": false,
+  "autoBackupAfterFileChange": false,
+  "customMessageOnAutoBackup": false,
+  "disablePush": false,
+  "pullBeforePush": true
+}

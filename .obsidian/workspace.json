@@ -41,7 +41,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Foundations of ML/Logistic Regression.md",
+                "file": "Classical ML/Logistic Regression.md",
                 "mode": "source",
                 "source": false
               },
@@ -109,8 +109,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "right": {
     "id": "9979a6eb589001b5",
@@ -206,17 +205,27 @@
               "icon": "spreadsheet",
               "title": "Advanced Tables"
             }
+          },
+          {
+            "id": "e6fe0a8b24dfa97b",
+            "type": "leaf",
+            "state": {
+              "type": "git-view",
+              "state": {},
+              "icon": "git-pull-request",
+              "title": "Source Control"
+            }
           }
         ],
-        "currentTab": 5
+        "currentTab": 6
       }
     ],
     "direction": "horizontal",
-    "width": 300,
-    "collapsed": true
+    "width": 300
   },
   "left-ribbon": {
     "hiddenItems": {
+      "obsidian-git:Open Git source control": false,
       "switcher:Open quick switcher": false,
       "graph:Open graph view": false,
       "canvas:Create new canvas": false,
@@ -226,19 +235,19 @@
       "bases:Create new base": false,
       "obsidian-excalidraw-plugin:New drawing": false,
       "obsidian-advanced-slides:Show Slide Preview": false,
-      "table-editor-obsidian:Advanced Tables Toolbar": false,
-      "github-sync:Sync with Remote": false
+      "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "3569066d62b0e906",
+  "active": "99df4c4c16aadb09",
   "lastOpenFiles": [
-    "Foundations of ML/Linear Regression.md",
+    "Classical ML",
+    "Classical ML/Linear Regression.md",
     "Foundations of ML/Binary cross entropy.md",
-    "Foundations of ML/Logistic Regression.md",
+    "Classical ML/Logistic Regression.md",
     "Foundations of ML/Introduction to Machine Learning.md",
-    "Foundations of ML/Logistic Regression - Quick notes.md",
+    "Classical ML/Logistic Regression - Quick notes.md",
     "Foundations of ML/Syllabus.md",
-    "Foundations of ML/Linear regression - context.md",
+    "Classical ML/Linear regression - context.md",
     "Statistics - overview/Hypothesis testing.md",
     "Foundations of ML/Feature engineering.md",
     "Understanding data/Pearson and Spearman corr coeff.md",
@@ -262,7 +271,6 @@
     "Statistics - overview/Untitled",
     "Statistics - overview/Probability distribution/Binomial Vs Poisson.md",
     "Statistics - overview/Probability distribution/Poisson.md",
-    "Statistics - overview/Probability distribution/Binomial.md",
     "Statistics - overview/Probability distribution",
     "Customizations",
     "Statistics - overview",
