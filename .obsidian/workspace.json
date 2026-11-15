@@ -11,10 +11,14 @@
             "id": "1a6ed5d156ccbd34",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "Classical ML/Decision tree.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "Decision tree"
             }
           }
         ]
@@ -207,6 +211,7 @@
   },
   "active": "1a6ed5d156ccbd34",
   "lastOpenFiles": [
+    "Classical ML/Decision tree0.md",
     "Classical ML/Decision tree.md",
     "Classical ML/Decision_Trees_Lecture_Notes.md",
     "Classical ML/Logistic Regression.md",
@@ -238,7 +243,6 @@
     "Statistics - overview/Probability distribution/Normal.md",
     "Statistics - overview/Probability distribution/Normal dist & confidence intervals.md",
     "Statistics - overview/Untitled",
-    "Statistics - overview/Probability distribution/Binomial Vs Poisson.md",
     "Statistics - overview/Probability distribution",
     "Customizations",
     "Statistics - overview",

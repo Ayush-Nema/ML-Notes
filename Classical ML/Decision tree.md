@@ -53,57 +53,112 @@ flowchart TD
 Each leaf predicts the label with the largest fitting count. In a problem with three or more categories, that need not be more than half the examples. If largest counts tie, scikit-learn chooses the tied class with the lowest encoded index.
 
 ## How do we decide whether a question is useful
-A good immediate question sends examples into children whose labels are less mixed overall. We need a consistent way to measure that mixture.
+A useful question divides the fitting examples into children whose labels are less mixed. A tree evaluates *candidate splits* using a numerical criterion and usually favors the split with the best immediate score. Below are four classification criteria, ordered by practical importance for this lesson: Gini and entropy are the common defaults, gain ratio is a notable alternative, and classification error is more useful for interpretation than for growing trees.
 
-### Gini impurity
-Let $p_k$ be the fraction of a node's fitting examples with label $k$. Then:
+We will evaluate every method on **the same actual Iris training split**. The notebook's 90 training flowers include 30 each of setosa, versicolor, and virginica. Try the question **“Is petal length ≤ 2.45 cm?”**:
+
+| Node | Flowers | Label counts [setosa, versicolor, virginica] | Class fractions |
+| --- | ---: | --- | --- |
+| Parent | 90 | [30, 30, 30] | [1/3, 1/3, 1/3] |
+| Left (“yes”) | 30 | [30, 0, 0] | [1, 0, 0] |
+| Right (“no”) | 60 | [0, 30, 30] | [0, 1/2, 1/2] |
+
+Here $p_k$ means the fraction of examples of class $k$ at a node; $n_L=30$, $n_R=60$, and $n=90$. **Child scores must be weighted by their sizes**: a mixed child containing 60 flowers matters twice as much as a child containing 30. These scores evaluate *this candidate question*; they do not prove it is the best question until other allowed splits are compared.
+
+### 1. Gini impurity
+**Common default for CART-style classification trees, including the fitted demonstration tree in this lesson.** It measures how mixed a node's class labels are:
 $$
-G = 1 - \sum_{k=1}^{K}p_k^2
+G(t)=1-\sum_{k=1}^{K}p_k^2
 $$
-Interpret the calculation before memorizing it. Squaring and summing the label fractions gives a high result when most examples belong to one label. Subtracting from one makes a pure node have impurity zero.
+A pure node has $G=0$. With three equally represented classes, the maximum is $1-3(1/3)^2=2/3$ (the often-quoted maximum of $1/2$ applies only to two classes). Gini is **not** a percentage of incorrect predictions.
 
-| Label counts | Fractions       | Gini            |
-| ------------ | --------------- | --------------- |
-| [3, 0, 0]    | [1, 0, 0]       | $1-1^2=0$       |
-| [2, 2, 0]    | [1/2, 1/2, 0]   | $1-1/4-1/4=1/2$ |
-| [1, 1, 1]    | [1/3, 1/3, 1/3] | $1-3(1/9)=2/3$  |
-
-For three classes, the largest possible impurity is $2/3$. Do not teach “Gini always ranges from 0 to 0.5”; that upper limit applies to two classes. Gini is not a percentage of wrong predictions.
-
-### Weight the two children
-If the parent contains $n$ examples, and its children contain $n_L$ and $n_R$:
+For our Iris question:
 $$
-G_{after}=\frac{n_L}{n}G_L+\frac{n_R}{n}G_R
+\begin{aligned}
+G_{parent}&=1-3\left(\frac13\right)^2=\frac23\\
+G_L&=1-1^2=0\\
+G_R&=1-\left(\frac12\right)^2-\left(\frac12\right)^2=\frac12
+\end{aligned}
 $$
+Weight the two children, then calculate the **Gini reduction**:
 $$
-\Delta G=G_{parent}-G_{after}
+\begin{aligned}
+G_{after}&=\frac{n_L}{n}G_L+\frac{n_R}{n}G_R\\
+&=\frac{30}{90}(0)+\frac{60}{90}\left(\frac12\right)=\frac13\\
+\Delta G&=G_{parent}-G_{after}=\frac23-\frac13=\boxed{\frac13}
+\end{aligned}
+$$
+**Choose:** the legal split with the **largest Gini reduction**, equivalently the lowest weighted child Gini at the same parent. Do not call this quantity “information gain”; that name usually refers to entropy reduction.
+
+### 2. Entropy and information gain
+**Another standard classification-tree criterion** (used by ID3 and supported by scikit-learn). Entropy measures uncertainty in the label distribution, in bits when the logarithm uses base 2:
+$$
+H(t)=-\sum_{k=1}^{K}p_k\log_2(p_k),\qquad 0\log_2 0:=0
+$$
+The split's **information gain** is the decrease in entropy:
+$$
+IG=H_{parent}-\left(\frac{n_L}{n}H_L+\frac{n_R}{n}H_R\right)
+$$
+For the same Iris question:
+$$
+\begin{aligned}
+H_{parent}&=-3\left(\frac13\log_2\frac13\right)=\log_2 3\approx1.585\\
+H_L&=0\\
+H_R&=-2\left(\frac12\log_2\frac12\right)=1\\
+H_{after}&=\frac{30}{90}(0)+\frac{60}{90}(1)=\frac23\approx0.667\\
+IG&=\log_2 3-\frac23\approx\boxed{0.918\text{ bits}}
+\end{aligned}
+$$
+**Choose:** the legal split with the **highest information gain**. Gini and entropy frequently prefer similar questions, but they need not rank every candidate split identically. Both evaluate immediate class separation, not final test accuracy.
+
+### 3. Gain ratio
+**An important alternative associated with C4.5.** Raw information gain can favor a feature that creates many small groups, especially when categorical features have many distinct values. Gain ratio divides information gain by the entropy of the *branch sizes*, sometimes called the split information:
+$$
+\begin{aligned}
+SplitInfo&=-\sum_{j\in\{L,R\}}\frac{n_j}{n}\log_2\left(\frac{n_j}{n}\right)\\
+GainRatio&=\frac{IG}{SplitInfo}\qquad (SplitInfo>0)
+\end{aligned}
+$$
+For our Iris question, the two branch proportions are $1/3$ and $2/3$:
+$$
+\begin{aligned}
+SplitInfo&=-\frac13\log_2\frac13-\frac23\log_2\frac23\approx0.918\\
+GainRatio&=\frac{0.918}{0.918}=\boxed{1.000}
+\end{aligned}
+$$
+Note: **C4.5** is a well-known **decision tree learning algorithm** developed by Ross Quinlan in 1993. It is an improved successor to his earlier algorithm, **ID3 (Iterative Dichotomiser 3)**.
+
+**Choose:** a split with a high gain ratio, subject to the algorithm's eligibility checks. The value 1 here **does not mean every species is identified**: the left branch is entirely setosa, but the right branch still mixes versicolor and virginica. A plain ratio can also overfavor extremely unbalanced splits, so C4.5 uses additional safeguards (including an information-gain check). Gain ratio is not the criterion used by the scikit-learn demonstration tree.
+
+### 4. Misclassification error
+**Simple to interpret, but generally less sensitive for selecting growing-tree splits.** It is the fraction that would be mislabeled if we predicted the most frequent class at a node:
+$$
+E(t)=1-\max_k p_k
+$$
+For the same Iris question:
+$$
+\begin{aligned}
+E_{parent}&=1-\frac13=\frac23\\
+E_L&=1-1=0\\
+E_R&=1-\frac12=\frac12\\
+E_{after}&=\frac{30}{90}(0)+\frac{60}{90}\left(\frac12\right)=\frac13\\
+\Delta E&=\frac23-\frac13=\boxed{\frac13}
+\end{aligned}
 $$
 
-Prefer the legal split with the lowest weighted child impurity. At a fixed parent, that is the same as the largest impurity reduction. Use “Gini reduction” here so students do not confuse this with entropy-based information gain.
+**Choose:** the legal split with the largest reduction in weighted misclassification error. On this example, predicting the majority label at the parent gets 30/90 correct, while predicting separately within the two children gets 30+30=60/90 correct (the right child's majority is tied). This criterion is often less helpful during tree growth because a split can substantially improve class proportions without changing the majority class; Gini or entropy detects such improvements.
 
-The weights matter. A child containing most of the examples must count more than a child containing only a few. Never average child impurities equally unless the child sizes are equal.
+#### Compare the four scores on one Iris question
 
-## Calculate a split using the original observations
-The notebook reserves 90 training flowers, containing 30 of each species. In class order setosa, versicolor, virginica, the root counts are **[30, 30, 30]**.
+| Method | Parent score | Weighted child score | Improvement / split score | Preferred direction |
+| --- | ---: | ---: | ---: | --- |
+| Gini impurity | 0.667 | 0.333 | Gini reduction **0.333** | Larger reduction |
+| Entropy | 1.585 bits | 0.667 bits | Information gain **0.918 bits** | Larger gain |
+| Gain ratio | 1.585 bits (entropy basis) | 0.667 bits (entropy basis) | **1.000** (using split information 0.918 bits) | Larger ratio, with safeguards |
+| Misclassification error | 0.667 | 0.333 | Error reduction **0.333** | Larger reduction |
+These numbers are **not interchangeable**: each method has its own scale. Compare *candidate splits within the same method*, not Gini reduction against information gain. The rest of this lesson continues to use **Gini impurity**, matching the actual depth-two Iris tree and its recorded results.
 
-Try **petal length ≤ 2.45 cm**:
-
-| Node | Count | Label counts | Gini |
-|---|---|---|---|
-| Parent | 90 | [30, 30, 30] | $2/3$ |
-| Left child | 30 | [30, 0, 0] | $0$ |
-| Right child | 60 | [0, 30, 30] | $1/2$ |
-
-Calculate:
-$$
-G_{after}=\frac{30}{90}(0)+\frac{60}{90}\left(\frac12\right)=\frac13
-$$
-$$
-\Delta G=\frac23-\frac13=\frac13
-$$
-
-If we had averaged the two child impurities equally, we would obtain $1/4$, which is wrong for these unequal child sizes.
-
+If we incorrectly averaged the Gini scores of the two children equally, we would get $(0+1/2)/2=1/4$, rather than the correct weighted result $1/3$. The same child-size weighting principle applies to entropy and misclassification error.
 
 > [!question] Pause for calculation
 > A split makes one small child pure. Is it automatically a good split? Explain what else you need to inspect.
@@ -224,9 +279,6 @@ The model inputs must contain only information available at prediction time. Nev
 > 3. Purity describes fitting labels, which can be few, noisy, or unrepresentative.
 > 4. Validation chooses depth; test audits the final frozen choice.
 > 5. The ≤ branch, on the left in this implementation.
-
-## Optional follow-up concepts
-Entropy is another impurity measure. It uses $H=-\sum_k p_k\log_2 p_k$, with $0\log_2 0$ treated as zero. We use Gini throughout the core lesson to keep the computation consistent. Cost-complexity pruning removes branches after fitting a larger tree; it differs from stopping growth with a depth cap. Cross-validation and ensembles belong in later lessons.
 
 ## Sources and dataset attribution
 - Fisher, R. (1936). *Iris* [Dataset]. UCI Machine Learning Repository. [Dataset record](https://archive.ics.uci.edu/dataset/53/iris), [DOI 10.24432/C56C76](https://doi.org/10.24432/C56C76). UCI lists CC BY 4.0; preserve attribution when distributing records.
