@@ -109,6 +109,7 @@ H_{after}&=\frac{30}{90}(0)+\frac{60}{90}(1)=\frac23\approx0.667\\
 IG&=\log_2 3-\frac23\approx\boxed{0.918\text{ bits}}
 \end{aligned}
 $$
+
 **Choose:** the legal split with the **highest information gain**. Gini and entropy frequently prefer similar questions, but they need not rank every candidate split identically. Both evaluate immediate class separation, not final test accuracy.
 
 ### 3. Gain ratio
@@ -215,6 +216,7 @@ Use three distinct sets:
 Each partition is stratified by species. Validation and test examples do not participate in fitting the demonstration trees. The seed is fixed at 42. The notebook first reserves 20% for test, then reserves 25% of the remainder for validation, yielding a 60/20/20 split.
 
 Accuracy is:
+
 $$
 \text{Accuracy}=\frac{\text{correct predictions}}{\text{examples evaluated}}
 $$

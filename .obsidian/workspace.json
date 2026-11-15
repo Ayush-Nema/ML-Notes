@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Classical ML/Decision tree.md",
+                "file": "Classical ML/Decision Tree.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Decision tree"
+              "title": "Decision Tree"
             }
           }
         ]
@@ -211,8 +211,10 @@
   },
   "active": "1a6ed5d156ccbd34",
   "lastOpenFiles": [
-    "Classical ML/Decision tree0.md",
+    "Classical ML/Linear regression - Context.md",
+    "Classical ML/Decision Tree.md",
     "Classical ML/Decision tree.md",
+    "Classical ML/Decision tree0.md",
     "Classical ML/Decision_Trees_Lecture_Notes.md",
     "Classical ML/Logistic Regression.md",
     "Classical ML",
@@ -221,7 +223,6 @@
     "Foundations of ML/Introduction to Machine Learning.md",
     "Classical ML/Logistic Regression - Quick notes.md",
     "Foundations of ML/Syllabus.md",
-    "Classical ML/Linear regression - context.md",
     "Statistics - overview/Hypothesis testing.md",
     "Foundations of ML/Feature engineering.md",
     "Understanding data/Pearson and Spearman corr coeff.md",
@@ -241,7 +242,6 @@
     "Understanding data",
     "Statistics - overview/ANOVA and A-B testing.md",
     "Statistics - overview/Probability distribution/Normal.md",
-    "Statistics - overview/Probability distribution/Normal dist & confidence intervals.md",
     "Statistics - overview/Untitled",
     "Statistics - overview/Probability distribution",
     "Customizations",
