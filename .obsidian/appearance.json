@@ -5,5 +5,6 @@
     "highlights"
   ],
   "theme": "system",
-  "translucency": false
+  "translucency": false,
+  "showRibbon": true
 }

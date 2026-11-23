@@ -53,7 +53,7 @@ flowchart TD
 Each leaf predicts the label with the largest fitting count. In a problem with three or more categories, that need not be more than half the examples. If largest counts tie, scikit-learn chooses the tied class with the lowest encoded index.
 
 ## How do we decide whether a question is useful
-A useful question divides the fitting examples into children whose labels are less mixed. A tree evaluates *candidate splits* using a numerical criterion and usually favors the split with the best immediate score. Below are four classification criteria, ordered by practical importance for this lesson: Gini and entropy are the common defaults, gain ratio is a notable alternative, and classification error is more useful for interpretation than for growing trees.
+A useful question divides the fitting examples into children whose labels are less mixed. A tree evaluates *candidate splits* using a numerical criterion and usually fal  vors the split with the best immediate score. Below are four classification criteria, ordered by practical importance for this lesson: Gini and entropy are the common defaults, gain ratio is a notable alternative, and classification error is more useful for interpretation than for growing trees.
 
 We will evaluate every method on **the same actual Iris training split**. The notebook's 90 training flowers include 30 each of setosa, versicolor, and virginica. Try the question **“Is petal length ≤ 2.45 cm?”**:
 
@@ -288,3 +288,5 @@ The model inputs must contain only information available at prediction time. Nev
 - [Decision tree learning and mathematical formulation](https://scikit-learn.org/stable/modules/tree.html).
 - [Classifier settings and prediction behavior](https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html).
 - [Inspecting the fitted tree structure](https://scikit-learn.org/stable/auto_examples/tree/plot_unveil_tree_structure.html).
+
+

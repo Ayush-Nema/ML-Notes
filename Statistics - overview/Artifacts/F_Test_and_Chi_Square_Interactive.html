@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="An offline, interactive beginner lesson on the ANOVA F-test and chi-square test of independence.">
+<title>Signal &amp; Surprise · F-test and Chi-square</title>
+<style>
+:root{--bg:#f5f4ef;--paper:#fff;--ink:#202f34;--muted:#526568;--line:#d7dfdc;--teal:#087769;--soft:#e8f3ee;--blue:#315fac;--orange:#ad5a19;--warn:#fff2dc;--radius:18px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input{font:inherit}button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--blue);outline-offset:4px}a{color:var(--teal)}header,main,footer{max-width:1140px;margin:auto;padding:24px 32px}header{padding-top:42px}.eyebrow{font-size:12px;letter-spacing:.13em;text-transform:uppercase;font-weight:750;color:var(--teal)}h1{font-size:clamp(32px,5vw,54px);letter-spacing:-.045em;line-height:1.1;margin:14px 0}h2{font-size:clamp(26px,4vw,36px);line-height:1.2;letter-spacing:-.035em;margin:8px 0 16px}h3{font-size:20px;line-height:1.3;margin:0 0 12px}p{margin:0 0 15px}.lede{max-width:760px;font-size:19px;color:var(--muted)}.meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}.pill{border:1px solid var(--line);border-radius:30px;padding:4px 12px;font-size:13px;background:var(--paper)}nav{position:sticky;top:0;z-index:2;background:var(--bg);border-bottom:1px solid var(--line)}.tabs{display:flex;gap:6px;max-width:1140px;margin:auto;padding:12px 32px;overflow:auto}.tabs button{border:0;border-radius:9px;padding:10px 16px;white-space:nowrap;background:transparent;color:var(--muted);font-size:14px;font-weight:650}.tabs button[aria-selected=true]{background:var(--ink);color:white}.step-label{color:var(--teal);font-size:13px;font-weight:750;letter-spacing:.07em;text-transform:uppercase}.intro{max-width:830px;margin:16px 0 24px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}.lab-grid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:22px}.card{padding:25px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);min-width:0}.card+.card{margin-top:20px}.grid>.card+.card,.lab-grid>.card+.card{margin-top:0}.callout{padding:17px 20px;border-left:4px solid var(--teal);background:var(--soft);border-radius:0 10px 10px 0;margin:18px 0}.warning{background:var(--warn);border-left-color:var(--orange)}.callout p:last-child{margin-bottom:0}.muted,.hint{color:var(--muted)}.hint{font-size:14px}.formula{font-family:Georgia,serif;font-size:21px;background:var(--bg);padding:16px;border-radius:10px;line-height:1.5;margin:16px 0}.fraction{display:inline-flex;flex-direction:column;text-align:center;vertical-align:middle;font-size:18px;margin:0 5px}.fraction>span:first-child{border-bottom:1px solid;padding-bottom:3px}.fraction>span:last-child{padding-top:3px}.btn{border:1px solid var(--line);background:var(--paper);border-radius:9px;padding:9px 15px;color:var(--ink);font-weight:600;font-size:14px}.btn.primary{background:var(--teal);border-color:var(--teal);color:white}.actions{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.next{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:28px;padding-top:22px;border-top:1px solid var(--line)}.control{display:block;margin:20px 0}.control-head{display:flex;justify-content:space-between;gap:12px;font-weight:650}.control output{font-variant-numeric:tabular-nums;color:var(--teal)}input[type=range]{width:100%;accent-color:var(--teal);margin:12px 0 4px}table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;border-bottom:1px solid var(--line);padding:10px 8px}th{font-weight:650;color:var(--muted)}caption{text-align:left;font-weight:650;margin-bottom:10px}.scroll-table{overflow:auto}input[type=number]{width:92px;max-width:100%;padding:8px;border:1px solid #98aba5;border-radius:7px;background:white;color:var(--ink)}input[aria-invalid=true]{border:2px solid var(--orange)}.number{font-variant-numeric:tabular-nums}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}.metric{padding:14px;background:var(--bg);border-radius:10px}.metric span{display:block;font-size:12px;letter-spacing:.02em;color:var(--muted)}.metric strong{font-size:25px;font-variant-numeric:tabular-nums}.decision{padding:16px;background:var(--soft);border-radius:10px;margin-top:16px}.decision p:last-child{margin:0}.decision.caution{background:var(--warn)}.chart{width:100%;display:block;margin:10px 0 0}.legend{font-size:13px;color:var(--muted);margin:4px 0 16px}.swatch{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--teal);margin-right:5px}.swatch.b{background:var(--blue)}.swatch.c{background:var(--orange)}details{margin:18px 0 0;border-top:1px solid var(--line);padding-top:14px}summary{cursor:pointer;font-weight:650}details>div{margin-top:12px}.cell-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.cell-btn{text-align:left;border:1px solid var(--line);border-radius:10px;padding:14px;background:var(--bg);color:var(--ink)}.cell-btn[aria-pressed=true]{outline:2px solid var(--teal);outline-offset:-2px}.cell-btn strong{display:block;font-size:22px;font-variant-numeric:tabular-nums}.cell-btn small{font-size:12px;color:var(--muted)}.question{padding:22px 0;border-bottom:1px solid var(--line)}.question:first-child{padding-top:0}.options{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.options button[aria-pressed=true]{background:var(--ink);color:white}.feedback{min-height:28px;font-size:14px;margin:12px 0 0}.feedback:empty{display:none}.progress{height:5px;background:var(--line)}.progress div{height:100%;background:var(--teal);transition:width .2s}footer{font-size:13px;color:var(--muted);padding-bottom:40px}footer p{margin-bottom:6px}[hidden]{display:none!important}.inline-code{font-family:monospace;font-size:13px}ul{padding-left:23px}.tight li{margin:7px 0}.section-gap{margin-top:22px}
+@media(max-width:850px){.lab-grid,.grid{grid-template-columns:1fr}.lab-grid>.card+.card,.grid>.card+.card{margin-top:0}.tabs{padding:10px 18px}.tabs button{padding:9px 11px}header,main,footer{padding-left:18px;padding-right:18px}.card{padding:20px}.lede{font-size:17px}.metrics{gap:7px}.metric{padding:11px}.metric strong{font-size:22px}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+@media print{nav,.next,.actions,.options{display:none!important}[role=tabpanel][hidden]{display:block!important}body{background:white;font-size:11pt}header,main,footer{max-width:none;padding:12px}.card{break-inside:avoid}.lab-grid,.grid{display:block}.card{margin:12px 0!important}.panel{break-before:page}.panel:first-child{break-before:auto}details>div{display:block!important}.progress{display:none}}
+</style>
+</head>
+<body>
+<header>
+<div class="eyebrow">The beginner statistics lab</div>
+<h1>Signal &amp; surprise.</h1>
+<p class="lede">Two questions. Two tests. Discover when differences in scores or counts provide evidence beyond ordinary sampling variation.</p>
+<div class="meta"><span class="pill">20-minute guided lesson</span><span class="pill">Hands-on examples</span><span class="pill">Works entirely offline</span></div>
+</header>
+<nav aria-label="Lesson sections">
+<div class="tabs" role="tablist" aria-label="Lesson sections">
+<button id="tab-start" role="tab" aria-controls="start" aria-selected="true" tabindex="0">01 · Start here</button>
+<button id="tab-f" role="tab" aria-controls="f" aria-selected="false" tabindex="-1">02 · F-test</button>
+<button id="tab-chi" role="tab" aria-controls="chi" aria-selected="false" tabindex="-1">03 · Chi-square</button>
+<button id="tab-recap" role="tab" aria-controls="recap" aria-selected="false" tabindex="-1">04 · Check yourself</button>
+</div><div class="progress" aria-hidden="true"><div id="progress" style="width:25%"></div></div>
+</nav>
+<main>
+<noscript><div class="callout warning">Enable JavaScript for the interactive examples. The introduction remains readable without it.</div></noscript>
+<section id="start" class="panel" role="tabpanel" aria-labelledby="tab-start">
+<div class="intro"><div class="step-label">0–3 min · The big idea</div><h2>Is the difference convincing?</h2><p>Three teaching methods produce different average quiz scores. Is this evidence that their <strong>population means</strong> differ? In a separate class, the pass rates differ. Is teaching method <strong>associated with passing</strong>?</p></div>
+<div class="grid">
+<article class="card"><div class="eyebrow">Numerical outcomes</div><h3>Compare the means</h3><p>Teaching method: A, B, C.<br>Outcome: a numerical quiz score.</p><div class="formula">ANOVA F-test</div><p class="hint">Compare variation between group means with variation within the groups.</p><button class="btn" data-go="f">Explore the F-test →</button></article>
+<article class="card"><div class="eyebrow">Categorical outcomes</div><h3>Look for an association</h3><p>Teaching method: A or B.<br>Outcome: pass or fail.</p><div class="formula">Chi-square independence test</div><p class="hint">Compare observed counts with the counts expected under independence.</p><button class="btn" data-go="chi">Explore chi-square →</button></article>
+</div>
+<article class="card section-gap"><h3>The same reasoning powers both tests</h3><div class="grid"><div><p><strong>1. Start with a null hypothesis, H₀.</strong><br>A specific default claim: equal population means, or no association.</p><p><strong>2. Calculate a test statistic.</strong><br>A number summarizing how far the data depart from H₀.</p></div><div><p><strong>3. Read the p-value.</strong><br>If H₀ and the test assumptions held, how likely would a statistic at least this extreme be?</p><p><strong>4. Apply a rule chosen in advance.</strong><br>Here α = 0.05. If p &lt; 0.05, reject H₀. Otherwise, fail to reject it.</p></div></div><div class="callout"><p><strong>Small p = evidence against H₀.</strong> It is not the probability that H₀ is true. A large p does not prove H₀; a small p does not establish a large or useful effect.</p></div><p class="hint">All data here are invented for teaching. Assume each student is observed once and different students are independent. Moving sliders is a learning exercise, not a way to search for significance in real data.</p></article>
+<div class="next"><span class="hint">First: scores and their averages.</span><button class="btn primary" data-go="f">Explore the F-test →</button></div>
+</section>
+
+<section id="f" class="panel" role="tabpanel" aria-labelledby="tab-f" hidden>
+<div class="intro"><div class="step-label">3–9 min · Comparing means</div><h2>The F-test: signal relative to noise.</h2><p>Do methods A, B and C have equal population mean scores? Each group contains five different students. Move the sliders to separate the means or spread the students out.</p></div>
+<div class="lab-grid">
+<aside class="card"><h3>Build three groups</h3><p class="hint"><strong>H₀:</strong> μA = μB = μC.<br><strong>H₁:</strong> at least one mean differs.</p>
+<label class="control" for="gap"><span class="control-head">Gap between means <output id="gap-value" for="gap">10 points</output></span><input id="gap" type="range" min="0" max="15" step="0.5" value="10"><span class="hint">More separation → stronger signal.</span></label>
+<label class="control" for="spread"><span class="control-head">Within-group spread <output id="spread-value" for="spread">5 points</output></span><input id="spread" type="range" min="1" max="10" step="0.5" value="5"><span class="hint">Offsets from each mean are −2s, −s, 0, s, 2s. Larger s → more noise.</span></label>
+<div class="actions"><button class="btn" id="f-original">Lecture example</button><button class="btn" id="f-equal">Equal means</button><button class="btn" id="f-noisy">More noise</button></div>
+<div class="formula">F = <span class="fraction"><span>between-group mean square</span><span>within-group mean square</span></span></div>
+<p class="hint">“ANOVA” means analysis of variance, but this test asks about <strong>means</strong>. The within-group spread stays equal across groups in this simulation.</p></aside>
+<article class="card"><h3>Same question. Changing evidence.</h3><svg id="f-chart" class="chart" viewBox="0 0 620 290" role="img" aria-labelledby="f-chart-title f-chart-desc"><title id="f-chart-title">Scores by teaching method</title><desc id="f-chart-desc">Five student scores in each group; a horizontal dark line marks each group mean.</desc></svg><div class="legend"><span class="swatch"></span>A &nbsp; <span class="swatch b"></span>B &nbsp; <span class="swatch c"></span>C &nbsp; · Black bars mark means · axis fixed at 40–120 points.</div>
+<div class="metrics"><div class="metric"><span>F statistic</span><strong id="f-stat">8.000</strong></div><div class="metric"><span>p-value</span><strong id="f-p">0.006196</strong></div><div class="metric"><span>Degrees of freedom</span><strong>2, 12</strong></div></div>
+<div id="f-decision" class="decision" aria-live="polite" aria-atomic="true"></div>
+<details><summary>Show the scores and calculation</summary><div><div id="f-scores" class="scroll-table"></div><div id="f-math" class="formula"></div><p class="hint">SS = sum of squared deviations. Between-group df = k − 1 = 2; within-group df = N − k = 12. The grand mean is 80. Simulated scores are points, not percentages; the scale is not capped at 100.</p></div></details>
+</article>
+</div>
+<div class="grid section-gap"><article class="card"><h3>Predict before you move</h3><p>Keep the means fixed and increase the spread. Will F rise or fall?</p><details><summary>Reveal the explanation</summary><div><p>The within-group mean square increases. The ratio F decreases, and the p-value increases. Separated sample means are less convincing when there is more variation within each group.</p></div></details></article>
+<article class="card"><h3>Check the assumptions</h3><ul class="tight"><li>Independent observations within and between groups.</li><li>Approximately normal errors within each population, especially for small samples.</li><li>Equal population variances for this standard ANOVA.</li></ul><p class="hint">Five invented scores per group cannot establish these assumptions. ANOVA does not identify which pairs differ. Consider Welch ANOVA when population variances differ.</p></article></div>
+<div class="next"><button class="btn" data-go="start">← The basics</button><button class="btn primary" data-go="chi">Explore chi-square →</button></div>
+</section>
+
+<section id="chi" class="panel" role="tabpanel" aria-labelledby="tab-chi" hidden>
+<div class="intro"><div class="step-label">9–15 min · Comparing counts</div><h2>Chi-square: observed versus expected.</h2><p>Is teaching method associated with passing? This is a separate dataset of 100 students. Edit the <strong>counts</strong> to see how far they depart from independence.</p></div>
+<div class="lab-grid"><aside class="card"><h3>What did we observe?</h3><p class="hint"><strong>H₀:</strong> method and pass/fail are independent.<br><strong>H₁:</strong> they are associated.</p>
+<table><caption>Observed students</caption><thead><tr><th scope="col">Method</th><th scope="col">Pass</th><th scope="col">Fail</th></tr></thead><tbody><tr><th scope="row">A</th><td><input id="ap" aria-label="Method A pass count" type="number" min="0" max="100000" step="1" value="30"></td><td><input id="af" aria-label="Method A fail count" type="number" min="0" max="100000" step="1" value="20"></td></tr><tr><th scope="row">B</th><td><input id="bp" aria-label="Method B pass count" type="number" min="0" max="100000" step="1" value="15"></td><td><input id="bf" aria-label="Method B fail count" type="number" min="0" max="100000" step="1" value="35"></td></tr></tbody></table>
+<div class="actions"><button class="btn" id="chi-original">Lecture example</button><button class="btn" id="chi-equal">Same pass rate</button><button class="btn" id="chi-small">Small sample</button></div>
+<p id="chi-input-note" class="hint">Use nonnegative whole-number counts. Each row and column must contain at least one student in total.</p><div class="formula">Expected count = <span class="fraction"><span>row total × column total</span><span>grand total</span></span></div><p class="hint">If method and outcome are independent, both groups should follow the overall pass rate. Expected counts can be decimals.</p>
+</aside>
+<article class="card"><h3>What would independence predict?</h3><div id="chi-valid">
+<div id="chi-expected"></div><p class="hint" id="chi-rates"></p>
+<h3 class="section-gap">Where does χ² come from?</h3><p class="hint">Select a cell to unpack its contribution. The four contributions add to the chi-square statistic.</p><div class="cell-grid" id="chi-cells"></div><div id="chi-cell-math" class="formula" aria-live="polite"></div>
+<div class="metrics"><div class="metric"><span>χ² statistic</span><strong id="chi-stat"></strong></div><div class="metric"><span>p-value</span><strong id="chi-p"></strong></div><div class="metric"><span>Degrees of freedom</span><strong>1</strong></div></div></div>
+<div id="chi-decision" class="decision" aria-live="polite" aria-atomic="true"></div>
+<details><summary>Why might software give a different answer?</summary><div><p>This lesson uses Pearson’s uncorrected statistic: χ² = Σ(O − E)²/E. In SciPy use <span class="inline-code">chi2_contingency(counts, correction=False)</span>. The default Yates correction for df = 1 changes the result.</p><p class="hint">Our 2 × 2 table has df = (2 − 1)(2 − 1) = 1.</p></div></details>
+</article></div>
+<div class="grid section-gap"><article class="card"><h3>Why actual counts matter</h3><p>Try these two tables. Both have pass rates of 60% versus 30%, but one contains ten times as many observations.</p><div class="actions"><button class="btn" id="chi-ten">10 per group</button><button class="btn" id="chi-hundred">100 per group</button></div><p class="hint">More observations can provide stronger evidence for the same difference in pass rates. Statistical significance does not measure effect size.</p></article><article class="card"><h3>Check the assumptions</h3><ul class="tight"><li>Independent students; each contributes to exactly one cell.</li><li>Mutually exclusive categories and actual integer counts.</li><li>Expected counts large enough for the approximation.</li></ul><p class="hint">For this lesson, use a conservative guideline: all expected counts ≥ 5. For a sparse 2 × 2 table, consider Fisher’s exact test. An association alone does not establish causation.</p></article></div>
+<div class="next"><button class="btn" data-go="f">← F-test</button><button class="btn primary" data-go="recap">Check your understanding →</button></div>
+</section>
+
+<section id="recap" class="panel" role="tabpanel" aria-labelledby="tab-recap" hidden>
+<div class="intro"><div class="step-label">15–20 min · Apply the idea</div><h2>Choose the question. Then the test.</h2><p>Choose an answer to get immediate feedback. These checks are for learning; no responses are sent or stored.</p></div>
+<article class="card" id="quiz">
+<div class="question" data-q="0"><h3>1. Do average house prices differ across three cities?</h3><p class="hint">Assume independent observations and appropriate test assumptions.</p><div class="options"><button class="btn" data-a="f" aria-pressed="false">ANOVA F-test</button><button class="btn" data-a="chi" aria-pressed="false">Chi-square independence</button></div><p class="feedback" aria-live="polite"></p></div>
+<div class="question" data-q="1"><h3>2. Is device type associated with purchase: yes or no?</h3><div class="options"><button class="btn" data-a="f" aria-pressed="false">ANOVA F-test</button><button class="btn" data-a="chi" aria-pressed="false">Chi-square independence</button></div><p class="feedback" aria-live="polite"></p></div>
+<div class="question" data-q="2"><h3>3. A test gives p = 0.30. What can you say at α = 0.05?</h3><div class="options"><button class="btn" data-a="prove" aria-pressed="false">We proved H₀</button><button class="btn" data-a="fail" aria-pressed="false">We fail to reject H₀</button></div><p class="feedback" aria-live="polite"></p></div>
+<div class="question" data-q="3"><h3>4. A significant ANOVA means…</h3><div class="options"><button class="btn" data-a="all" aria-pressed="false">Every pair differs</button><button class="btn" data-a="one" aria-pressed="false">Evidence that at least one mean differs</button></div><p class="feedback" aria-live="polite"></p></div>
+<p id="quiz-status" class="hint" aria-live="polite">0 of 4 answered.</p><button class="btn" id="quiz-reset">Try again</button>
+</article>
+<article class="card"><h3>Your take-away</h3><div class="scroll-table"><table><thead><tr><th>Question</th><th>Input</th><th>Test</th></tr></thead><tbody><tr><td>Do population means differ?</td><td>Numerical scores + categorical groups</td><td>One-way ANOVA F-test</td></tr><tr><td>Are categories associated?</td><td>Contingency table of counts</td><td>Chi-square independence</td></tr></tbody></table></div><div class="callout"><p><strong>State the question → check design and assumptions → calculate → interpret in context.</strong> Neither test alone establishes causation or predictive usefulness.</p></div>
+<details><summary>Wait — isn’t an F-test about variances?</summary><div><p>“F-test” names a family of tests. The classical two-sample variance F-test asks whether two normal populations have equal variances and uses F = s₁²/s₂². ANOVA also forms a ratio of variance estimates, but its null hypothesis is about population means.</p></div></details>
+<details><summary>Where does this connect to machine learning?</summary><div><p>ANOVA can screen numerical features across class labels. A chi-square independence test can screen categorical features for association with a categorical target. Fit feature selection inside training data or each cross-validation fold; account for multiple testing when screening many features. A small p-value alone does not guarantee useful predictions.</p><p>Chi-square also has a separate goodness-of-fit test: one categorical variable versus specified probabilities, such as die counts versus a fair die.</p></div></details>
+</article>
+<div class="next"><button class="btn" data-go="chi">← Chi-square</button><button class="btn primary" data-go="start">Back to the beginning</button></div>
+</section>
+</main>
+<footer><p>Based on the accompanying “F-test and Chi-square test” lecture notes. All examples are synthetic. Threshold fixed at α = 0.05.</p><p>Reference: <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.f_oneway.html" target="_blank" rel="noopener noreferrer">SciPy ANOVA</a> · <a href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.contingency.chi2_contingency.html" target="_blank" rel="noopener noreferrer">SciPy chi-square</a>. These optional links need internet; the lesson itself does not.</p></footer>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const sections=['start','f','chi','recap'];
+function go(id,focus=false){
+  sections.forEach(s=>{const active=s===id;$(s).hidden=!active;$('tab-'+s).setAttribute('aria-selected',String(active));$('tab-'+s).tabIndex=active?0:-1;});
+  $('progress').style.width=((sections.indexOf(id)+1)*25)+'%';
+  if(id==='f')updateF();
+  if(focus)$('tab-'+id).focus();
+}
+document.querySelectorAll('[role=tab]').forEach(tab=>{
+  tab.addEventListener('click',()=>go(tab.getAttribute('aria-controls')));
+  tab.addEventListener('keydown',e=>{let i=sections.indexOf(tab.getAttribute('aria-controls'));if(e.key==='ArrowRight')i=(i+1)%4;else if(e.key==='ArrowLeft')i=(i+3)%4;else if(e.key==='Home')i=0;else if(e.key==='End')i=3;else return;e.preventDefault();go(sections[i],true);});
+});
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{go(b.dataset.go,true);window.scrollTo({top:Math.max(0,document.querySelector('nav').offsetTop),behavior:'auto'});}));
+function fmt(x,d=3){return x.toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});}
+function pformat(p){if(p<1e-6)return '< 0.000001';return p.toFixed(6);}
+function anova(gap,spread){
+  const means=[80-gap,80,80+gap];
+  const groups=means.map(m=>[-2,-1,0,1,2].map(o=>m+o*spread));
+  const between=means.reduce((s,m)=>s+5*(m-80)**2,0);
+  const within=groups.reduce((s,g,i)=>s+g.reduce((t,v)=>t+(v-means[i])**2,0),0);
+  const F=(between/2)/(within/12);
+  // Exact F survival function for df1 = 2 and df2 = 12, fixed in this lab.
+  const p=Math.pow(12/(12+2*F),6);
+  return {means,groups,between,within,F,p};
+}
+function svgElement(tag,attrs,text){const el=document.createElementNS('http://www.w3.org/2000/svg',tag);Object.entries(attrs).forEach(([k,v])=>el.setAttribute(k,v));if(text!==undefined)el.textContent=text;return el;}
+function drawF(r){
+  const svg=$('f-chart');svg.querySelectorAll(':scope > :not(title):not(desc)').forEach(e=>e.remove());
+  const width=Math.max(260,svg.getBoundingClientRect().width||620);
+  svg.setAttribute('viewBox',`0 0 ${width} 290`);
+  const left=56,right=width-12,plotWidth=right-left;
+  const y=v=>230-(v-40)*2.4;
+  const colors=['#087769','#315fac','#ad5a19'];
+  for(let tick=40;tick<=120;tick+=20){svg.append(svgElement('line',{x1:left,y1:y(tick),x2:right,y2:y(tick),stroke:'#d7dfdc'}));svg.append(svgElement('text',{x:left-8,y:y(tick)+5,'text-anchor':'end',fill:'#526568','font-size':14},tick));}
+  svg.append(svgElement('text',{x:20,y:135,transform:'rotate(-90 20 135)','text-anchor':'middle',fill:'#526568','font-size':14},'Score (points)'));
+  r.groups.forEach((g,i)=>{const x=left+plotWidth*(i+.5)/3;g.forEach((v,j)=>{const dot=svgElement('circle',{cx:x+(j-2)*6,cy:y(v),r:5,fill:colors[i]});dot.append(svgElement('title',{},`Method ${'ABC'[i]}, student ${j+1}: ${v} points`));svg.append(dot);});svg.append(svgElement('line',{x1:x-21,y1:y(r.means[i]),x2:x+21,y2:y(r.means[i]),stroke:'#202f34','stroke-width':4}));svg.append(svgElement('text',{x,y:256,'text-anchor':'middle',fill:'#202f34','font-size':14},'Method '+'ABC'[i]));svg.append(svgElement('text',{x,y:277,'text-anchor':'middle',fill:'#526568','font-size':13},'Mean '+r.means[i]));});
+  $('f-chart-desc').textContent=r.groups.map((g,i)=>`Method ${'ABC'[i]}: ${g.join(', ')}; mean ${r.means[i]}.`).join(' ');
+}
+function updateF(){
+  const gap=Number($('gap').value),spread=Number($('spread').value),r=anova(gap,spread);
+  $('gap-value').textContent=gap+' points';$('spread-value').textContent=spread+' points';
+  $('f-stat').textContent=fmt(r.F);$('f-p').textContent=pformat(r.p);
+  $('f-decision').innerHTML=r.p<.05?'<strong>Reject H₀ at α = 0.05.</strong><p>Evidence that at least one population mean differs. This does not identify which pairs differ.</p>':'<strong>Fail to reject H₀ at α = 0.05.</strong><p>Insufficient evidence of a population mean difference. This does not prove the means are equal.</p>';
+  $('f-scores').innerHTML='<table><caption>Five scores per independent group</caption><thead><tr><th>Method</th><th>Scores (points)</th><th>Mean</th></tr></thead><tbody>'+r.groups.map((g,i)=>`<tr><th>${'ABC'[i]}</th><td>${g.join(', ')}</td><td>${r.means[i]}</td></tr>`).join('')+'</tbody></table>';
+  $('f-math').textContent=`SS between = ${fmt(r.between,1)}; SS within = ${fmt(r.within,1)}. F = (${fmt(r.between,1)} ÷ 2) / (${fmt(r.within,1)} ÷ 12) = ${fmt(r.F)}.`;
+  drawF(r);
+}
+['gap','spread'].forEach(id=>$(id).addEventListener('input',updateF));
+function setF(g,s){$('gap').value=g;$('spread').value=s;updateF();}
+$('f-original').addEventListener('click',()=>setF(10,5));$('f-equal').addEventListener('click',()=>setF(0,5));$('f-noisy').addEventListener('click',()=>setF(10,10));
+
+// Regularized upper incomplete gamma Q(a,x), using a series or a continued fraction.
+// This computes the chi-square survival probability Q(df/2, statistic/2).
+function logGamma(z){
+  const c=[676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  if(z<.5)return Math.log(Math.PI)-Math.log(Math.sin(Math.PI*z))-logGamma(1-z);
+  z-=1;let x=.99999999999980993;for(let i=0;i<c.length;i++)x+=c[i]/(z+i+1);const t=z+7.5;return .5*Math.log(2*Math.PI)+(z+.5)*Math.log(t)-t+Math.log(x);
+}
+function gammaQ(a,x){
+  if(x===0)return 1;const pref=Math.exp(-x+a*Math.log(x)-logGamma(a)),eps=1e-14,tiny=1e-300;
+  if(x<a+1){let term=1/a,sum=term,ap=a;for(let n=1;n<1000;n++){ap++;term*=x/ap;sum+=term;if(Math.abs(term)<Math.abs(sum)*eps)break;}return Math.max(0,Math.min(1,1-sum*pref));}
+  let b=x+1-a,c=1/tiny,d=1/b,h=d;
+  for(let i=1;i<1000;i++){const an=-i*(i-a);b+=2;d=an*d+b;if(Math.abs(d)<tiny)d=tiny;c=b+an/c;if(Math.abs(c)<tiny)c=tiny;d=1/d;const delta=d*c;h*=delta;if(Math.abs(delta-1)<eps)break;}
+  return Math.max(0,Math.min(1,pref*h));
+}
+function chiSquare(values){
+  const rows=[values[0]+values[1],values[2]+values[3]],cols=[values[0]+values[2],values[1]+values[3]],total=rows[0]+rows[1];
+  if(rows.some(v=>v===0)||cols.some(v=>v===0))return null;
+  const expected=[rows[0]*cols[0]/total,rows[0]*cols[1]/total,rows[1]*cols[0]/total,rows[1]*cols[1]/total];
+  const contributions=values.map((v,i)=>(v-expected[i])**2/expected[i]);const statistic=contributions.reduce((a,b)=>a+b,0);
+  return {rows,cols,total,expected,contributions,statistic,p:gammaQ(.5,statistic/2)};
+}
+const countIds=['ap','af','bp','bf'];let selectedCell=0,currentChi=null,currentValues=null;
+function showCell(i){
+  selectedCell=i;if(!currentChi)return;document.querySelectorAll('.cell-btn').forEach((b,j)=>b.setAttribute('aria-pressed',String(j===i)));
+  const labels=['A / Pass','A / Fail','B / Pass','B / Fail'];
+  $('chi-cell-math').textContent=`${labels[i]}: (${currentValues[i]} − ${fmt(currentChi.expected[i],2)})² ÷ ${fmt(currentChi.expected[i],2)} = ${fmt(currentChi.contributions[i])}.`;
+}
+function invalidChi(message){currentChi=null;$('chi-valid').hidden=true;$('chi-decision').className='decision caution';$('chi-decision').textContent=message;}
+function updateChi(){
+  let valid=true;const values=countIds.map(id=>{const el=$(id),v=el.valueAsNumber,ok=el.value.trim()!==''&&Number.isInteger(v)&&v>=0&&v<=100000;el.setAttribute('aria-invalid',String(!ok));if(!ok)valid=false;return v;});
+  if(!valid){invalidChi('Enter a whole-number count from 0 to 100,000 in every cell. Results are paused until the counts are valid.');return;}
+  const r=chiSquare(values);if(!r){invalidChi('Every row and column needs a positive total. With an empty category, this independence calculation is undefined.');return;}
+  currentChi=r;currentValues=values;$('chi-valid').hidden=false;
+  $('chi-expected').innerHTML=`<table><caption>Expected counts if method and outcome were independent</caption><thead><tr><th>Method</th><th>Pass</th><th>Fail</th><th>Total</th></tr></thead><tbody><tr><th>A</th><td>${fmt(r.expected[0],2)}</td><td>${fmt(r.expected[1],2)}</td><td>${r.rows[0]}</td></tr><tr><th>B</th><td>${fmt(r.expected[2],2)}</td><td>${fmt(r.expected[3],2)}</td><td>${r.rows[1]}</td></tr><tr><th>Total</th><td>${r.cols[0]}</td><td>${r.cols[1]}</td><td>${r.total}</td></tr></tbody></table>`;
+  $('chi-rates').textContent=`Observed pass rates: A ${fmt(values[0]/r.rows[0]*100,1)}%; B ${fmt(values[2]/r.rows[1]*100,1)}%. Overall ${fmt(r.cols[0]/r.total*100,1)}%.`;
+  const labels=['A · Pass','A · Fail','B · Pass','B · Fail'];$('chi-cells').replaceChildren();r.contributions.forEach((value,i)=>{const b=document.createElement('button');b.className='cell-btn';b.setAttribute('aria-pressed',String(selectedCell===i));b.innerHTML=`<small>${labels[i]} · O = ${values[i]}, E = ${fmt(r.expected[i],2)}</small><strong>${fmt(value)}</strong><small>Contribution to χ²</small>`;b.addEventListener('click',()=>showCell(i));$('chi-cells').append(b);});
+  $('chi-stat').textContent=fmt(r.statistic);$('chi-p').textContent=pformat(r.p);showCell(selectedCell);
+  const sparse=r.expected.some(e=>e<5);$('chi-decision').className=sparse?'decision caution':'decision';
+  if(sparse){$('chi-decision').innerHTML='<strong>Small expected counts: use caution.</strong><p>At least one expected count is below 5. The displayed p-value is the asymptotic approximation. This lesson’s guideline is not met, so do not use it for a firm conclusion; consider Fisher’s exact test for this 2 × 2 table.</p>';}
+  else if(r.p<.05){$('chi-decision').innerHTML='<strong>Reject H₀ at α = 0.05.</strong><p>Evidence of an association between teaching method and pass/fail. This does not show that method caused the difference.</p>';}
+  else{$('chi-decision').innerHTML='<strong>Fail to reject H₀ at α = 0.05.</strong><p>Insufficient evidence of association. This does not prove independence.</p>';}
+}
+countIds.forEach(id=>$(id).addEventListener('input',updateChi));
+function setCounts(v){v.forEach((n,i)=>$(countIds[i]).value=n);updateChi();}
+$('chi-original').addEventListener('click',()=>setCounts([30,20,15,35]));$('chi-equal').addEventListener('click',()=>setCounts([25,25,25,25]));$('chi-small').addEventListener('click',()=>setCounts([3,2,1,4]));$('chi-ten').addEventListener('click',()=>setCounts([6,4,3,7]));$('chi-hundred').addEventListener('click',()=>setCounts([60,40,30,70]));
+const answers=['f','chi','fail','one'];const explanations=['One categorical grouping variable and a numerical outcome: compare population means with ANOVA.','Both variables are categorical: use a chi-square independence test on the counts, if assumptions fit.','p ≥ 0.05 means insufficient evidence against H₀, not proof that it is true.','ANOVA provides evidence of at least one population mean difference. Follow-up tests are needed to locate the differences.'];const responses=new Map();
+document.querySelectorAll('.question').forEach(q=>q.querySelectorAll('[data-a]').forEach(b=>b.addEventListener('click',()=>{const i=Number(q.dataset.q),correct=b.dataset.a===answers[i];responses.set(i,correct);q.querySelectorAll('[data-a]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));q.querySelector('.feedback').textContent=(correct?'Correct. ':'Try again. ')+explanations[i];$('quiz-status').textContent=`${responses.size} of 4 answered · ${Array.from(responses.values()).filter(Boolean).length} currently correct.`;})));
+$('quiz-reset').addEventListener('click',()=>{responses.clear();document.querySelectorAll('.feedback').forEach(p=>p.textContent='');document.querySelectorAll('.options button').forEach(b=>b.setAttribute('aria-pressed','false'));$('quiz-status').textContent='0 of 4 answered.';});
+window.addEventListener('resize',()=>{if(!$('f').hidden)updateF();});
+updateF();updateChi();
+</script>
+</body>
+</html>

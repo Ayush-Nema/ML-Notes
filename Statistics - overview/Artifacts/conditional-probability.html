@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conditional probability: a day at the coffee shop</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #EDF0F5;
+    --panel: #FFFFFF;
+    --ink: #18212F;
+    --muted: #566175;
+    --line: #D3DAE6;
+    --accent: #2F5BEA;
+    --tint: #E6ECFD;
+    --both: #17795C;
+    --coffee: #5B8DEF;
+    --pastry: #F0A02B;
+    --neither: #D3D9E3;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 18px 56px; }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 700;
+    font-size: clamp(1.9rem, 4.5vw, 2.8rem);
+    line-height: 1.12;
+    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+  }
+  h2 { font-family: var(--serif); font-size: 1.3rem; margin: 0 0 8px; line-height: 1.25; }
+  p { margin: 0 0 10px; }
+  .lead { max-width: 62ch; font-size: 1.08rem; color: var(--muted); margin-bottom: 22px; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px;
+  }
+  .layout { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); }
+  .stack { display: grid; gap: 18px; align-content: start; }
+  @media (min-width: 920px) {
+    .layout { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
+  }
+
+  /* condition chips */
+  .chips-label { font-weight: 600; margin-bottom: 8px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .chip {
+    font: inherit;
+    border: 1.5px solid var(--line);
+    background: #fff;
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 8px 16px;
+    cursor: pointer;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  :focus-visible { outline: 3px solid #F0A02B; outline-offset: 2px; }
+
+  /* dot field */
+  #field { width: 100%; height: auto; display: block; }
+  #field circle { transition: fill .25s, opacity .25s; }
+  .d0 { fill: var(--both); }
+  .d1 { fill: var(--coffee); }
+  .d2 { fill: var(--pastry); }
+  .d3 { fill: var(--neither); }
+  #field circle.off { opacity: .1; }
+  .legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 14px; margin-top: 12px; font-size: .93rem; }
+  @media (min-width: 560px) { .legend { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .legend span.sw { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+  .legend b { font-variant-numeric: tabular-nums; }
+
+  /* answer card */
+  .notation { font-family: var(--serif); font-style: italic; color: var(--muted); margin-bottom: 4px; }
+  .big { font-family: var(--serif); font-size: clamp(2.6rem, 8vw, 3.8rem); font-weight: 700; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .formula { margin: 8px 0 12px; font-variant-numeric: tabular-nums; }
+  .answer-title { font-weight: 600; margin-bottom: 6px; }
+
+  /* table */
+  table { width: 100%; border-collapse: separate; border-spacing: 4px; font-variant-numeric: tabular-nums; text-align: center; }
+  th { font-weight: 600; font-size: .88rem; color: var(--muted); padding: 4px; }
+  th.row { text-align: left; }
+  td { background: #F6F8FB; border: 1.5px solid transparent; border-radius: 8px; padding: 8px 4px; transition: background .2s, border-color .2s; }
+  td.in { background: var(--tint); }
+  td.num { border-color: var(--accent); font-weight: 700; }
+  td.den { border-color: var(--accent); border-style: dashed; font-weight: 700; }
+
+  /* sliders */
+  .ctl { margin-bottom: 16px; }
+  .ctl label { display: block; font-weight: 600; margin-bottom: 4px; }
+  .ctl .row { display: flex; align-items: center; gap: 12px; }
+  input[type=range] { flex: 1; accent-color: var(--accent); min-width: 0; height: 28px; }
+  output { min-width: 3.4ch; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+  .btn {
+    font: inherit; font-weight: 600; cursor: pointer;
+    border: 1.5px solid var(--accent); background: #fff; color: var(--accent);
+    border-radius: 10px; padding: 8px 14px;
+  }
+  .btn:hover { background: var(--tint); }
+  .btn.solid { background: var(--accent); color: #fff; }
+  .btn.solid:hover { background: #2349c4; }
+  .status { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: #F6F8FB; font-size: .95rem; }
+  .small { font-size: .93rem; color: var(--muted); }
+  .reveal { margin-top: 12px; padding: 12px; border-radius: 10px; background: var(--tint); }
+  .next { margin-top: 24px; }
+  a { color: var(--accent); }
+  @media (prefers-reduced-motion: reduce) {
+    #field circle, td { transition: none; }
+  }
+
+  /* ---- theory additions ---- */
+  .toc { display: flex; gap: 8px; flex-wrap: wrap; margin: -6px 0 20px; }
+  .toc a { text-decoration: none; color: var(--ink); background: #fff; border: 1.5px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: .95rem; }
+  .toc a:hover { border-color: var(--accent); color: var(--accent); }
+  .theory { margin-top: 18px; display: grid; gap: 18px; }
+  .prose { max-width: 68ch; }
+  .math { font-family: var(--serif); font-size: 1.15rem; background: #F6F8FB; border-radius: 10px; padding: 12px 16px; margin: 10px 0; overflow-x: auto; font-variant-numeric: tabular-nums; line-height: 2; }
+  .math .ln { white-space: nowrap; }
+  .frac { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; margin: 0 .25em; line-height: 1.35; }
+  .frac > span:first-child { border-bottom: 1.5px solid currentColor; padding: 0 .35em .08em; }
+  .frac > span:last-child { padding: .08em .35em 0; }
+  .live { background: var(--tint); border-radius: 10px; padding: 10px 14px; margin: 10px 0; font-family: var(--serif); font-variant-numeric: tabular-nums; overflow-x: auto; line-height: 1.8; }
+  .live .ln { white-space: nowrap; }
+  .live .tag { font-family: var(--sans); font-size: .85rem; color: var(--muted); display: block; margin-bottom: 2px; }
+  .note { border-left: 4px solid var(--pastry); padding: 6px 12px; margin: 10px 0; max-width: 68ch; background: #FFF8EA; border-radius: 0 8px 8px 0; }
+  #sq { width: 100%; height: auto; display: block; margin: 6px 0; border-radius: 6px; }
+  #sq text { font-family: var(--sans); font-size: 14px; text-anchor: middle; }
+  .theory ul { margin: 0 0 10px; padding-left: 1.2em; max-width: 68ch; }
+  .theory li { margin-bottom: 6px; }
+  .qz { border: 0; padding: 0; margin: 0 0 22px; }
+  .qz legend { font-weight: 600; margin-bottom: 8px; padding: 0; max-width: 68ch; }
+  .qopts { display: grid; gap: 6px; max-width: 68ch; }
+  .qopt { font: inherit; text-align: left; background: #fff; border: 1.5px solid var(--line); border-radius: 10px; padding: 9px 12px; cursor: pointer; color: var(--ink); }
+  .qopt:hover { border-color: var(--accent); }
+  .qopt.ok { border-color: var(--both); background: #E4F3EE; }
+  .qopt.bad { border-color: #C23B3B; background: #FBE7E7; }
+  .qwhy { margin-top: 8px; max-width: 68ch; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Conditional probability: a day at the coffee shop</h1>
+  <p class="lead">Conditional probability answers one question: once I know something extra, how likely is the thing I care about? Here, the extra fact is what a customer bought.</p>
+
+  <nav class="toc" aria-label="Sections">
+    <a href="#explore">Play with it</a>
+    <a href="#theory">The theory and maths</a>
+    <a href="#quiz">Test yourself</a>
+  </nav>
+
+  <div class="layout" id="explore">
+
+    <!-- LEFT: the dots -->
+    <div class="stack">
+      <section class="panel" aria-labelledby="fieldTitle">
+        <h2 id="fieldTitle">1,000 customers, one dot each</h2>
+        <p class="small">A coffee shop served 1,000 customers today. Some bought a coffee, some bought a pastry, some bought both. Choose what you know about a customer and watch the group shrink.</p>
+
+        <div class="chips-label" id="chipsLabel">What do you know about the customer?</div>
+        <div class="chips" role="group" aria-labelledby="chipsLabel">
+          <button class="chip" data-cond="all" aria-pressed="true">Nothing yet</button>
+          <button class="chip" data-cond="coffee" aria-pressed="false">They bought a coffee</button>
+          <button class="chip" data-cond="pastry" aria-pressed="false">They bought a pastry</button>
+        </div>
+
+        <svg id="field" viewBox="0 0 800 500" role="img" aria-label="1,000 dots, one per customer"></svg>
+
+        <div class="legend" id="legend"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="guessTitle">
+        <h2 id="guessTitle">Does the order of the question matter?</h2>
+        <p>Someone in the shop bought a pastry. What is the chance they also bought a coffee?</p>
+        <div class="ctl">
+          <label for="guess">Your guess</label>
+          <div class="row">
+            <input type="range" id="guess" min="0" max="100" step="1" value="40">
+            <output id="guessOut" for="guess">40%</output>
+          </div>
+        </div>
+        <button class="btn solid" id="revealBtn">Check my guess</button>
+        <div class="reveal" id="revealBox" hidden aria-live="polite"></div>
+      </section>
+    </div>
+
+    <!-- RIGHT: the math + controls -->
+    <div class="stack">
+      <section class="panel" aria-live="polite" aria-labelledby="ansTitle">
+        <div class="answer-title" id="ansTitle"></div>
+        <div class="notation" id="notation"></div>
+        <div class="big" id="bigNum"></div>
+        <div class="formula" id="formula"></div>
+        <p id="explain"></p>
+      </section>
+
+      <section class="panel" aria-labelledby="tblTitle">
+        <h2 id="tblTitle">The same counts as a table</h2>
+        <table>
+          <thead>
+            <tr><th></th><th>Pastry</th><th>No pastry</th><th>Total</th></tr>
+          </thead>
+          <tbody>
+            <tr><th class="row">Coffee</th><td data-k="cp"></td><td data-k="cn"></td><td data-k="c"></td></tr>
+            <tr><th class="row">No coffee</th><td data-k="np"></td><td data-k="nn"></td><td data-k="n"></td></tr>
+            <tr><th class="row">Total</th><td data-k="p"></td><td data-k="q"></td><td data-k="all"></td></tr>
+          </tbody>
+        </table>
+        <p class="small" style="margin-top:8px">Shaded cells are the customers you are still considering. The solid outline is the count we want, and the dashed outline is the group we divide by.</p>
+      </section>
+
+      <section class="panel" aria-labelledby="ctlTitle">
+        <h2 id="ctlTitle">Change the shop</h2>
+        <div class="ctl">
+          <label for="pc">Customers who buy a coffee</label>
+          <div class="row"><input type="range" id="pc" min="10" max="90" step="1" value="60"><output id="pcOut" for="pc"></output></div>
+        </div>
+        <div class="ctl">
+          <label for="pa">Coffee buyers who also buy a pastry</label>
+          <div class="row"><input type="range" id="pa" min="0" max="100" step="1" value="40"><output id="paOut" for="pa"></output></div>
+        </div>
+        <div class="ctl">
+          <label for="pb">Non-coffee customers who buy a pastry</label>
+          <div class="row"><input type="range" id="pb" min="0" max="100" step="1" value="10"><output id="pbOut" for="pb"></output></div>
+        </div>
+        <button class="btn" id="indep">Make coffee and pastry unrelated</button>
+        <div class="status" id="status" aria-live="polite"></div>
+      </section>
+    </div>
+  </div>
+
+
+  <div class="theory" id="theory">
+
+    <section class="panel" aria-labelledby="t1">
+      <h2 id="t1">Intuition: probability is area, and conditioning is zooming in</h2>
+      <p class="prose">Picture the whole shop as a square with area 1. The probability of an event is the share of the square it covers. If someone tells you "this customer bought a coffee", they are telling you the customer is somewhere inside the coffee column. Everything outside it is now impossible, so you throw it away and stretch what remains until it has area 1 again. That stretch is the division in the formula below.</p>
+      <p class="prose">Column width is the share of customers in each group. The coloured block inside a column is the share of that group who bought a pastry. Use the buttons to zoom in on a group.</p>
+      <div class="chips" role="group" aria-label="Zoom into a group">
+        <button class="chip" data-zoom="all" aria-pressed="true">Whole shop</button>
+        <button class="chip" data-zoom="coffee" aria-pressed="false">Zoom into coffee buyers</button>
+        <button class="chip" data-zoom="nocoffee" aria-pressed="false">Zoom into non-coffee customers</button>
+      </div>
+      <svg id="sq" viewBox="0 0 640 300" role="img" aria-label="Probability square">
+        <rect id="r0" class="d0" stroke="#fff" stroke-width="2"/>
+        <rect id="r1" class="d1" stroke="#fff" stroke-width="2"/>
+        <rect id="r2" class="d2" stroke="#fff" stroke-width="2"/>
+        <rect id="r3" class="d3" stroke="#fff" stroke-width="2"/>
+        <text id="x0" fill="#fff"></text>
+        <text id="x1" fill="#18212F"></text>
+        <text id="x2" fill="#18212F"></text>
+        <text id="x3" fill="#18212F"></text>
+      </svg>
+      <p class="small prose" id="sqCap" aria-live="polite"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="t2">
+      <h2 id="t2">The definition</h2>
+      <p class="prose">For events <i>A</i> and <i>B</i> with <i>P</i>(<i>B</i>) &gt; 0, the probability of <i>A</i> given <i>B</i> is the overlap divided by the size of <i>B</i>:</p>
+      <div class="math"><i>P</i>(<i>A</i> | <i>B</i>) = <span class="frac"><span><i>P</i>(<i>A</i> ∩ <i>B</i>)</span><span><i>P</i>(<i>B</i>)</span></span></div>
+      <p class="prose">The symbol ∩ means "and": both events happen. The bar | means "given" or "restricted to the cases where".</p>
+      <p class="prose">This is the same thing as counting dots. If <i>n</i> is the number of customers, then <i>P</i>(<i>A</i> ∩ <i>B</i>) ÷ <i>P</i>(<i>B</i>) = (<i>n</i><sub><i>AB</i></sub> ÷ <i>n</i>) ÷ (<i>n</i><sub><i>B</i></sub> ÷ <i>n</i>) = <i>n</i><sub><i>AB</i></sub> ÷ <i>n</i><sub><i>B</i></sub>. The total cancels, which is why "count the overlap, divide by the group you know about" always works.</p>
+      <div class="live" id="liveDef"></div>
+      <p class="prose">The condition <i>P</i>(<i>B</i>) &gt; 0 matters: you cannot restrict to a group that has nobody in it.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="t3">
+      <h2 id="t3">The multiplication rule</h2>
+      <p class="prose">Rearrange the definition and you get a rule for "both happen". To get both, first the one event must happen, then the other must happen within it:</p>
+      <div class="math">
+        <div class="ln"><i>P</i>(<i>A</i> ∩ <i>B</i>) = <i>P</i>(<i>A</i> | <i>B</i>) × <i>P</i>(<i>B</i>)</div>
+        <div class="ln"><i>P</i>(<i>A</i> ∩ <i>B</i>) = <i>P</i>(<i>B</i> | <i>A</i>) × <i>P</i>(<i>A</i>)</div>
+      </div>
+      <p class="prose">Both lines describe the same overlap, just reached in a different order. For three events the rule chains: <i>P</i>(<i>A</i> ∩ <i>B</i> ∩ <i>C</i>) = <i>P</i>(<i>A</i>) × <i>P</i>(<i>B</i> | <i>A</i>) × <i>P</i>(<i>C</i> | <i>A</i> ∩ <i>B</i>).</p>
+      <div class="live" id="liveMult"></div>
+      <p class="prose">The fact that the overlap can be written two ways is what leads to Bayes' theorem in the next file.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="t4">
+      <h2 id="t4">The law of total probability</h2>
+      <p class="prose">Suppose every customer is either a coffee buyer or not. Then the overall chance of a pastry is a weighted average of the chance within each group, weighted by group size:</p>
+      <div class="math"><i>P</i>(<i>A</i>) = <i>P</i>(<i>A</i> | <i>B</i>) <i>P</i>(<i>B</i>) + <i>P</i>(<i>A</i> | <i>B</i><sup>c</sup>) <i>P</i>(<i>B</i><sup>c</sup>)</div>
+      <p class="prose"><i>B</i><sup>c</sup> means "not <i>B</i>". In the square above, this just says the pastry area is the pastry block in the left column plus the pastry block in the right column.</p>
+      <div class="live" id="liveTotal"></div>
+      <p class="prose">One consequence: the overall rate always sits between the two conditional rates. Slide the coffee share and watch the overall pastry rate move toward whichever group is bigger.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="t5">
+      <h2 id="t5">Independence</h2>
+      <p class="prose">Events <i>A</i> and <i>B</i> are independent when learning about one tells you nothing about the other. Any one of these three statements says so, and each implies the others (when the probabilities involved are positive):</p>
+      <div class="math">
+        <div class="ln"><i>P</i>(<i>A</i> | <i>B</i>) = <i>P</i>(<i>A</i>)</div>
+        <div class="ln"><i>P</i>(<i>B</i> | <i>A</i>) = <i>P</i>(<i>B</i>)</div>
+        <div class="ln"><i>P</i>(<i>A</i> ∩ <i>B</i>) = <i>P</i>(<i>A</i>) × <i>P</i>(<i>B</i>)</div>
+      </div>
+      <div class="live" id="liveInd" aria-live="polite"></div>
+      <div class="note"><b>Independent is not the same as mutually exclusive.</b> Mutually exclusive events cannot happen together, so <i>P</i>(<i>A</i> ∩ <i>B</i>) = 0. If you learn that <i>B</i> happened, you know <i>A</i> did not. That is the strongest possible dependence, not independence.</div>
+    </section>
+
+    <section class="panel" aria-labelledby="t6">
+      <h2 id="t6">Conditional probabilities are still probabilities</h2>
+      <p class="prose">Once you fix <i>B</i>, the numbers <i>P</i>( · | <i>B</i>) follow all the usual rules. They are never negative, the whole space has probability 1, and complements work as normal:</p>
+      <div class="math"><i>P</i>(<i>A</i><sup>c</sup> | <i>B</i>) = 1 − <i>P</i>(<i>A</i> | <i>B</i>)</div>
+      <div class="live" id="liveComp"></div>
+      <p class="prose">Be careful about which side of the bar the complement is on. <i>P</i>(<i>A</i> | <i>B</i><sup>c</sup>) is not 1 − <i>P</i>(<i>A</i> | <i>B</i>). It describes a different group of customers entirely, which here is 10%, not 60%.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="t7">
+      <h2 id="t7">Common mistakes</h2>
+      <ul>
+        <li><b>Swapping the two sides.</b> <i>P</i>(<i>A</i> | <i>B</i>) and <i>P</i>(<i>B</i> | <i>A</i>) share a numerator but divide by different groups. "If the defendant is innocent, this evidence is rare" is not the same claim as "given this evidence, the defendant is probably guilty". Courts have a name for confusing them: the prosecutor's fallacy.</li>
+        <li><b>Hearing "given" as "because".</b> Coffee buyers being more likely to buy pastries does not mean the coffee caused the pastry. Both could come from a morning rush. Conditional probability describes association, not cause.</li>
+        <li><b>Dividing by the wrong group.</b> Always ask which customers you are still considering once you know what you know. That group is the denominator.</li>
+      </ul>
+    </section>
+  </div>
+
+  <section class="panel" id="quiz" style="margin-top:18px" aria-labelledby="qTitle">
+    <h2 id="qTitle">Test yourself</h2>
+    <div id="quizBox"></div>
+    <p class="small" id="score"></p>
+  </section>
+
+  <section class="panel next" aria-labelledby="takeTitle">
+    <h2 id="takeTitle">What to take away</h2>
+    <p>Conditioning on an event throws away every outcome where it did not happen. What is left becomes the new whole, so you divide by its size: P(A | B) = P(A and B) ÷ P(B).</p>
+    <p>P(pastry | coffee) and P(coffee | pastry) are different questions with different answers. They share the same numerator, the customers who bought both, but divide by different groups.</p>
+    <p>If learning B never changes the chance of A, the two events are independent. Use the button above to see what that looks like.</p>
+    <p class="small">Next: <a href="bayes-theorem.html">Bayes' theorem</a> turns this reversal into a tool for updating beliefs. (Keep both files in the same folder for the link to work.) The numbers here are made up for illustration.</p>
+  </section>
+</div>
+
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s);
+  const NS = "http://www.w3.org/2000/svg";
+  const st = { pc: 60, a: 40, b: 10, cond: "all", revealed: false };
+
+  const fmtInt = (n) => n.toLocaleString("en-US");
+  const fmtPct = (x) => (Math.round(x * 1000) / 10).toFixed(1).replace(/\.0$/, "") + "%";
+
+  // Build the 1,000 dots once: 40 columns x 25 rows, filled column by column.
+  const field = $("#field");
+  const dots = [];
+  for (let i = 0; i < 1000; i++) {
+    const c = document.createElementNS(NS, "circle");
+    c.setAttribute("cx", Math.floor(i / 25) * 20 + 10);
+    c.setAttribute("cy", (i % 25) * 20 + 10);
+    c.setAttribute("r", 7);
+    field.appendChild(c);
+    dots.push(c);
+  }
+
+  function counts() {
+    const C = Math.round(1000 * st.pc / 100);
+    const both = Math.round(C * st.a / 100);
+    const nonC = 1000 - C;
+    const po = Math.round(nonC * st.b / 100);
+    return { C, both, cOnly: C - both, nonC, po, neither: nonC - po, P: both + po };
+  }
+
+  function render() {
+    const n = counts();
+    const { C, both, cOnly, nonC, po, neither, P } = n;
+
+    // dots
+    const inSpace = {
+      all: [true, true, true, true],
+      coffee: [true, true, false, false],
+      pastry: [true, false, true, false],
+    }[st.cond];
+    const edges = [both, both + cOnly, both + cOnly + po];
+    dots.forEach((d, i) => {
+      const cat = i < edges[0] ? 0 : i < edges[1] ? 1 : i < edges[2] ? 2 : 3;
+      d.setAttribute("class", "d" + cat + (inSpace[cat] ? "" : " off"));
+    });
+
+    $("#legend").innerHTML =
+      '<div><span class="sw" style="background:var(--both)"></span><b>' + fmtInt(both) + "</b> coffee and pastry</div>" +
+      '<div><span class="sw" style="background:var(--coffee)"></span><b>' + fmtInt(cOnly) + "</b> coffee only</div>" +
+      '<div><span class="sw" style="background:var(--pastry)"></span><b>' + fmtInt(po) + "</b> pastry only</div>" +
+      '<div><span class="sw" style="background:var(--neither)"></span><b>' + fmtInt(neither) + "</b> neither</div>";
+
+    // table
+    const vals = { cp: both, cn: cOnly, c: C, np: po, nn: neither, n: nonC, p: P, q: 1000 - P, all: 1000 };
+    document.querySelectorAll("td[data-k]").forEach((td) => {
+      const k = td.dataset.k;
+      td.textContent = fmtInt(vals[k]);
+      td.className = "";
+    });
+    const mark = (keys, cls) => keys.forEach((k) => document.querySelector('td[data-k="' + k + '"]').classList.add(cls));
+    if (st.cond === "coffee") { mark(["cp", "cn", "c"], "in"); mark(["cp"], "num"); mark(["c"], "den"); }
+    else if (st.cond === "pastry") { mark(["cp", "np", "p"], "in"); mark(["cp"], "num"); mark(["p"], "den"); }
+    else { mark(["p"], "num"); mark(["all"], "den"); }
+
+    // answer card
+    const baseP = P / 1000, baseC = C / 1000;
+    let title, notation, big, formula, explain;
+    if (st.cond === "all") {
+      title = "Chance a customer bought a pastry, with no other information";
+      notation = "P(pastry)";
+      big = fmtPct(baseP);
+      formula = fmtInt(P) + " pastry buyers ÷ 1,000 customers";
+      explain = "This is the plain, unconditional chance. Pick “They bought a coffee” above to see what happens when we learn one more fact.";
+    } else if (st.cond === "coffee") {
+      const cur = both / C;
+      title = "Chance of a pastry, given the customer bought a coffee";
+      notation = "P(pastry | coffee), read “probability of a pastry, given coffee”";
+      big = fmtPct(cur);
+      formula = fmtInt(both) + " bought both ÷ " + fmtInt(C) + " bought a coffee";
+      if (Math.abs(cur - baseP) < 0.005) explain = "That matches the overall " + fmtPct(baseP) + ". Knowing about the coffee told us nothing new, so coffee and pastry are independent.";
+      else explain = "Knowing they bought a coffee cut the group down to " + fmtInt(C) + " customers. Overall " + fmtPct(baseP) + " buy a pastry, but among coffee buyers it is " + fmtPct(cur) + ", so the extra fact " + (cur > baseP ? "raised" : "lowered") + " the chance.";
+    } else {
+      title = "Chance the customer bought a coffee, given they bought a pastry";
+      notation = "P(coffee | pastry), read “probability of a coffee, given pastry”";
+      if (P === 0) {
+        big = "n/a";
+        formula = "Nobody bought a pastry";
+        explain = "With no pastry buyers there is nobody to condition on. Raise one of the pastry sliders.";
+      } else {
+        const cur = both / P;
+        big = fmtPct(cur);
+        formula = fmtInt(both) + " bought both ÷ " + fmtInt(P) + " bought a pastry";
+        if (Math.abs(cur - baseC) < 0.005) explain = "That matches the overall " + fmtPct(baseC) + " who buy a coffee. A pastry tells us nothing about coffee here.";
+        else explain = "Now the group is the " + fmtInt(P) + " pastry buyers. Overall " + fmtPct(baseC) + " buy a coffee, but among pastry buyers it is " + fmtPct(cur) + ". Same " + fmtInt(both) + " on top, a different group underneath.";
+      }
+    }
+    $("#ansTitle").textContent = title;
+    $("#notation").textContent = notation;
+    $("#bigNum").textContent = big;
+    $("#formula").textContent = formula;
+    $("#explain").textContent = explain;
+
+    renderTheory(n);
+
+    // slider outputs and status
+    $("#pcOut").textContent = st.pc + "%";
+    $("#paOut").textContent = st.a + "%";
+    $("#pbOut").textContent = st.b + "%";
+    $("#status").textContent = st.a === st.b
+      ? "Unrelated: " + st.a + "% of coffee buyers and " + st.b + "% of everyone else buy a pastry. Knowing about the coffee changes nothing."
+      : "Related: " + st.a + "% of coffee buyers buy a pastry, compared with " + st.b + "% of everyone else. Knowing about the coffee changes the odds.";
+
+    // guess reveal
+    const box = $("#revealBox");
+    if (st.revealed) {
+      box.hidden = false;
+      if (P === 0) {
+        box.textContent = "Nobody bought a pastry in this version of the shop, so there is no answer. Raise one of the pastry sliders.";
+      } else {
+        const ans = both / P;
+        const guess = Number($("#guess").value);
+        box.innerHTML =
+          "<p>You guessed <b>" + guess + "%</b>. The answer is <b>" + fmtPct(ans) + "</b> (" + fmtInt(both) + " of " + fmtInt(P) + " pastry buyers also bought a coffee).</p>" +
+          "<p>The question “of coffee buyers, how many buy a pastry?” gives " + fmtPct(both / C) + ". Same overlap, different group to divide by.</p>" +
+          '<button class="btn" id="seeIt">Show it on the dots</button>';
+        $("#seeIt").onclick = () => { st.cond = "pastry"; syncChips(); render(); window.scrollTo({ top: 0, behavior: "smooth" }); };
+      }
+    } else {
+      box.hidden = true;
+    }
+  }
+
+  function syncChips() {
+    document.querySelectorAll(".chip[data-cond]").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.cond === st.cond)));
+  }
+
+  document.querySelectorAll(".chip[data-cond]").forEach((c) => c.addEventListener("click", () => {
+    st.cond = c.dataset.cond; syncChips(); render();
+  }));
+  $("#pc").addEventListener("input", (e) => { st.pc = +e.target.value; render(); });
+  $("#pa").addEventListener("input", (e) => { st.a = +e.target.value; render(); });
+  $("#pb").addEventListener("input", (e) => { st.b = +e.target.value; render(); });
+  $("#indep").addEventListener("click", () => { st.b = st.a; $("#pb").value = st.b; render(); });
+  $("#guess").addEventListener("input", (e) => { $("#guessOut").textContent = e.target.value + "%"; if (st.revealed) render(); });
+  $("#revealBtn").addEventListener("click", () => { st.revealed = true; render(); });
+
+  /* ---------- theory section ---------- */
+  const fmtD = (x) => String(Number(x.toFixed(3)));
+  const W = 640, H = 300;
+  const cur = { xc: 0, wc: 0, xn: 0, wn: 0, ha: 0, hb: 0 };
+  let zoom = "all", raf = null, first = true, lastN = null;
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function sqTarget(n) {
+    const pc = n.C / 1000;
+    const a = n.C ? n.both / n.C : 0, b = n.nonC ? n.po / n.nonC : 0;
+    let t;
+    if (zoom === "all") t = { xc: 0, wc: pc * W, xn: pc * W, wn: (1 - pc) * W };
+    else if (zoom === "coffee") t = { xc: 0, wc: W, xn: W, wn: 0 };
+    else t = { xc: 0, wc: 0, xn: 0, wn: W };
+    t.ha = a; t.hb = b;
+    return t;
+  }
+
+  function label(id, x, y, w, h, name, pct) {
+    const t = $(id);
+    if (w < 40 || h < 18) { t.innerHTML = ""; return; }
+    if (w >= 105 && h >= 42) {
+      t.innerHTML = '<tspan x="' + (x + w / 2) + '" y="' + (y + h / 2 - 3) + '">' + name + '</tspan><tspan x="' + (x + w / 2) + '" y="' + (y + h / 2 + 15) + '" font-weight="700">' + pct + "</tspan>";
+    } else {
+      t.innerHTML = '<tspan x="' + (x + w / 2) + '" y="' + (y + h / 2 + 5) + '" font-weight="700">' + pct + "</tspan>";
+    }
+  }
+
+  function drawSq() {
+    const n = lastN;
+    const set = (id, x, y, w, h) => {
+      const r = $(id);
+      r.setAttribute("x", x); r.setAttribute("y", y);
+      r.setAttribute("width", Math.max(w, 0)); r.setAttribute("height", Math.max(h, 0));
+    };
+    const hA = cur.ha * H, hB = cur.hb * H;
+    set("#r0", cur.xc, 0, cur.wc, hA);
+    set("#r1", cur.xc, hA, cur.wc, H - hA);
+    set("#r2", cur.xn, 0, cur.wn, hB);
+    set("#r3", cur.xn, hB, cur.wn, H - hB);
+    let v;
+    if (zoom === "all") v = [n.both / 1000, n.cOnly / 1000, n.po / 1000, n.neither / 1000];
+    else if (zoom === "coffee") v = [n.C ? n.both / n.C : 0, n.C ? n.cOnly / n.C : 0, 0, 0];
+    else v = [0, 0, n.nonC ? n.po / n.nonC : 0, n.nonC ? n.neither / n.nonC : 0];
+    label("#x0", cur.xc, 0, cur.wc, hA, "coffee + pastry", fmtPct(v[0]));
+    label("#x1", cur.xc, hA, cur.wc, H - hA, "coffee only", fmtPct(v[1]));
+    label("#x2", cur.xn, 0, cur.wn, hB, "pastry only", fmtPct(v[2]));
+    label("#x3", cur.xn, hB, cur.wn, H - hB, "neither", fmtPct(v[3]));
+  }
+
+  function animateSq(n) {
+    lastN = n;
+    const t = sqTarget(n);
+    if (raf) cancelAnimationFrame(raf);
+    if (reduce || first) { Object.assign(cur, t); first = false; drawSq(); return; }
+    const from = Object.assign({}, cur), t0 = performance.now(), dur = 350;
+    const step = (now) => {
+      const k = Math.min((now - t0) / dur, 1), e = 1 - Math.pow(1 - k, 3);
+      for (const key in t) cur[key] = from[key] + (t[key] - from[key]) * e;
+      drawSq();
+      if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+  }
+
+  function renderTheory(n) {
+    animateSq(n);
+    const pB = n.C / 1000, pnB = n.nonC / 1000, pA = n.P / 1000, pAB = n.both / 1000;
+    const aGivenB = n.C ? n.both / n.C : 0;
+    const aGivenNB = n.nonC ? n.po / n.nonC : 0;
+    const bGivenA = n.P ? n.both / n.P : null;
+
+    const caps = {
+      all: "Whole shop. Each block's area is its share of all 1,000 customers. For example, coffee + pastry covers " + fmtPct(pAB) + " of the square.",
+      coffee: "Zoomed in on the " + fmtInt(n.C) + " coffee buyers. The other " + fmtInt(n.nonC) + " customers are discarded and the column is stretched to full width. The pastry block now covers " + fmtPct(aGivenB) + " of what is left, which is P(pastry | coffee).",
+      nocoffee: "Zoomed in on the " + fmtInt(n.nonC) + " customers who did not buy coffee. The pastry block covers " + fmtPct(aGivenNB) + " of this group, which is P(pastry | no coffee).",
+    };
+    $("#sqCap").textContent = caps[zoom];
+    $("#sq").setAttribute("aria-label", "Probability square. " + caps[zoom]);
+    document.querySelectorAll("[data-zoom]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.zoom === zoom)));
+
+    $("#liveDef").innerHTML =
+      '<span class="tag">With the current shop</span>' +
+      '<div class="ln">P(pastry | coffee) = P(pastry ∩ coffee) ÷ P(coffee) = ' + fmtD(pAB) + " ÷ " + fmtD(pB) + " = " + fmtD(aGivenB) + "</div>" +
+      '<div class="ln">Counting dots instead: ' + fmtInt(n.both) + " ÷ " + fmtInt(n.C) + " = " + fmtD(aGivenB) + "</div>";
+
+    $("#liveMult").innerHTML =
+      '<span class="tag">With the current shop</span>' +
+      '<div class="ln">P(coffee ∩ pastry) = P(pastry | coffee) × P(coffee) = ' + fmtD(aGivenB) + " × " + fmtD(pB) + " = " + fmtD(pAB) + "</div>" +
+      (bGivenA === null
+        ? '<div class="ln">P(coffee ∩ pastry) = P(coffee | pastry) × P(pastry): nobody bought a pastry, so this order has nothing to condition on.</div>'
+        : '<div class="ln">P(coffee ∩ pastry) = P(coffee | pastry) × P(pastry) = ' + fmtD(bGivenA) + " × " + fmtD(pA) + " = " + fmtD(pAB) + "</div>");
+
+    $("#liveTotal").innerHTML =
+      '<span class="tag">With the current shop</span>' +
+      '<div class="ln">P(pastry) = ' + fmtD(aGivenB) + " × " + fmtD(pB) + " + " + fmtD(aGivenNB) + " × " + fmtD(pnB) + " = " + fmtD(n.both / 1000) + " + " + fmtD(n.po / 1000) + " = " + fmtD(pA) + "</div>";
+
+    const same = Math.abs(aGivenB - pA) < 0.0015;
+    const prod = pA * pB;
+    $("#liveInd").innerHTML =
+      '<span class="tag">Are coffee and pastry independent in the current shop?</span>' +
+      '<div class="ln">P(pastry) = ' + fmtD(pA) + " &nbsp;vs&nbsp; P(pastry | coffee) = " + fmtD(aGivenB) + "</div>" +
+      '<div class="ln">P(pastry ∩ coffee) = ' + fmtD(pAB) + " &nbsp;vs&nbsp; P(pastry) × P(coffee) = " + fmtD(prod) + "</div>" +
+      '<div class="ln"><b>' + (same
+        ? "Equal, so they are independent: coffee tells you nothing about pastries."
+        : "Not equal, so they are dependent: coffee and pastry are linked.") + "</b></div>";
+
+    $("#liveComp").innerHTML =
+      '<span class="tag">With the current shop</span>' +
+      '<div class="ln">P(no pastry | coffee) = 1 − ' + fmtD(aGivenB) + " = " + fmtD(1 - aGivenB) + " (" + fmtInt(n.cOnly) + " ÷ " + fmtInt(n.C) + ")</div>" +
+      '<div class="ln">P(pastry | no coffee) = ' + fmtD(aGivenNB) + " (a different group, so not 1 − " + fmtD(aGivenB) + ")</div>";
+  }
+
+  document.querySelectorAll("[data-zoom]").forEach((b) => b.addEventListener("click", () => {
+    zoom = b.dataset.zoom; renderTheory(counts());
+  }));
+
+  /* ---------- quiz ---------- */
+  const QUIZ = [
+    { q: "Which expression equals P(A | B)?",
+      o: ["P(A ∩ B) ÷ P(A)", "P(A ∩ B) ÷ P(B)", "P(A) ÷ P(B)", "P(A) × P(B)"], a: 1,
+      why: "Knowing B happened makes B the new whole, so you divide the overlap by P(B)." },
+    { q: "Events A and B are independent. Which statement must be true?",
+      o: ["P(A ∩ B) = 0", "P(A | B) = P(B | A)", "P(A | B) = P(A)", "P(A) + P(B) = 1"], a: 2,
+      why: "Independence means learning B leaves the chance of A unchanged. The other options describe different ideas, such as mutually exclusive events." },
+    { q: "30% of emails are spam. The word “free” appears in 50% of spam and in 10% of other emails. What share of all emails contain “free”?",
+      o: ["15%", "22%", "30%", "60%"], a: 1,
+      why: "Law of total probability: 0.50 × 0.30 + 0.10 × 0.70 = 0.15 + 0.07 = 0.22." },
+    { q: "A and B cannot both happen, and each has a positive probability. Are they independent?",
+      o: ["Yes, they never influence each other", "No: if B happens then A is impossible, so P(A | B) = 0, which differs from P(A)", "Only if P(A) = P(B)", "It depends on how many trials you run"], a: 1,
+      why: "Mutually exclusive events with positive probability are always dependent. Knowing one happened tells you a lot about the other." },
+  ];
+  (function buildQuiz() {
+    const box = $("#quizBox"), score = $("#score");
+    let done = 0, right = 0;
+    QUIZ.forEach((it) => {
+      const f = document.createElement("fieldset"); f.className = "qz";
+      const lg = document.createElement("legend"); lg.textContent = it.q; f.appendChild(lg);
+      const opts = document.createElement("div"); opts.className = "qopts";
+      const why = document.createElement("div"); why.className = "qwhy"; why.hidden = true; why.setAttribute("aria-live", "polite");
+      it.o.forEach((t, oi) => {
+        const b = document.createElement("button"); b.type = "button"; b.className = "qopt"; b.textContent = t;
+        b.addEventListener("click", () => {
+          if (f.dataset.done) return;
+          f.dataset.done = "1"; done++;
+          const ok = oi === it.a; if (ok) right++;
+          b.classList.add(ok ? "ok" : "bad");
+          if (!ok) b.textContent = "✗ " + t;
+          const good = opts.children[it.a]; good.classList.add("ok"); good.textContent = "✓ " + it.o[it.a];
+          why.hidden = false; why.textContent = (ok ? "Correct. " : "Not quite. ") + it.why;
+          score.textContent = "Score so far: " + right + " of " + done + " answered, out of " + QUIZ.length + " questions.";
+        });
+        opts.appendChild(b);
+      });
+      f.appendChild(opts); f.appendChild(why); box.appendChild(f);
+    });
+  })();
+
+  render();
+})();
+</script>
+</body>
+</html>

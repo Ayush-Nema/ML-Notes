@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hyperparameter Tuning – An Interactive Beginner's Guide</title>
+<style>
+  :root{
+    --bg:#f6f7fb; --card:#ffffff; --ink:#1f2433; --muted:#5d6579; --line:#e3e6ef;
+    --accent:#4f46e5; --accent2:#eef0ff; --good:#16a34a; --goodbg:#e8f7ee;
+    --bad:#dc2626; --badbg:#fdecec; --warn:#d97706; --blue:#2563eb; --orange:#f97316;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  header{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;padding:48px 20px 40px;text-align:center}
+  header h1{margin:0 0 10px;font-size:clamp(26px,5vw,40px)}
+  header p{margin:0 auto;max-width:640px;opacity:.92}
+  nav{position:sticky;top:0;z-index:10;background:#fffffff2;backdrop-filter:blur(6px);border-bottom:1px solid var(--line);
+      display:flex;gap:6px;overflow-x:auto;padding:8px 12px;justify-content:center;flex-wrap:wrap}
+  nav a{white-space:nowrap;text-decoration:none;color:var(--ink);font-size:14px;padding:5px 12px;border-radius:999px;background:var(--accent2)}
+  nav a:hover{background:#dfe2ff}
+  main{max-width:860px;margin:0 auto;padding:20px 16px 60px}
+  section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 22px 24px;margin:22px 0;box-shadow:0 1px 3px #0000000a}
+  h2{margin:0 0 4px;font-size:24px}
+  .tag{display:inline-block;font-size:12px;font-weight:700;color:var(--accent);background:var(--accent2);padding:2px 10px;border-radius:999px;margin-bottom:8px}
+  h3{margin:20px 0 6px;font-size:17px}
+  p{margin:8px 0}
+  .analogy{background:#fff8e6;border-left:4px solid #f5b301;padding:10px 14px;border-radius:8px;margin:12px 0}
+  .lab{background:#f9faff;border:1px solid var(--line);border-radius:12px;padding:14px;margin:14px 0}
+  .lab h4{margin:0 0 8px;font-size:15px;color:var(--accent)}
+  canvas{width:100%;display:block;background:#fff;border:1px solid var(--line);border-radius:10px}
+  .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0}
+  .row label{font-weight:600;font-size:14px;min-width:120px}
+  input[type=range]{flex:1;min-width:160px;accent-color:var(--accent)}
+  .val{font-family:ui-monospace,Menlo,monospace;background:var(--accent2);padding:2px 8px;border-radius:6px;font-size:14px;min-width:70px;text-align:center}
+  button{font:inherit;cursor:pointer;border:1px solid var(--line);background:#fff;padding:7px 14px;border-radius:8px;transition:.15s}
+  button:hover:not(:disabled){border-color:var(--accent);background:var(--accent2)}
+  button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  button.primary:hover{background:#4338ca}
+  .stats{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
+  .stat{flex:1;min-width:130px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+  .stat small{display:block;color:var(--muted);font-size:12px}
+  .stat b{font-size:18px;font-family:ui-monospace,Menlo,monospace}
+  .msg{padding:10px 14px;border-radius:8px;font-weight:600;margin:10px 0;background:var(--accent2)}
+  .msg.good{background:var(--goodbg);color:#14532d}
+  .msg.bad{background:var(--badbg);color:#7f1d1d}
+  .msg.warn{background:#fff4e0;color:#7c4a03}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:6px 0}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+  .legend u{display:inline-block;width:18px;height:0;border-top:3px solid;margin-right:5px;vertical-align:3px;text-decoration:none}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:640px){.two{grid-template-columns:1fr}section{padding:18px 14px}}
+  .quiz{margin-top:22px;border:2px dashed #c7c9f5;border-radius:12px;padding:14px 16px;background:#fcfcff}
+  .quiz .qh{font-weight:700;color:var(--accent);margin-bottom:4px}
+  .quiz .opt{display:block;width:100%;text-align:left;margin:6px 0}
+  .quiz .opt.correct{background:var(--goodbg);border-color:var(--good)}
+  .quiz .opt.wrong{background:var(--badbg);border-color:var(--bad)}
+  .quiz .exp{margin-top:10px;padding:10px 12px;border-radius:8px;display:none}
+  .quiz .exp.show{display:block}
+  .quiz .exp.ok{background:var(--goodbg)} .quiz .exp.no{background:var(--badbg)}
+  .sortrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--line)}
+  .sortrow:last-child{border:0}
+  .sortrow span.n{flex:1;min-width:190px}
+  .sortrow button{font-size:13px;padding:4px 10px}
+  .sortrow .fb{font-size:13px;width:100%;color:var(--muted);display:none}
+  .sortrow.ok{background:var(--goodbg)} .sortrow.no{background:var(--badbg)}
+  .cells{display:grid;grid-template-columns:repeat(20,1fr);gap:3px;margin:10px 0}
+  .cell{height:34px;border-radius:5px;background:#bfdbfe;border:1px solid #93c5fd}
+  .cell.val{background:var(--orange);border-color:#c2410c;min-width:0;padding:0}
+  table{border-collapse:collapse;width:100%;font-size:14px}
+  td,th{border:1px solid var(--line);padding:5px 8px;text-align:center}
+  th{background:var(--accent2)}
+  tr.sel td{background:#fff1e6;font-weight:700}
+  footer{text-align:center;color:var(--muted);font-size:13px;padding:10px 0 30px}
+  /* legend shapes: prefixed with .legend i so they beat the generic ".legend i" round-dot rule */
+  .legend i.lg-dot{display:inline-block;box-sizing:border-box;width:12px;height:12px;border-radius:50%;border:1.5px solid #fff;box-shadow:0 0 0 1px #cfd3e0;margin-right:6px;vertical-align:-2px}
+  .legend i.lg-sq{display:inline-block;box-sizing:border-box;width:12px;height:12px;border-radius:0;border:1.5px solid #1f2433;margin-right:6px;vertical-align:-2px}
+  .legend i.lg-sq.wrong{border:3px solid #dc2626;width:14px;height:14px}
+  .legend i.lg-bg{display:inline-block;box-sizing:border-box;width:18px;height:12px;border-radius:2px;border:1px solid #cfd3e0;margin-right:6px;vertical-align:-2px}
+  .legend i.lg-tri{display:inline-block;width:0;height:0;border-radius:0;background:none;border-left:6px solid transparent;border-right:6px solid transparent;border-top:10px solid #999;margin-right:6px;vertical-align:-1px}
+  .legend i.lg-vl{display:inline-block;width:0;height:13px;border-radius:0;background:none;border-left:2px dashed #4f46e5;margin-right:7px;vertical-align:-2px}
+  pre{background:#1f2433;color:#e6e9f5;padding:14px 16px;border-radius:10px;overflow-x:auto;font-size:13px;line-height:1.5}
+  pre .c{color:#8b93ad}
+  .steps{counter-reset:st;list-style:none;padding:0}
+  .steps li{counter-increment:st;position:relative;padding:4px 0 4px 38px;margin:6px 0}
+  .steps li::before{content:counter(st);position:absolute;left:0;top:3px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:14px;text-align:center;line-height:26px}
+  .cheat td:first-child{text-align:left;font-weight:600}
+  .cheat td{text-align:left}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎛️ Hyperparameter Tuning</h1>
+  <p>A hands-on, beginner-friendly tour of the "knobs" you set before a machine learning model starts learning. Play with every demo, then test yourself with the question at the end of each section.</p>
+</header>
+<nav>
+  <a href="#s1">1 · What are they?</a>
+  <a href="#s2">2 · Learning rate</a>
+  <a href="#s3">3 · Model complexity</a>
+  <a href="#s4">4 · Regularization</a>
+  <a href="#s5">5 · Search strategies</a>
+  <a href="#s6">6 · Validation</a>
+  <a href="#s7">7 · KNN example</a>
+  <a href="#s8">Cheat sheet</a>
+</nav>
+<main>
+
+<!-- ============ 1 ============ -->
+<section id="s1">
+  <span class="tag">SUBTOPIC 1</span>
+  <h2>What is a hyperparameter?</h2>
+  <p>When a model trains, it <b>learns</b> some numbers by itself from data. These are the <b>parameters</b> (for example, the weights in a neural network). But there are other numbers that <b>you</b> must choose <i>before</i> training starts. Those are the <b>hyperparameters</b>.</p>
+  <div class="analogy">🍞 <b>Baking analogy:</b> The bread itself (its texture, how it rises) is what gets "learned" while baking. The oven temperature, the baking time and the amount of yeast are settings <i>you</i> choose beforehand. Pick them badly and even the best recipe gives bad bread. <b>Hyperparameter tuning = finding good oven settings.</b></p></div>
+
+  <div class="lab">
+    <h4>🧪 Try it: who sets this number – the model or you?</h4>
+    <p style="margin-top:0;font-size:14px;color:var(--muted)">Click a button for each item. You get instant feedback.</p>
+    <div id="sorter"></div>
+    <div class="msg" id="sortScore">Score: 0 / 8</div>
+  </div>
+
+  <div id="q1" class="quiz"></div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="s2">
+  <span class="tag">SUBTOPIC 2</span>
+  <h2>Learning rate: how big is each step?</h2>
+  <p>Most models learn by <b>gradient descent</b>: look at the slope of the error, then take a step downhill. The <b>learning rate</b> controls the <i>size</i> of that step.</p>
+  <div class="analogy">⛰️ Imagine walking down a foggy valley to reach the lowest point. Tiny steps are safe but take forever. Giant leaps may carry you right over the bottom to the other side.</div>
+
+  <div class="lab">
+    <h4>🧪 Try it: roll the ball to the bottom of the valley</h4>
+    <p style="margin:0 0 8px;font-size:14px;color:var(--muted)">Error curve: <code>loss = (w − 2)²</code>. The best value of <code>w</code> is 2. Pick a learning rate, then press <b>Run</b>.</p>
+    <canvas id="gdCanvas"></canvas>
+    <div class="row"><label for="lr">Learning rate</label><input type="range" id="lr" min="0.01" max="1.1" step="0.01" value="0.1"><span class="val" id="lrVal">0.10</span></div>
+    <div class="row">
+      <button class="primary" id="gdRun">▶ Run 30 steps</button>
+      <button id="gdStep">Step once</button>
+      <button id="gdReset">Reset</button>
+      <button data-lr="0.02">Try tiny (0.02)</button>
+      <button data-lr="0.3">Try good (0.30)</button>
+      <button data-lr="0.9">Try big (0.90)</button>
+      <button data-lr="1.05">Try huge (1.05)</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><small>Steps taken</small><b id="gdSteps">0</b></div>
+      <div class="stat"><small>Current w</small><b id="gdW">-3.50</b></div>
+      <div class="stat"><small>Current loss</small><b id="gdLoss">30.25</b></div>
+    </div>
+    <div class="msg" id="gdMsg">Press Run to see what happens.</div>
+  </div>
+
+  <div id="q2" class="quiz"></div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="s3">
+  <span class="tag">SUBTOPIC 3</span>
+  <h2>Model complexity: underfitting vs overfitting</h2>
+  <p>Many models have a "how flexible am I?" hyperparameter: the <b>degree of a polynomial</b>, the <b>depth of a tree</b>, the <b>number of layers</b> in a network. More flexibility lets a model capture more patterns, but it can also start memorising <b>noise</b>.</p>
+  <div class="analogy">📚 A student who memorises last year's exam answers word for word (overfitting) fails when the questions change. A student who only learns "everything is about 50%" (underfitting) never gets it right either. We want the student who understands the idea.</div>
+
+  <div class="lab">
+    <h4>🧪 Try it: fit a curve to noisy data</h4>
+    <p style="margin:0 0 6px;font-size:14px;color:var(--muted)">The grey dashed line is the real pattern (a sine wave). The model only sees the 14 <b style="color:var(--blue)">blue training dots</b>. We check it on the <b style="color:var(--orange)">orange test dots</b> it has never seen.</p>
+    <canvas id="polyCanvas"></canvas>
+    <div class="legend"><span><i style="background:var(--blue)"></i>training data</span><span><i style="background:var(--orange)"></i>test data</span><span><u style="border-color:#aaa;border-top-style:dashed"></u>true pattern</span><span><u style="border-color:#dc2626"></u>model's curve</span></div>
+    <div class="row"><label for="deg">Polynomial degree</label><input type="range" id="deg" min="0" max="12" step="1" value="1"><span class="val" id="degVal">1</span></div>
+    <div class="stats">
+      <div class="stat"><small>Training error (MSE)</small><b id="trErr">–</b></div>
+      <div class="stat"><small>Test error (MSE)</small><b id="teErr">–</b></div>
+    </div>
+    <div class="msg" id="polyMsg"></div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:4px">Errors for every degree (lower is better, log scale). Watch how training error keeps falling while test error turns around:</p>
+    <canvas id="degChart"></canvas>
+    <div class="legend"><span><u style="border-color:var(--blue)"></u>training error</span><span><u style="border-color:var(--orange)"></u>test error</span></div>
+  </div>
+
+  <div id="q3" class="quiz"></div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="s4">
+  <span class="tag">SUBTOPIC 4</span>
+  <h2>Regularization: putting a leash on the model</h2>
+  <p><b>Regularization</b> adds a penalty for extreme, wiggly solutions. Its strength is a hyperparameter, often called <b>λ (lambda)</b> or <b>alpha</b>. A small λ means little restraint; a large λ forces the model to stay very simple.</p>
+  <div class="analogy">🐕 A dog on a leash. No leash (λ = 0) and it runs wild chasing every squirrel (noise). A leash that is too short and it can't move at all. A medium leash keeps it well behaved but still lets it explore.</div>
+
+  <div class="lab">
+    <h4>🧪 Try it: tame an over-flexible model</h4>
+    <p style="margin:0 0 6px;font-size:14px;color:var(--muted)">Same data as before, but now the model is a very flexible <b>degree-9 polynomial</b> (so it overfits easily). Slide λ up and see what happens.</p>
+    <canvas id="regCanvas"></canvas>
+    <div class="row"><label for="lam">Regularization λ</label><input type="range" id="lam" min="0" max="60" step="1" value="0"><span class="val" id="lamVal">0</span></div>
+    <div class="stats">
+      <div class="stat"><small>Training error (MSE)</small><b id="rtrErr">–</b></div>
+      <div class="stat"><small>Test error (MSE)</small><b id="rteErr">–</b></div>
+    </div>
+    <div class="msg" id="regMsg"></div>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:4px">Error as λ grows (log scale). The sweet spot is the lowest point of the orange line:</p>
+    <canvas id="regChart"></canvas>
+  </div>
+
+  <div id="q4" class="quiz"></div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="s5">
+  <span class="tag">SUBTOPIC 5</span>
+  <h2>Search strategies: grid vs random</h2>
+  <p>With many hyperparameters, we have to try combinations and see which scores best. Two classic strategies:</p>
+  <ul>
+    <li><b>Grid search</b>: try every combination on an evenly spaced grid.</li>
+    <li><b>Random search</b>: pick combinations at random.</li>
+  </ul>
+  <p>Usually some hyperparameters matter much more than others. A grid wastes trials by repeating the same few values of the important one; random search tries a <i>new</i> value each time.</p>
+
+  <div class="lab">
+    <h4>🧪 Try it: same budget, two strategies</h4>
+    <p style="margin:0 0 6px;font-size:14px;color:var(--muted)">Each dot is one trial (one model trained). Greener = better score. Here the <b>learning rate</b> (horizontal) matters a lot, while <b>dropout</b> (vertical) matters little. The best spot is a narrow band.</p>
+    <div class="row"><label for="budget">Trials (budget)</label><input type="range" id="budget" min="4" max="36" step="1" value="9"><span class="val" id="budgetVal">9</span></div>
+    <div class="two">
+      <div><b>Grid search</b><canvas id="gridCanvas"></canvas><div class="stat" style="margin-top:6px"><small>Best score found</small><b id="gridBest">–</b></div></div>
+      <div><b>Random search</b><canvas id="randCanvas"></canvas><div class="stat" style="margin-top:6px"><small>Best score found</small><b id="randBest">–</b></div></div>
+    </div>
+    <div class="row">
+      <button class="primary" id="reroll">🎲 Re-roll random search</button>
+      <label style="min-width:0;font-weight:500"><input type="checkbox" id="reveal"> Reveal the hidden landscape</label>
+    </div>
+    <div class="legend"><span>x-axis: learning rate (low → high)</span><span>y-axis: dropout (low → high)</span><span>⭐ = best trial</span></div>
+    <div class="msg" id="searchMsg"></div>
+  </div>
+
+  <div id="q5" class="quiz"></div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="s6">
+  <span class="tag">SUBTOPIC 6</span>
+  <h2>Validation &amp; cross-validation: judging fairly</h2>
+  <p>To compare hyperparameter choices we need an honest score. We never judge a model on the data it trained on. We split the data:</p>
+  <ul>
+    <li><b>Training set</b>: the model learns from this.</li>
+    <li><b>Validation set</b>: we compare hyperparameters using this.</li>
+    <li><b>Test set</b>: locked away until the very end for one final, honest check.</li>
+  </ul>
+  <p>With little data, one validation split can be lucky or unlucky. <b>K-fold cross-validation</b> splits the data into K parts, and each part takes a turn as the validation set. Then we average the K scores.</p>
+
+  <div class="lab">
+    <h4>🧪 Try it: rotate the validation fold</h4>
+    <p style="margin:0 0 6px;font-size:14px;color:var(--muted)">20 data points. <b style="color:#2563eb">Blue</b> = used for training, <b style="color:var(--orange)">orange</b> = used for validation in that round. Click a fold to see it.</p>
+    <div class="row"><label for="kf">Number of folds K</label><input type="range" id="kf" min="2" max="10" step="1" value="5"><span class="val" id="kfVal">5</span></div>
+    <div class="cells" id="cells"></div>
+    <div class="row" id="foldBtns"></div>
+    <table id="foldTable"></table>
+    <p style="font-size:13px;color:var(--muted)">Scores here are simulated for illustration. Notice how a single fold can look better or worse than the average, which is exactly why we average.</p>
+  </div>
+
+  <div id="q6" class="quiz"></div>
+</section>
+
+<!-- ============ 7 KNN ============ -->
+<section id="s7">
+  <span class="tag">SUBTOPIC 7 · PRACTICAL EXAMPLE</span>
+  <h2>Putting it together: tuning <i>k</i> in K-Nearest Neighbors</h2>
+  <p><b>K-Nearest Neighbors (KNN)</b> is one of the simplest models: to classify a new point, look at its <b>k closest training points</b> and let them vote. There is nothing to "learn" except which points to remember, and the one big decision you make is the hyperparameter <b>k</b>. That makes it a perfect, realistic playground for everything above.</p>
+  <div class="analogy">🏘️ You move to a new neighborhood and wonder if the locals like pizza or sushi. Asking only your <b>1</b> nearest neighbor is risky (one odd person misleads you). Asking <b>the whole city</b> ignores what your street is like. Asking your nearest <b>10 or so</b> is usually just right.</div>
+
+  <h3>The workflow we will follow</h3>
+  <ol class="steps">
+    <li><b>Split</b> the data: 120 training, 60 validation and 60 test points. The test set stays locked.</li>
+    <li><b>Try</b> different values of k (1 to 40) and score each one.</li>
+    <li><b>Compare</b> scores on validation data and with 5-fold cross-validation (using the training data only).</li>
+    <li><b>Pick</b> the best k, then unlock the test set <b>once</b> for an honest final score.</li>
+  </ol>
+
+  <div class="lab">
+    <h4>🧪 Try it: two interleaved "moons" of points</h4>
+    <p style="margin:0 0 6px;font-size:14px;color:var(--muted)">The background colour shows what KNN would predict at every spot. Round dots are <b>training</b> points (the voters). Squares are <b>validation</b> points, and a <b style="color:var(--bad)">red outline</b> means KNN got that one wrong.</p>
+    <canvas id="knnCanvas"></canvas>
+    <div class="legend">
+      <span><i class="lg-dot" style="background:#2563eb"></i>class A training point</span>
+      <span><i class="lg-dot" style="background:#f97316"></i>class B training point</span>
+      <span><i class="lg-sq" style="background:#2563eb"></i>class A validation point</span>
+      <span><i class="lg-sq" style="background:#f97316"></i>class B validation point</span>
+      <span><i class="lg-sq wrong" style="background:#fff"></i>red outline = wrongly predicted validation point</span>
+      <span><i class="lg-bg" style="background:rgba(37,99,235,.20)"></i>region predicted as A</span>
+      <span><i class="lg-bg" style="background:rgba(249,115,22,.24)"></i>region predicted as B</span>
+    </div>
+    <div class="row"><label for="knnSlider">Number of neighbors k</label><input type="range" id="knnSlider" min="1" max="40" step="1" value="1"><span class="val" id="knnVal">1</span></div>
+    <div class="stats">
+      <div class="stat"><small>Training accuracy</small><b id="knnTr">–</b></div>
+      <div class="stat"><small>Validation accuracy</small><b id="knnVa">–</b></div>
+      <div class="stat"><small>5-fold CV accuracy</small><b id="knnCv">–</b></div>
+    </div>
+    <div class="msg" id="knnMsg"></div>
+    <div class="row">
+      <button data-k="1">Try k = 1</button>
+      <button data-k="40">Try k = 40</button>
+      <button id="knnBestVal">⭐ Best k by validation</button>
+      <button id="knnBestCv">⭐ Best k by 5-fold CV</button>
+    </div>
+
+    <p style="font-size:14px;color:var(--muted);margin:14px 0 4px">Accuracy for every k (higher is better). This is the picture a real tuning run gives you:</p>
+    <canvas id="knnChart"></canvas>
+    <div class="legend">
+      <span><u style="border-color:#2563eb"></u>training accuracy</span>
+      <span><u style="border-color:#f97316"></u>validation accuracy</span>
+      <span><u style="border-color:#7c3aed"></u>5-fold CV accuracy</span>
+      <span><i class="lg-tri" style="border-top-color:#f97316"></i>best k by validation</span>
+      <span><i class="lg-tri" style="border-top-color:#7c3aed"></i>best k by 5-fold CV</span>
+      <span><i class="lg-vl"></i>your current k (slider)</span>
+    </div>
+    <div class="msg" id="knnBestMsg"></div>
+
+    <h4 style="margin-top:16px">🔒 The final exam (do this last, and only once)</h4>
+    <p style="margin:0 0 8px;font-size:14px;color:var(--muted)">Set the slider to the k you have chosen, then unlock the test set. In real projects you only get this one look.</p>
+    <div class="row"><button class="primary" id="knnTest">🔓 Evaluate current k on the test set</button></div>
+    <div class="msg" id="knnTestOut" style="display:none"></div>
+  </div>
+
+  <h3>What you saw, in plain words</h3>
+  <ul>
+    <li><b>Very small k (like 1)</b>: the boundary is jagged and wraps around single noisy points. Training accuracy is a perfect 100% because every training point is its own nearest neighbor, but validation accuracy is lower. This is <b>overfitting</b>.</li>
+    <li><b>Very large k</b>: the boundary becomes smooth and blunt, and local structure gets averaged away. Both training and validation accuracy drop. This is <b>underfitting</b>.</li>
+    <li><b>In between</b>: validation and CV accuracy peak. That is the k you want.</li>
+  </ul>
+
+  <h3>The same thing in real code (scikit-learn)</h3>
+<pre><span class="c"># 1) Split: hold the test set out first</span>
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.25, random_state=0, stratify=y)
+
+<span class="c"># 2) Scale features (KNN uses distances, so units matter!)</span>
+pipe = make_pipeline(StandardScaler(), KNeighborsClassifier())
+
+<span class="c"># 3) Try k = 1..40 with 5-fold cross-validation on the training data</span>
+search = GridSearchCV(pipe,
+    param_grid={"kneighborsclassifier__n_neighbors": range(1, 41)},
+    cv=5)
+search.fit(X_train, y_train)
+
+print("Best k:", search.best_params_)
+print("CV accuracy:", search.best_score_)
+
+<span class="c"># 4) One final, honest check on the locked test set</span>
+print("Test accuracy:", search.score(X_test, y_test))</pre>
+
+  <h3>Practical tips for KNN tuning</h3>
+  <ul>
+    <li><b>Scale your features.</b> If one feature is "income in dollars" and another is "age in years", income will dominate all distances. Standardize first.</li>
+    <li><b>Use an odd k</b> for two-class problems to avoid tied votes.</li>
+    <li><b>A common starting range</b> is 1 up to about √(number of training samples), then refine.</li>
+    <li><b>Other KNN hyperparameters</b> worth tuning: the distance metric (Euclidean, Manhattan) and whether closer neighbors get more voting weight.</li>
+    <li>If several k values tie, prefer the <b>larger k</b>: it gives a simpler, more stable model.</li>
+  </ul>
+
+  <div id="q7" class="quiz"></div>
+</section>
+
+<!-- ============ cheat ============ -->
+<section id="s8">
+  <span class="tag">WRAP-UP</span>
+  <h2>Cheat sheet</h2>
+  <table class="cheat">
+    <tr><th>Hyperparameter</th><th>Too low</th><th>Too high</th></tr>
+    <tr><td>Learning rate</td><td>Learns painfully slowly</td><td>Bounces around or diverges</td></tr>
+    <tr><td>Model complexity (degree, depth, layers)</td><td>Underfits (too simple)</td><td>Overfits (memorises noise)</td></tr>
+    <tr><td>Regularization strength λ</td><td>Overfits</td><td>Underfits (too constrained)</td></tr>
+    <tr><td>k in KNN</td><td>Jagged boundary, overfits noise</td><td>Over-smoothed boundary, underfits</td></tr>
+    <tr><td>Number of trials</td><td>Might miss good settings</td><td>Costs time and compute</td></tr>
+  </table>
+  <h3>A simple recipe</h3>
+  <ol>
+    <li>Split your data into train / validation / test. Lock the test set away.</li>
+    <li>Choose which hyperparameters to tune and sensible ranges (use a log scale for things like learning rate and λ).</li>
+    <li>Try values with random search (or smarter tools such as Bayesian optimization) and score with validation or cross-validation.</li>
+    <li>Pick the best setting, retrain, and evaluate <b>once</b> on the test set.</li>
+  </ol>
+</section>
+</main>
+<footer>Self-contained page · no internet needed · all demos run in your browser</footer>
+
+<script>
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function gauss(r){return Math.sqrt(-2*Math.log(r()+1e-12))*Math.cos(2*Math.PI*r())}
+function setup(c,h){const d=window.devicePixelRatio||1;const w=c.clientWidth||600;c.width=w*d;c.height=h*d;c.style.height=h+'px';const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,w,h);return{x,w,h}}
+function fmt(v){if(!isFinite(v))return '∞';if(v>=1000)return v.toExponential(1);if(v>=100)return v.toFixed(0);return v.toFixed(3)}
+function setMsg(el,text,cls){el.textContent=text;el.className='msg '+(cls||'')}
+
+/* ---------- quiz builder ---------- */
+function quiz(id,question,options,answer,why){
+  const el=$(id);
+  el.innerHTML='<div class="qh">🧠 Check yourself</div>';
+  const p=document.createElement('p');p.style.fontWeight='600';p.textContent=question;el.appendChild(p);
+  const exp=document.createElement('div');exp.className='exp';
+  const btns=options.map((t,i)=>{
+    const b=document.createElement('button');b.className='opt';b.textContent=String.fromCharCode(65+i)+'.  '+t;
+    b.onclick=()=>{
+      btns.forEach((x,j)=>{x.disabled=true;if(j===answer)x.classList.add('correct');});
+      const right=i===answer;
+      if(!right)b.classList.add('wrong');
+      exp.className='exp show '+(right?'ok':'no');
+      exp.innerHTML=(right?'✅ <b>Correct!</b> ':'❌ <b>Not quite.</b> The correct answer is <b>'+String.fromCharCode(65+answer)+'</b>. ')+why;
+    };
+    el.appendChild(b);return b;
+  });
+  el.appendChild(exp);
+}
+
+/* ---------- 1. sorter ---------- */
+const items=[
+  ['Weights of a neural network',true,'The model adjusts weights itself during training, so they are parameters.'],
+  ['Learning rate',false,'You choose it before training, so it is a hyperparameter.'],
+  ['Number of trees in a random forest',false,'You decide how many trees to build: hyperparameter.'],
+  ['Bias term of a linear model',true,'It is learned from the data: parameter.'],
+  ['Batch size',false,'You choose how many samples per update: hyperparameter.'],
+  ['Regularization strength (λ)',false,'You set how strongly to penalize complexity: hyperparameter.'],
+  ['k in k-nearest-neighbors',false,'You pick how many neighbors to look at: hyperparameter.'],
+  ['Split thresholds inside a decision tree',true,'The tree learns these from the data: parameters.']
+];
+let sortCorrect=0,sortDone=0;
+const sorter=$('sorter');
+items.forEach(([name,learned,fb])=>{
+  const row=document.createElement('div');row.className='sortrow';
+  row.innerHTML='<span class="n"></span><button data-a="1">Learned by model</button><button data-a="0">Set by me</button><span class="fb"></span>';
+  row.querySelector('.n').textContent=name;
+  row.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    const guess=b.dataset.a==='1';const ok=guess===learned;
+    row.classList.add(ok?'ok':'no');
+    const f=row.querySelector('.fb');f.style.display='block';f.textContent=(ok?'✅ ':'❌ ')+fb;
+    row.querySelectorAll('button').forEach(x=>x.disabled=true);
+    sortDone++;if(ok)sortCorrect++;
+    setMsg($('sortScore'),'Score: '+sortCorrect+' / '+items.length+(sortDone===items.length?'  — all done!':''),sortDone===items.length?'good':'');
+  });
+  sorter.appendChild(row);
+});
+quiz('q1','Which of these is a hyperparameter?',
+ ['The slope a linear regression learns from data','The number of layers you choose for a neural network','The prediction the model makes for a new sample','The error on the training set'],1,
+ 'Hyperparameters are settings you choose <i>before</i> training (like the number of layers). The slope is a learned parameter, the prediction is an output, and the error is a measurement.');
+
+/* ---------- 2. gradient descent ---------- */
+let gw=-3.5,gsteps=0,ghist=[-3.5],gtimer=null,gdiv=false;
+const lrEl=$('lr');
+const gl=w=>(w-2)**2;
+function gdDraw(){
+  const {x,w,h}=setup($('gdCanvas'),260);
+  const X0=-4,X1=8,Y0=0,Y1=40,pad=30;
+  const mx=v=>pad+(v-X0)/(X1-X0)*(w-2*pad), my=v=>h-pad-(v-Y0)/(Y1-Y0)*(h-2*pad);
+  x.strokeStyle='#e3e6ef';x.fillStyle='#5d6579';x.font='12px sans-serif';
+  for(let v=-4;v<=8;v+=2){x.beginPath();x.moveTo(mx(v),pad/2);x.lineTo(mx(v),h-pad);x.stroke();x.fillText(v,mx(v)-4,h-pad+14)}
+  x.fillText('w (the value being learned)',w/2-60,h-4);x.fillText('loss',4,14);
+  x.beginPath();x.strokeStyle='#4f46e5';x.lineWidth=3;
+  for(let v=X0;v<=X1;v+=0.05){const yy=my(gl(v));v===X0?x.moveTo(mx(v),yy):x.lineTo(mx(v),yy)}
+  x.stroke();x.lineWidth=1;
+  x.setLineDash([4,4]);x.strokeStyle='#16a34a';x.beginPath();x.moveTo(mx(2),pad/2);x.lineTo(mx(2),h-pad);x.stroke();x.setLineDash([]);
+  x.fillStyle='#16a34a';x.fillText('best w = 2',mx(2)+5,pad/2+10);
+  // trail
+  const vis=ghist.filter(v=>v>=X0&&v<=X1);
+  x.strokeStyle='#f97316';x.beginPath();
+  ghist.forEach((v,i)=>{const px=mx(Math.max(X0,Math.min(X1,v))),py=my(Math.min(Y1,gl(v)));i?x.lineTo(px,py):x.moveTo(px,py)});x.stroke();
+  ghist.forEach((v,i)=>{if(v<X0||v>X1)return;x.fillStyle=i===ghist.length-1?'#dc2626':'#f9731688';x.beginPath();x.arc(mx(v),my(gl(v)),i===ghist.length-1?8:4,0,7);x.fill()});
+  if(ghist[ghist.length-1]<X0||ghist[ghist.length-1]>X1){x.fillStyle='#dc2626';x.font='bold 14px sans-serif';x.fillText('💥 flew off the chart!',w/2-60,40)}
+}
+function gdInfo(){
+  $('gdSteps').textContent=gsteps;$('gdW').textContent=Math.abs(gw)>1e6?'huge':gw.toFixed(2);
+  $('gdLoss').textContent=fmt(gl(gw));
+  const lr=+lrEl.value;
+  if(gdiv)setMsg($('gdMsg'),'💥 Diverged! The learning rate is too big: every step overshoots by more than the last.','bad');
+  else if(gsteps===0)setMsg($('gdMsg'),'Press Run to see what happens.');
+  else if(Math.abs(gw-2)<0.01)setMsg($('gdMsg'),'🎯 Converged near the minimum in '+gsteps+' steps.','good');
+  else if(lr<0.08)setMsg($('gdMsg'),'🐢 Safe but slow: steps are so small it needs very many of them.','warn');
+  else if(lr>0.5)setMsg($('gdMsg'),'↔️ Overshooting: it jumps back and forth across the bottom.','warn');
+  else setMsg($('gdMsg'),'👍 Making steady progress downhill.','good');
+}
+function gdStep(){
+  if(gdiv)return;gw=gw-lrEl.value*2*(gw-2);gsteps++;ghist.push(gw);
+  if(Math.abs(gw)>1e4)gdiv=true;gdDraw();gdInfo();
+}
+function gdReset(){clearInterval(gtimer);gtimer=null;gw=-3.5;gsteps=0;ghist=[-3.5];gdiv=false;gdDraw();gdInfo()}
+$('gdStep').onclick=gdStep;
+$('gdReset').onclick=gdReset;
+$('gdRun').onclick=()=>{gdReset();let n=0;gtimer=setInterval(()=>{gdStep();if(++n>=30||gdiv){clearInterval(gtimer)}},180)};
+lrEl.oninput=()=>{$('lrVal').textContent=(+lrEl.value).toFixed(2);gdReset()};
+document.querySelectorAll('[data-lr]').forEach(b=>b.onclick=()=>{lrEl.value=b.dataset.lr;lrEl.oninput();$('gdRun').click()});
+quiz('q2','Your training loss keeps jumping up and down and eventually shoots to huge numbers. What should you try first?',
+ ['Increase the learning rate','Decrease the learning rate','Add more training data','Increase the model depth'],1,
+ 'Exploding loss is the classic sign that steps are too big and overshoot the minimum. Lowering the learning rate (often by 3–10×) is the first thing to try. A rate that is too <i>small</i> would instead give slow, steady progress.');
+
+/* ---------- 3 & 4. polynomial fitting ---------- */
+function fit(xs,ys,deg,lam){
+  const n=deg+1;const A=Array.from({length:n},()=>new Array(n+1).fill(0));
+  for(let k=0;k<xs.length;k++){
+    const p=[];let v=1;for(let i=0;i<n;i++){p.push(v);v*=xs[k]}
+    for(let i=0;i<n;i++){for(let j=0;j<n;j++)A[i][j]+=p[i]*p[j];A[i][n]+=p[i]*ys[k]}
+  }
+  for(let i=0;i<n;i++)A[i][i]+=(i===0?1e-9:lam+1e-9);
+  for(let i=0;i<n;i++){
+    let m=i;for(let r=i+1;r<n;r++)if(Math.abs(A[r][i])>Math.abs(A[m][i]))m=r;
+    [A[i],A[m]]=[A[m],A[i]];
+    for(let r=i+1;r<n;r++){const f=A[r][i]/A[i][i];for(let c=i;c<=n;c++)A[r][c]-=f*A[i][c]}
+  }
+  const w=new Array(n);
+  for(let i=n-1;i>=0;i--){let s=A[i][n];for(let j=i+1;j<n;j++)s-=A[i][j]*w[j];w[i]=s/A[i][i]}
+  return w;
+}
+const ev=(w,x)=>{let s=0,v=1;for(const c of w){s+=c*v;v*=x}return s};
+const mse=(w,xs,ys)=>xs.reduce((a,x,i)=>a+(ev(w,x)-ys[i])**2,0)/xs.length;
+const truth=x=>Math.sin(Math.PI*x);
+const R=rng(7);
+const trX=Array.from({length:14},()=>R()*2-1).sort((a,b)=>a-b);
+const trY=trX.map(x=>truth(x)+0.3*gauss(R));
+const teX=Array.from({length:80},()=>R()*2-1);
+const teY=teX.map(x=>truth(x)+0.3*gauss(R));
+
+function drawFit(canvas,deg,lam){
+  const {x,w,h}=setup(canvas,300);
+  const X0=-1.1,X1=1.1,Y0=-2,Y1=2,pad=24;
+  const mx=v=>pad+(v-X0)/(X1-X0)*(w-2*pad), my=v=>h-pad-(v-Y0)/(Y1-Y0)*(h-2*pad);
+  x.strokeStyle='#eceef5';
+  for(let v=-2;v<=2;v++){x.beginPath();x.moveTo(pad,my(v));x.lineTo(w-pad,my(v));x.stroke()}
+  x.strokeStyle='#cfd3e0';x.beginPath();x.moveTo(pad,my(0));x.lineTo(w-pad,my(0));x.stroke();
+  x.save();x.beginPath();x.rect(pad,pad/2,w-2*pad,h-pad*1.5);x.clip();
+  x.setLineDash([6,5]);x.strokeStyle='#999';x.lineWidth=2;x.beginPath();
+  for(let v=X0;v<=X1;v+=0.01){const px=mx(v),py=my(truth(v));v===X0?x.moveTo(px,py):x.lineTo(px,py)}x.stroke();x.setLineDash([]);
+  teX.forEach((v,i)=>{x.fillStyle='#f9731666';x.beginPath();x.arc(mx(v),my(teY[i]),3,0,7);x.fill()});
+  const wt=fit(trX,trY,deg,lam);
+  x.strokeStyle='#dc2626';x.lineWidth=3;x.beginPath();
+  for(let v=X0;v<=X1;v+=0.01){const px=mx(v),py=my(ev(wt,v));v===X0?x.moveTo(px,py):x.lineTo(px,py)}x.stroke();
+  trX.forEach((v,i)=>{x.fillStyle='#2563eb';x.strokeStyle='#fff';x.lineWidth=1.5;x.beginPath();x.arc(mx(v),my(trY[i]),5.5,0,7);x.fill();x.stroke()});
+  x.restore();
+  return [mse(wt,trX,trY),mse(wt,teX,teY)];
+}
+function errChart(canvas,tr,te,cur,xlabels,xtitle){
+  const {x,w,h}=setup(canvas,220);
+  const padL=44,padR=14,padT=12,padB=34;
+  const all=tr.concat(te).map(v=>Math.log10(Math.max(v,1e-4)));
+  const lo=Math.min(-2,Math.floor(Math.min(...all))),hi=Math.min(3,Math.ceil(Math.max(...all)));
+  const n=tr.length;
+  const mx=i=>padL+i/(n-1)*(w-padL-padR), my=v=>padT+(1-(Math.min(hi,Math.max(lo,Math.log10(Math.max(v,1e-4)))-lo)/(hi-lo)))*(h-padT-padB);
+  x.font='11px sans-serif';x.fillStyle='#5d6579';x.strokeStyle='#eceef5';
+  for(let e=lo;e<=hi;e++){const py=padT+(1-(e-lo)/(hi-lo))*(h-padT-padB);x.beginPath();x.moveTo(padL,py);x.lineTo(w-padR,py);x.stroke();x.fillText('10^'+e,4,py+4)}
+  xlabels.forEach(([i,t])=>x.fillText(t,mx(i)-8,h-padB+14));
+  x.fillText(xtitle,w/2-50,h-4);
+  const line=(arr,col)=>{x.strokeStyle=col;x.lineWidth=2.5;x.beginPath();arr.forEach((v,i)=>i?x.lineTo(mx(i),my(v)):x.moveTo(mx(i),my(v)));x.stroke()};
+  line(tr,'#2563eb');line(te,'#f97316');
+  x.setLineDash([4,4]);x.strokeStyle='#4f46e5';x.lineWidth=1.5;x.beginPath();x.moveTo(mx(cur),padT);x.lineTo(mx(cur),h-padB);x.stroke();x.setLineDash([]);
+  [[tr,'#2563eb'],[te,'#f97316']].forEach(([a,c])=>{x.fillStyle=c;x.beginPath();x.arc(mx(cur),my(a[cur]),5,0,7);x.fill()});
+}
+// Section 3
+const degTr=[],degTe=[];
+for(let d=0;d<=12;d++){const wt=fit(trX,trY,d,0);degTr.push(mse(wt,trX,trY));degTe.push(mse(wt,teX,teY))}
+const bestDeg=degTe.indexOf(Math.min(...degTe));
+function updPoly(){
+  const d=+$('deg').value;$('degVal').textContent=d;
+  const [a,b]=drawFit($('polyCanvas'),d,0);
+  $('trErr').textContent=fmt(a);$('teErr').textContent=fmt(b);
+  if(d<=1)setMsg($('polyMsg'),'📉 Underfitting: the model is too simple, so both training and test errors are high.','warn');
+  else if(d<=5)setMsg($('polyMsg'),'✅ Good balance: it follows the real pattern and does well on unseen test data too.','good');
+  else setMsg($('polyMsg'),'📈 Overfitting: the curve chases the noise in the blue dots. Training error is tiny but test error is bigger.','bad');
+  errChart($('degChart'),degTr,degTe,d,[[0,'0'],[2,'2'],[4,'4'],[6,'6'],[8,'8'],[10,'10'],[12,'12']],'polynomial degree');
+}
+$('deg').oninput=updPoly;
+quiz('q3','A model gets 99% accuracy on its training data but only 65% on validation data. What is happening and what could help?',
+ ['Underfitting: make the model more complex','Overfitting: simplify the model, add regularization, or get more data','The learning rate is too small: increase it','Nothing is wrong: training accuracy is what matters'],1,
+ 'A big gap between training and validation performance is the signature of overfitting: the model memorised the training set. Reducing complexity (shallower trees, lower degree), adding regularization, or collecting more data all help. Underfitting would show <i>low</i> accuracy on <i>both</i> sets.');
+
+// Section 4
+const lamOf=v=>v===0?0:Math.pow(10,-6+(v-1)*(7/59));
+const regTr=[],regTe=[];
+for(let v=0;v<=60;v++){const wt=fit(trX,trY,9,lamOf(v));regTr.push(mse(wt,trX,trY));regTe.push(mse(wt,teX,teY))}
+function updReg(){
+  const v=+$('lam').value,l=lamOf(v);
+  $('lamVal').textContent=l===0?'0':l.toExponential(1);
+  const [a,b]=drawFit($('regCanvas'),9,l);
+  $('rtrErr').textContent=fmt(a);$('rteErr').textContent=fmt(b);
+  const best=regTe.indexOf(Math.min(...regTe));
+  if(v<best-12)setMsg($('regMsg'),'📈 λ is tiny: the wiggly curve is still overfitting the noise.','bad');
+  else if(v>best+14)setMsg($('regMsg'),'📉 λ is too big: the model is squeezed into a nearly flat line and underfits.','warn');
+  else setMsg($('regMsg'),'✅ Near the sweet spot: smooth curve, low test error.','good');
+  errChart($('regChart'),regTr,regTe,v,[[0,'0'],[1,'1e-6'],[20,'1e-4'],[40,'1e-2'],[60,'10']],'λ (log scale; first point is λ = 0)');
+}
+$('lam').oninput=updReg;
+quiz('q4','You increase the regularization strength λ a lot. What typically happens to the model?',
+ ['It becomes more flexible and training error drops to zero','It becomes simpler; training error rises and it may underfit if λ is too large','Nothing changes because λ is learned automatically','The learning rate adjusts itself'],1,
+ 'Regularization penalizes complexity, so a larger λ pushes the model toward simpler solutions. Training error goes up, and if λ is too large the model underfits. λ is a hyperparameter, so <i>you</i> choose it, ideally with validation data.');
+
+/* ---------- 5. grid vs random ---------- */
+const land=(x,y)=>0.15+0.8*Math.exp(-(((x-0.62)/0.07)**2))*(0.6+0.4*Math.exp(-(((y-0.55)/0.3)**2)));
+let randSeed=11;
+function searchPoints(n){
+  const g=Math.floor(Math.sqrt(n)),grid=[];
+  for(let i=0;i<g;i++)for(let j=0;j<g;j++)grid.push([(i+0.5)/g,(j+0.5)/g]);
+  const r=rng(randSeed),rd=[];for(let i=0;i<n;i++)rd.push([r(),r()]);
+  return [grid,rd];
+}
+function colorFor(s){const t=Math.max(0,Math.min(1,(s-0.15)/0.8));return `rgb(${Math.round(230-190*t)},${Math.round(80+120*t)},${Math.round(80-20*t)})`}
+function drawSearch(canvas,pts,show){
+  const {x,w,h}=setup(canvas,240);
+  const pad=10;const mx=v=>pad+v*(w-2*pad),my=v=>h-pad-v*(h-2*pad);
+  if(show){const N=60;for(let i=0;i<N;i++)for(let j=0;j<N;j++){const s=land((i+.5)/N,(j+.5)/N);const t=Math.max(0,Math.min(1,(s-0.15)/0.8));x.fillStyle=`rgba(22,163,74,${0.08+t*0.55})`;x.fillRect(mx(i/N),my((j+1)/N),(w-2*pad)/N+1,(h-2*pad)/N+1)}}
+  x.strokeStyle='#cfd3e0';x.strokeRect(pad,pad,w-2*pad,h-2*pad);
+  let best=-1,bi=0;pts.forEach((p,i)=>{const s=land(p[0],p[1]);if(s>best){best=s;bi=i}});
+  pts.forEach((p,i)=>{const s=land(p[0],p[1]);x.fillStyle=colorFor(s);x.strokeStyle='#fff';x.lineWidth=1.5;x.beginPath();x.arc(mx(p[0]),my(p[1]),7,0,7);x.fill();x.stroke()});
+  const b=pts[bi];x.strokeStyle='#4f46e5';x.lineWidth=2.5;x.beginPath();x.arc(mx(b[0]),my(b[1]),11,0,7);x.stroke();
+  x.font='14px sans-serif';x.fillStyle='#4f46e5';x.fillText('⭐',mx(b[0])+10,my(b[1])-10);
+  return best;
+}
+function updSearch(){
+  const n=+$('budget').value;$('budgetVal').textContent=n;
+  const [g,r]=searchPoints(n);const show=$('reveal').checked;
+  const gb=drawSearch($('gridCanvas'),g,show),rb=drawSearch($('randCanvas'),r,show);
+  $('gridBest').textContent=gb.toFixed(3)+'  ('+g.length+' trials)';
+  $('randBest').textContent=rb.toFixed(3)+'  ('+r.length+' trials)';
+  if(rb>gb+0.02)setMsg($('searchMsg'),'🎲 Random search found a better setting. It tried '+n+' different learning rates, while the grid only tried '+Math.floor(Math.sqrt(n))+'.','good');
+  else if(gb>rb+0.02)setMsg($('searchMsg'),'🍀 Grid got lucky this time. Click "Re-roll" a few times to see that random search wins more often than not.','warn');
+  else setMsg($('searchMsg'),'🤝 About equal this time. Try re-rolling, or lowering the budget to 9.');
+}
+$('budget').oninput=updSearch;$('reveal').onchange=updSearch;
+$('reroll').onclick=()=>{randSeed=Math.floor(Math.random()*1e6);updSearch()};
+quiz('q5','Why is random search often more efficient than grid search when only a few hyperparameters really matter?',
+ ['It always finds the global best setting','It tries many different values of every hyperparameter, including the important ones, instead of repeating the same few','It does not need a validation set','It trains each model faster'],1,
+ 'A grid with 9 trials in 2 dimensions only tests 3 distinct values of each hyperparameter. Random search tests 9 distinct values of each, so it explores the important one far more densely. It is not guaranteed to win and still needs validation scores.');
+
+/* ---------- 6. cross-validation ---------- */
+let selFold=0;
+function updCV(){
+  const K=+$('kf').value;$('kfVal').textContent=K;if(selFold>=K)selFold=0;
+  const N=20,cells=$('cells');cells.innerHTML='';
+  const foldOf=j=>Math.floor(j*K/N);
+  for(let j=0;j<N;j++){const c=document.createElement('div');c.className='cell'+(foldOf(j)===selFold?' val':'');c.title='sample '+(j+1);cells.appendChild(c)}
+  const fb=$('foldBtns');fb.innerHTML='';
+  for(let f=0;f<K;f++){const b=document.createElement('button');b.textContent='Fold '+(f+1);if(f===selFold)b.className='primary';b.onclick=()=>{selFold=f;updCV()};fb.appendChild(b)}
+  const r=rng(100+K),sd=0.02*Math.sqrt(K);
+  const sc=[];for(let f=0;f<K;f++)sc.push(Math.max(0.5,Math.min(0.99,0.82+sd*gauss(r))));
+  const mean=sc.reduce((a,b)=>a+b,0)/K,std=Math.sqrt(sc.reduce((a,b)=>a+(b-mean)**2,0)/K);
+  let html='<tr><th>Round</th><th>Validation fold</th><th>Training samples</th><th>Validation accuracy</th></tr>';
+  const sizes=Array(K).fill(0);for(let j=0;j<N;j++)sizes[foldOf(j)]++;
+  for(let f=0;f<K;f++)html+=`<tr class="${f===selFold?'sel':''}"><td>${f+1}</td><td>Fold ${f+1} (${sizes[f]} samples)</td><td>${N-sizes[f]}</td><td>${(sc[f]*100).toFixed(1)}%</td></tr>`;
+  html+=`<tr><th colspan="3">Average of all ${K} rounds</th><th>${(mean*100).toFixed(1)}% ± ${(std*100).toFixed(1)}</th></tr>`;
+  $('foldTable').innerHTML=html;
+}
+$('kf').oninput=updCV;
+quiz('q6','Why should you NOT use the test set to choose hyperparameters?',
+ ['Because the test set is usually too small to be useful','Because tuning on it leaks information, so the final test score becomes over-optimistic and no longer an honest estimate','Because test data cannot be used for predictions','Because hyperparameters can only be tuned on training data'],1,
+ 'If you keep adjusting settings until the test score looks good, the test set quietly becomes part of training. Your reported score will be too rosy. Use validation data (or cross-validation) for tuning and touch the test set once, at the very end.');
+
+/* ---------- 7. KNN example ---------- */
+const KR=rng(2024);
+const kAll=[];
+for(let i=0;i<240;i++){
+  const c=i%2,t=KR()*Math.PI;let px,py;
+  if(c===0){px=Math.cos(t);py=Math.sin(t)}else{px=1-Math.cos(t);py=0.5-Math.sin(t)}
+  kAll.push({x:px+0.3*gauss(KR),y:py+0.3*gauss(KR),c});
+}
+for(let i=kAll.length-1;i>0;i--){const j=Math.floor(KR()*(i+1));[kAll[i],kAll[j]]=[kAll[j],kAll[i]]}
+const kTrain=kAll.slice(0,120),kVal=kAll.slice(120,180),kTest=kAll.slice(180);
+const KMAX=40;
+// labels of pool points ordered from nearest to farthest (optionally skipping some)
+function sortedLabels(px,py,pool,skip){
+  const arr=[];
+  pool.forEach((p,i)=>{if(skip&&skip(i))return;arr.push([(p.x-px)**2+(p.y-py)**2,p.c])});
+  arr.sort((a,b)=>a[0]-b[0]);return arr.map(a=>a[1]);
+}
+function knnPred(lbls,k){
+  const kk=Math.min(k,lbls.length);let ones=0;for(let i=0;i<kk;i++)ones+=lbls[i];
+  if(ones*2>kk)return 1;if(ones*2<kk)return 0;return lbls[0];
+}
+const kTrL=kTrain.map(p=>sortedLabels(p.x,p.y,kTrain));
+const kVaL=kVal.map(p=>sortedLabels(p.x,p.y,kTrain));
+const kTeL=kTest.map(p=>sortedLabels(p.x,p.y,kTrain));
+const kCvL=kTrain.map((p,i)=>sortedLabels(p.x,p.y,kTrain,j=>j%5===i%5)); // 5 folds: neighbors from other folds only
+const knnAcc=(Ls,pts,k)=>Ls.reduce((a,l,i)=>a+(knnPred(l,k)===pts[i].c?1:0),0)/pts.length;
+const kTrAcc=[],kVaAcc=[],kCvAcc=[];
+for(let k=1;k<=KMAX;k++){kTrAcc.push(knnAcc(kTrL,kTrain,k));kVaAcc.push(knnAcc(kVaL,kVal,k));kCvAcc.push(knnAcc(kCvL,kTrain,k))}
+const knnBest=a=>{let b=0;a.forEach((v,i)=>{if(v>=a[b]-1e-12)b=i});return b+1}; // ties -> larger k
+const bestV=knnBest(kVaAcc),bestC=knnBest(kCvAcc);
+const KX0=-1.7,KX1=2.7,KY0=-1.3,KY1=1.8,GX=66,GY=44;
+const kGrid=[];
+for(let j=0;j<GY;j++)for(let i=0;i<GX;i++)kGrid.push(sortedLabels(KX0+(i+.5)/GX*(KX1-KX0),KY0+(j+.5)/GY*(KY1-KY0),kTrain));
+
+function knnDraw(k){
+  const {x,w,h}=setup($('knnCanvas'),330);
+  const mx=v=>(v-KX0)/(KX1-KX0)*w,my=v=>h-(v-KY0)/(KY1-KY0)*h;
+  const cw=w/GX,ch=h/GY;
+  for(let j=0;j<GY;j++)for(let i=0;i<GX;i++){
+    x.fillStyle=knnPred(kGrid[j*GX+i],k)?'rgba(249,115,22,.24)':'rgba(37,99,235,.20)';
+    x.fillRect(i*cw,h-(j+1)*ch,cw+0.6,ch+0.6);
+  }
+  kTrain.forEach(p=>{x.fillStyle=p.c?'#f97316':'#2563eb';x.strokeStyle='#fff';x.lineWidth=1.5;x.beginPath();x.arc(mx(p.x),my(p.y),4.5,0,7);x.fill();x.stroke()});
+  kVal.forEach((p,i)=>{
+    const wrong=knnPred(kVaL[i],k)!==p.c;
+    x.fillStyle=p.c?'#f97316':'#2563eb';x.strokeStyle=wrong?'#dc2626':'#1f2433';x.lineWidth=wrong?3:1.2;
+    x.beginPath();x.rect(mx(p.x)-5,my(p.y)-5,10,10);x.fill();x.stroke();
+  });
+}
+function knnChart(k){
+  const {x,w,h}=setup($('knnChart'),230);
+  const pl=46,pr=14,pt=12,pb=34,lo=0.5,hi=1.0;
+  const mx=i=>pl+i/(KMAX-1)*(w-pl-pr),my=v=>pt+(1-(Math.max(lo,Math.min(hi,v))-lo)/(hi-lo))*(h-pt-pb);
+  x.font='11px sans-serif';x.fillStyle='#5d6579';x.strokeStyle='#eceef5';x.lineWidth=1;
+  for(let v=0.5;v<=1.001;v+=0.1){x.beginPath();x.moveTo(pl,my(v));x.lineTo(w-pr,my(v));x.stroke();x.fillText(Math.round(v*100)+'%',6,my(v)+4)}
+  [1,5,10,15,20,25,30,35,40].forEach(t=>x.fillText(t,mx(t-1)-5,h-pb+14));
+  x.fillText('k (number of neighbors)',w/2-60,h-4);
+  const line=(a,c)=>{x.strokeStyle=c;x.lineWidth=2.5;x.beginPath();a.forEach((v,i)=>i?x.lineTo(mx(i),my(v)):x.moveTo(mx(i),my(v)));x.stroke()};
+  line(kTrAcc,'#2563eb');line(kVaAcc,'#f97316');line(kCvAcc,'#7c3aed');
+  x.setLineDash([4,4]);x.strokeStyle='#4f46e5';x.lineWidth=1.5;x.beginPath();x.moveTo(mx(k-1),pt);x.lineTo(mx(k-1),h-pb);x.stroke();x.setLineDash([]);
+  [[kTrAcc,'#2563eb'],[kVaAcc,'#f97316'],[kCvAcc,'#7c3aed']].forEach(([a,c])=>{x.fillStyle=c;x.beginPath();x.arc(mx(k-1),my(a[k-1]),4.5,0,7);x.fill()});
+  [[bestV,'#f97316',kVaAcc],[bestC,'#7c3aed',kCvAcc]].forEach(([b,c,a])=>{
+    x.fillStyle=c;x.beginPath();const px=mx(b-1),py=my(a[b-1])-9;x.moveTo(px,py);x.lineTo(px-6,py-10);x.lineTo(px+6,py-10);x.closePath();x.fill();
+  });
+}
+function updKnn(){
+  const k=+$('knnSlider').value;$('knnVal').textContent=k;
+  knnDraw(k);knnChart(k);
+  $('knnTr').textContent=(kTrAcc[k-1]*100).toFixed(1)+'%';
+  $('knnVa').textContent=(kVaAcc[k-1]*100).toFixed(1)+'%';
+  $('knnCv').textContent=(kCvAcc[k-1]*100).toFixed(1)+'%';
+  if(k<=2)setMsg($('knnMsg'),'📈 Overfitting: with k = '+k+' each point trusts almost only its single closest neighbor, so the boundary chases noise. Look at the gap between training and validation accuracy.','bad');
+  else if(k>=30)setMsg($('knnMsg'),'📉 Underfitting: with k = '+k+' the vote is dominated by far-away points, so the boundary is over-smoothed and accuracy drops everywhere.','warn');
+  else if(k===bestC||k===bestV)setMsg($('knnMsg'),'✅ k = '+k+' is one of the best values found by validation / cross-validation.','good');
+  else setMsg($('knnMsg'),'👍 A reasonable middle ground. Compare with the ▼ markers on the chart to see if it can be improved.','good');
+}
+$('knnSlider').oninput=updKnn;
+document.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{$('knnSlider').value=b.dataset.k;updKnn()});
+$('knnBestVal').onclick=()=>{$('knnSlider').value=bestV;updKnn()};
+$('knnBestCv').onclick=()=>{$('knnSlider').value=bestC;updKnn()};
+setMsg($('knnBestMsg'),'Best k by validation: '+bestV+' ('+(kVaAcc[bestV-1]*100).toFixed(1)+'%).  Best k by 5-fold CV: '+bestC+' ('+(kCvAcc[bestC-1]*100).toFixed(1)+'%). CV averages over 5 rounds, so it is usually the steadier guide, especially with a small validation set.');
+$('knnTest').onclick=function(){
+  const k=+$('knnSlider').value,a=knnAcc(kTeL,kTest,k);
+  const o=$('knnTestOut');o.style.display='block';
+  setMsg(o,'🎓 With k = '+k+', test accuracy is '+(a*100).toFixed(1)+'% (validation said '+(kVaAcc[k-1]*100).toFixed(1)+'%). They are close but not identical, and that is normal. The test score is your honest estimate for new data. You have now used your one look.','good');
+  o.style.display='block';
+  this.disabled=true;this.textContent='🔒 Test set used (reload the page to try again)';
+};
+quiz('q7','In the KNN demo, k = 1 gives 100% training accuracy but noticeably lower validation accuracy. Why does k = 1 score perfectly on the training data?',
+ ['Because k = 1 is always the best hyperparameter','Because each training point is its own nearest neighbor, so the model just memorises the labels it was given','Because the training set is larger than the validation set','Because KNN learns weights that perfectly fit the data'],1,
+ 'When you predict a point that is itself in the training set, its closest neighbor is itself (distance 0), so with k = 1 it always copies its own label. That is memorisation, not skill, which is why you must judge k on validation data or cross-validation, never on training accuracy.');
+
+/* ---------- init ---------- */
+function drawAll(){gdDraw();updPoly();updReg();updSearch();updCV();updKnn()}
+gdInfo();drawAll();
+let rz;window.addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(drawAll,150)});
+</script>
+</body>
+</html>

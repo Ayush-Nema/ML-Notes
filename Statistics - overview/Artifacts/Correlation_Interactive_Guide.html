@@ -1,0 +1,1138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pearson and Spearman Correlation: Interactive Guide</title>
+<style>
+:root{
+  --page:#f9f9f7; --surf:#fcfcfb; --ink:#0b0b0b; --ink2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --ring:rgba(11,11,11,.10); --mid:#f0efec;
+  --s1:#2a78d6; --s2:#eb6834; --pos:#2a78d6; --neg:#e34948;
+  --posT:rgba(42,120,214,.10); --negT:rgba(227,73,72,.10);
+  --good:#006300; --bad:#b52a29; --code:#f1f0ec;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:where(:not([data-theme="light"])){
+    --page:#0d0d0d; --surf:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10); --mid:#383835;
+    --s1:#3987e5; --s2:#d95926; --pos:#3987e5; --neg:#e66767;
+    --posT:rgba(57,135,229,.16); --negT:rgba(230,103,103,.16);
+    --good:#0ca30c; --bad:#e66767; --code:#232322;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#0d0d0d; --surf:#1a1a19; --ink:#f0efec; --ink2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --ring:rgba(255,255,255,.10); --mid:#383835;
+  --s1:#3987e5; --s2:#d95926; --pos:#3987e5; --neg:#e66767;
+  --posT:rgba(57,135,229,.16); --negT:rgba(230,103,103,.16);
+  --good:#0ca30c; --bad:#e66767; --code:#232322;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{margin:0;background:var(--page);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-text-size-adjust:100%}
+a{color:var(--s1)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--s1);outline-offset:2px;border-radius:4px}
+
+/* top bar */
+.top{position:sticky;top:0;z-index:20;background:var(--surf);border-bottom:1px solid var(--ring)}
+.top-in{max-width:1000px;margin:0 auto;padding:0 16px;display:flex;align-items:center;gap:12px;height:52px}
+.brand{font-weight:700;white-space:nowrap}
+.navs{display:flex;gap:2px;overflow-x:auto;flex:1;scrollbar-width:none}
+.navs::-webkit-scrollbar{display:none}
+.navs a{color:var(--ink2);text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap;font-size:14px}
+.navs a:hover{background:var(--mid);color:var(--ink)}
+.tbtn{border:1px solid var(--axis);background:transparent;border-radius:6px;padding:5px 10px;font-size:13px;cursor:pointer;white-space:nowrap}
+.tbtn:hover{background:var(--mid)}
+
+main{max-width:1000px;margin:0 auto;padding:0 16px 80px}
+.hero{padding:44px 0 28px}
+.hero h1{font-size:clamp(28px,5vw,46px);line-height:1.12;margin:0 0 12px;letter-spacing:-.02em;font-weight:750;max-width:18em}
+.hero p.sub{font-size:18px;color:var(--ink2);max-width:40em;margin:0 0 24px}
+.sec{padding:48px 0 8px;border-top:1px solid var(--ring);margin-top:32px}
+.sec h2{font-size:clamp(24px,3.4vw,32px);line-height:1.2;margin:0 0 8px;letter-spacing:-.015em}
+.lead{font-size:18px;color:var(--ink2);max-width:42em;margin:0 0 20px}
+.blk{margin:28px 0}
+.blk>h3{font-size:14px;font-weight:700;color:var(--ink2);margin:0 0 10px;padding-bottom:6px;border-bottom:1px solid var(--ring);letter-spacing:.01em}
+p{margin:0 0 12px;max-width:44em}
+ul,ol{max-width:44em;padding-left:22px;margin:0 0 12px}
+li{margin:4px 0}
+.note{color:var(--ink2);font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.chip{border:1px solid var(--axis);border-radius:999px;padding:3px 12px;font-size:13px;color:var(--ink2);background:var(--surf)}
+.chip b{color:var(--ink)}
+
+/* stage = interactive panel */
+.stage{background:var(--surf);border:1px solid var(--ring);border-radius:12px;padding:16px;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;align-items:start}
+.stage.one{grid-template-columns:minmax(0,1fr)}
+.stage.rev{grid-template-columns:minmax(0,1fr) minmax(0,1.5fr)}
+@media (max-width:760px){.stage,.stage.rev{grid-template-columns:minmax(0,1fr)}}
+.plot{width:100%;height:auto;display:block;overflow:visible}
+.plot text{font:12px system-ui,-apple-system,"Segoe UI",sans-serif;fill:var(--muted)}
+.plot .axl{fill:var(--ink2);font-size:13px}
+.plot .gl{stroke:var(--grid);stroke-width:1}
+.plot .ax{stroke:var(--axis);stroke-width:1.5}
+.plot .mean{stroke:var(--ink2);stroke-width:1.2;stroke-dasharray:5 4;opacity:.7}
+.plot .qr.p{fill:var(--posT)} .plot .qr.n{fill:var(--negT)}
+.plot .qt{font-size:12px;font-weight:600}
+.plot .qt.p{fill:var(--pos)} .plot .qt.n{fill:var(--neg)}
+.pt{fill:var(--s1);stroke:var(--surf);stroke-width:2}
+.pt.pos{fill:var(--pos)} .pt.neg{fill:var(--neg)} .pt.zero{fill:var(--muted)}
+.pt.o2{fill:var(--s2)} .pt.ghost{opacity:.22} .pt.hl{stroke:var(--ink);stroke-width:2.5}
+.pt.hid{opacity:0}
+.plot.drag .hit{cursor:grab;touch-action:none}
+.plot.drag .hit:active{cursor:grabbing}
+.hit{fill:transparent}
+.hitg:focus-visible .pt{stroke:var(--ink);stroke-width:3}
+.hitg:focus{outline:none}
+
+/* controls */
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+.btn{border:1px solid var(--axis);background:var(--surf);border-radius:8px;padding:6px 12px;cursor:pointer;font-size:14px}
+.btn:hover{background:var(--mid)}
+.btn.on{background:var(--ink);color:var(--surf);border-color:var(--ink)}
+.btn.pri{background:var(--s1);color:#fff;border-color:var(--s1)}
+.seg{display:inline-flex;flex-wrap:wrap;gap:6px}
+input[type=range]{width:100%;accent-color:var(--s1)}
+label.sl{display:block;font-size:14px;color:var(--ink2);margin:6px 0}
+label.sl b{color:var(--ink)}
+
+/* gauges */
+.gauges{display:grid;gap:16px}
+.g-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.g-lab{font-size:14px;color:var(--ink2)}
+.g-lab i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:baseline}
+.g-val{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.g-track{position:relative;height:10px;background:var(--mid);border-radius:5px}
+.g-mid{position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:var(--axis)}
+.g-fill{position:absolute;top:0;bottom:0;border-radius:5px;opacity:.35}
+.g-mark{position:absolute;top:50%;width:16px;height:16px;border-radius:50%;border:2px solid var(--surf);transform:translate(-50%,-50%);transition:left .12s}
+.g-ends{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px}
+.p1{background:var(--s1)} .p2{background:var(--s2)}
+.read{font-size:14px;color:var(--ink2)}
+.read b{color:var(--ink);font-variant-numeric:tabular-nums}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px;margin:8px 0}
+.kv span:nth-child(odd){color:var(--ink2)}
+.kv span:nth-child(even){font-weight:600;font-variant-numeric:tabular-nums}
+
+/* math */
+.m{font-family:"Cambria Math","STIX Two Math","Latin Modern Math",Cambria,"Times New Roman",serif;font-size:1.1em}
+.eq{display:block;text-align:center;overflow-x:auto;padding:14px 8px;margin:10px 0;background:var(--surf);border:1px solid var(--ring);border-radius:10px;white-space:nowrap}
+.fr{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .2em}
+.fr>span:first-child{border-bottom:1.4px solid currentColor;padding:0 .35em .12em}
+.fr>span:last-child{padding:.12em .35em 0}
+.sum{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.05;margin:0 .15em}
+.sum small{font-size:.62em}.sum b{font-weight:400;font-size:1.3em}
+.sq{display:inline-flex;align-items:stretch;margin:0 .35em}
+.sq .rt{border-top:1.4px solid currentColor;padding:0 .15em;margin-left:-.05em}
+.bar{text-decoration:overline}
+.m sub{font-size:.7em;font-style:italic}.m sup{font-size:.7em}
+.m i{font-style:italic}
+
+/* tables */
+.tbl{width:100%;border-collapse:collapse;font-size:14px;background:var(--surf);border:1px solid var(--ring);border-radius:8px;overflow:hidden}
+.tbl th,.tbl td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--ring);vertical-align:top}
+.tbl th{background:var(--mid);font-weight:650}
+.tbl td.n,.tbl th.n{text-align:right;font-variant-numeric:tabular-nums}
+.tbl tr.hi td{background:var(--posT)}
+.tbl tr.hide td{color:transparent}
+.tblwrap{overflow-x:auto}
+.cmp td:first-child{font-weight:600;color:var(--ink2);white-space:nowrap}
+
+/* code */
+details.code{border:1px solid var(--ring);border-radius:8px;background:var(--surf)}
+details.code summary{cursor:pointer;padding:9px 12px;font-size:14px;font-weight:600;color:var(--ink2)}
+details.code pre{margin:0;padding:12px;background:var(--code);overflow-x:auto;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;border-top:1px solid var(--ring);position:relative}
+.cp{float:right;margin:8px 8px 0 0}
+
+/* confusions + questions */
+.cf{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.flip{text-align:left;background:var(--surf);border:1px solid var(--ring);border-radius:10px;padding:12px 14px;cursor:pointer;min-height:120px;display:block;width:100%}
+.flip .my{font-weight:600}
+.flip .tag{font-size:12px;color:var(--bad);font-weight:700;display:block;margin-bottom:4px}
+.flip .re{display:none;margin-top:8px;color:var(--ink2)}
+.flip .re .tag{color:var(--good)}
+.flip[aria-expanded=true] .re{display:block}
+.flip .hint{display:block;margin-top:8px;font-size:12px;color:var(--muted)}
+.flip[aria-expanded=true] .hint{display:none}
+.qs{display:grid;gap:8px;max-width:44em}
+.qs details{background:var(--surf);border:1px solid var(--ring);border-radius:8px;padding:9px 12px}
+.qs summary{cursor:pointer;font-weight:600}
+.qs details p{margin:8px 0 0;color:var(--ink2)}
+
+/* quiz */
+.quiz .q{background:var(--surf);border:1px solid var(--ring);border-radius:10px;padding:14px;margin:12px 0;max-width:46em}
+.quiz .q h4{margin:0 0 8px;font-size:16px}
+.quiz .opt{display:block;width:100%;text-align:left;border:1px solid var(--axis);background:transparent;border-radius:8px;padding:8px 12px;margin:6px 0;cursor:pointer}
+.quiz .opt:hover{background:var(--mid)}
+.quiz .opt.right{border-color:var(--good);background:var(--posT)}
+.quiz .opt.wrong{border-color:var(--bad);background:var(--negT)}
+.quiz .why{display:none;margin-top:8px;color:var(--ink2);font-size:14px}
+.quiz .q.done .why{display:block}
+.score{font-weight:700}
+
+/* misc */
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--ink2);margin:0 0 8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.callout{border-left:3px solid var(--s1);padding:4px 0 4px 14px;margin:14px 0;color:var(--ink2);max-width:44em}
+.callout b{color:var(--ink)}
+.tip{position:fixed;z-index:50;pointer-events:none;background:var(--ink);color:var(--surf);font-size:12px;padding:5px 8px;border-radius:6px;display:none;max-width:240px}
+.verdict{border:1px solid var(--axis);border-radius:10px;padding:12px 14px;background:var(--surf)}
+.verdict b{font-size:18px}
+.wiz label{display:block;padding:6px 0;cursor:pointer}
+.wiz fieldset{border:0;padding:0;margin:0 0 10px}
+.wiz legend{font-weight:600;padding:0 0 4px}
+.threecol{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.threecol>div{background:var(--surf);border:1px solid var(--ring);border-radius:10px;padding:12px 14px}
+.threecol b{display:block;margin-bottom:4px}
+footer{max-width:1000px;margin:0 auto;padding:24px 16px 48px;color:var(--muted);font-size:13px;border-top:1px solid var(--ring)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+@media print{.top{display:none}.stage{break-inside:avoid}}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-in">
+  <span class="brand">Correlation guide</span>
+  <nav class="navs" aria-label="Sections">
+    <a href="#what">What it is</a><a href="#pearson">Pearson</a><a href="#breaks">Where Pearson breaks</a>
+    <a href="#spearman">Spearman</a><a href="#choose">Which to use</a><a href="#cautions">Cautions and ML</a>
+    <a href="#quiz">Quiz</a><a href="#cheat">Cheat sheet</a>
+  </nav>
+  <button class="tbtn" id="themeBtn" type="button">Dark mode</button>
+</div></header>
+
+<main>
+<section class="hero" id="top">
+  <h1>Pearson looks for a line. Spearman looks for a trend.</h1>
+  <p class="sub">Correlation is the precise way to say "tends to", with a number attached. Drag any dot below and watch both numbers react.</p>
+  <div class="stage">
+    <div>
+      <div id="heroPlot"></div>
+      <p class="note" style="margin:8px 0 0">Five students: hours studied against quiz score out of 5. Focus a dot and use the arrow keys if you prefer the keyboard.</p>
+    </div>
+    <div>
+      <div class="gauges" id="heroGauges"></div>
+      <div class="ctrl" style="margin-top:16px"><button class="btn" id="heroReset" type="button">Reset dots</button></div>
+      <p class="read">Try pulling one dot far away from the others. Then try making the dots follow a curve that always rises.</p>
+    </div>
+  </div>
+  <div class="blk">
+    <h3>How this guide is laid out</h3>
+    <p>Every concept follows the same steps, so you always know where you are:</p>
+    <div class="chips">
+      <span class="chip"><b>The idea</b></span><span class="chip"><b>Try it</b></span><span class="chip"><b>The math</b></span>
+      <span class="chip"><b>Worked example</b></span><span class="chip"><b>Code</b></span>
+      <span class="chip"><b>Common confusions</b></span><span class="chip"><b>Check yourself</b></span>
+    </div>
+    <p class="note">Colors mean the same thing everywhere: <b style="color:var(--s1)">blue is Pearson</b> and <b style="color:var(--s2)">orange is Spearman</b>.</p>
+  </div>
+</section>
+
+<!-- 1 WHAT -->
+<section class="sec" id="what">
+  <h2>What correlation is</h2>
+  <p class="lead">A single number between −1 and +1 that says how two variables move together.</p>
+
+  <div class="blk"><h3>The idea</h3>
+    <p>Picture a scatter plot with one dot per person: hours studied on the x-axis, quiz score on the y-axis. The correlation coefficient packs two things into one number.</p>
+    <ul>
+      <li><b>The sign</b> is the direction. Positive means they rise together. Negative means one rises as the other falls.</li>
+      <li><b>The size</b> (distance from 0) is the strength: how tightly the dots hug the pattern.</li>
+    </ul>
+    <p>It does <b>not</b> tell you how steep the pattern is. That is the slope, a different idea.</p>
+  </div>
+
+  <div class="blk"><h3>Try it: slide the correlation</h3>
+    <div class="stage">
+      <div><div id="cloudPlot"></div></div>
+      <div>
+        <label class="sl" for="rSlider">Target correlation: <b id="rLabel">+0.60</b></label>
+        <input id="rSlider" type="range" min="-1" max="1" step="0.05" value="0.6">
+        <div class="gauges" id="cloudGauges" style="margin:14px 0"></div>
+        <div class="chips"><span class="chip">Direction: <b id="dirChip">up together</b></span><span class="chip">Strength: <b id="strChip">moderate</b></span></div>
+      </div>
+    </div>
+    <div class="tblwrap" style="margin-top:14px"><table class="tbl" id="strTbl">
+      <thead><tr><th>Size of the coefficient</th><th>Typical description</th></tr></thead>
+      <tbody>
+        <tr><td>0.0 to 0.2</td><td>negligible or very weak</td></tr>
+        <tr><td>0.2 to 0.4</td><td>weak</td></tr>
+        <tr><td>0.4 to 0.6</td><td>moderate</td></tr>
+        <tr><td>0.6 to 0.8</td><td>strong</td></tr>
+        <tr><td>0.8 to 1.0</td><td>very strong</td></tr>
+      </tbody></table></div>
+    <p class="note" style="margin-top:8px">A rule of thumb, not a law. 0.3 can be exciting in psychology and disappointing in physics.</p>
+  </div>
+
+  <div class="blk"><h3>Try it: guess the correlation</h3>
+    <div class="stage">
+      <div><div id="guessPlot"></div></div>
+      <div>
+        <label class="sl" for="guessSl">Your guess: <b id="guessLab">0.00</b></label>
+        <input id="guessSl" type="range" min="-1" max="1" step="0.05" value="0">
+        <div class="ctrl" style="margin-top:12px"><button class="btn pri" id="guessCheck" type="button">Check</button><button class="btn" id="guessNext" type="button">New cloud</button></div>
+        <p class="read" id="guessOut">Look at the cloud, set your guess, then check.</p>
+        <p class="read" id="guessTally"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="blk"><h3>Worked example</h3>
+    <div class="tblwrap"><table class="tbl cmp"><thead><tr><th>Pair of variables</th><th>Likely correlation</th></tr></thead><tbody>
+      <tr><td>Hours studied and quiz score</td><td>positive, moderate to strong</td></tr>
+      <tr><td>Hours of TV per day and exam score</td><td>negative, weak to moderate</td></tr>
+      <tr><td>Shoe size and favorite color</td><td>about 0</td></tr>
+      <tr><td>Temperature and heating bill</td><td>negative, strong</td></tr>
+    </tbody></table></div>
+  </div>
+  <div class="blk"><h3>Code</h3><div data-code="what"></div></div>
+  <div class="blk"><h3>Common confusions</h3><div data-conf="what"></div></div>
+  <div class="blk"><h3>Check yourself</h3><div data-qs="what"></div></div>
+</section>
+
+<!-- 2 PEARSON -->
+<section class="sec" id="pearson">
+  <h2>Pearson correlation</h2>
+  <p class="lead">How well do the points follow a straight line? This is what people mean when they just say "correlation".</p>
+
+  <div class="blk"><h3>The idea</h3>
+    <p>Draw a vertical line at the average of x and a horizontal line at the average of y. That splits the plot into four quadrants, and every dot casts a vote.</p>
+    <ul>
+      <li>Top-right or bottom-left: above average in both, or below in both. The dot <b>votes positive</b>.</li>
+      <li>Top-left or bottom-right: above in one, below in the other. The dot <b>votes negative</b>.</li>
+    </ul>
+    <p>Pearson is essentially the average vote, with bigger votes from dots far from the center.</p>
+  </div>
+
+  <div class="blk"><h3>Try it: quadrant votes</h3>
+    <div class="ctrl">
+      <span class="seg"><button class="btn" data-qp="up" type="button">Uphill</button><button class="btn" data-qp="mix" type="button">Mixed</button><button class="btn" data-qp="down" type="button">Downhill</button><button class="btn" data-qp="start" type="button">Reset</button></span>
+    </div>
+    <div class="stage">
+      <div><div id="quadPlot"></div></div>
+      <div>
+        <div class="gauges" id="quadGauges"></div>
+        <div class="kv" id="quadKv"></div>
+        <p class="read">Drag dots between quadrants. When the votes cancel out, r heads toward 0.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="blk"><h3>The math</h3>
+    <div class="eq m" data-eq="pearson"></div>
+    <ul>
+      <li><b>Top:</b> for each dot, multiply how far x is from its mean by how far y is from its mean, then add them all up. That is the quadrant vote.</li>
+      <li><b>Bottom:</b> divide by the overall spread of x and of y, so the answer ignores units and always lands between −1 and 1.</li>
+    </ul>
+    <p>Two equivalent forms worth seeing once. The first uses <b>covariance</b> (the raw vote, which depends on units) and the standard deviations. The second averages the product of z-scores (distance from the mean, in standard deviations).</p>
+    <div class="eq m" data-eq="pearson2"></div>
+    <p><b>Properties:</b> r is always between −1 and 1. Changing units does not change it. Swapping x and y does not change it. Flipping the sign of one variable flips the sign of r.</p>
+  </div>
+
+  <div class="blk"><h3>Worked example: five students</h3>
+    <p>Add one student at a time and watch the sums build up.</p>
+    <div class="ctrl"><button class="btn pri" id="exNext" type="button">Add next student</button><button class="btn" id="exAll" type="button">Show all</button><button class="btn" id="exReset" type="button">Reset</button></div>
+    <div class="stage rev">
+      <div><div id="exPlot"></div></div>
+      <div class="tblwrap"><table class="tbl" id="exTbl"></table></div>
+    </div>
+    <p class="read" id="exResult" style="margin-top:12px">Means: x̄ = 3 and ȳ = 4.</p>
+  </div>
+
+  <div class="blk"><h3>Units do not matter</h3>
+    <p>Covariance changes when you change units. Pearson r does not. Switch units and compare.</p>
+    <div class="ctrl"><span class="seg" id="unitSeg">
+      <button class="btn on" data-u="0" type="button">Hours, score out of 5</button>
+      <button class="btn" data-u="1" type="button">Minutes, score out of 5</button>
+      <button class="btn" data-u="2" type="button">Minutes, score out of 100</button></span></div>
+    <div class="kv" id="unitKv"></div>
+  </div>
+
+  <div class="blk"><h3>Code</h3><div data-code="pearson"></div></div>
+  <div class="blk"><h3>Common confusions</h3><div data-conf="pearson"></div></div>
+  <div class="blk"><h3>Check yourself</h3><div data-qs="pearson"></div></div>
+</section>
+
+<!-- 3 BREAKS -->
+<section class="sec" id="breaks">
+  <h2>Where Pearson breaks</h2>
+  <p class="lead">Pearson asks "how close to a straight line?" So curves and far-away dots can fool it.</p>
+  <div class="blk"><h3>Try it: four ways to fool the number</h3>
+    <div class="ctrl"><span class="seg" id="caseSeg">
+      <button class="btn on" data-c="exp" type="button">Always rising, not a line</button>
+      <button class="btn" data-c="out" type="button">One wild point</button>
+      <button class="btn" data-c="u" type="button">U-shape</button>
+      <button class="btn" data-c="ans" type="button">Anscombe's quartet</button></span>
+      <button class="btn" id="caseReset" type="button">Reset</button>
+      <button class="btn" id="caseGlitch" type="button" hidden>Corrupt the last value</button></div>
+    <div class="stage" id="caseStage">
+      <div id="casePlots"></div>
+      <div>
+        <div class="gauges" id="caseGauges"></div>
+        <p class="read" id="caseText" style="margin-top:14px"></p>
+      </div>
+    </div>
+  </div>
+  <div class="callout"><b>Always plot first.</b> Neither coefficient can see a pattern that goes down and then up. The number alone can hide the story.</div>
+  <div class="blk"><h3>Code</h3><div data-code="breaks"></div></div>
+  <div class="blk"><h3>Common confusions</h3><div data-conf="breaks"></div></div>
+  <div class="blk"><h3>Check yourself</h3><div data-qs="breaks"></div></div>
+</section>
+
+<!-- 4 SPEARMAN -->
+<section class="sec" id="spearman">
+  <h2>Spearman correlation</h2>
+  <p class="lead">Replace the raw values with their ranks, then compute Pearson on the ranks.</p>
+
+  <div class="blk"><h3>The idea</h3>
+    <p>Imagine a race where you only record finish <i>positions</i> (1st, 2nd, 3rd) instead of finish times. Ranks forget "by how much" and keep only "who is ahead of whom".</p>
+    <ul>
+      <li>Two rankings in nearly the same order: Spearman near +1.</li>
+      <li>One ranking the exact reverse of the other: −1.</li>
+      <li>Orderings that look unrelated: near 0.</li>
+    </ul>
+    <p>Because it only uses order, a curve that always rises scores exactly 1, and a huge outlier is just "the biggest value".</p>
+  </div>
+
+  <div class="blk"><h3>Try it: from raw values to ranks</h3>
+    <p>Months since launch against daily signups. Drag a dot, then convert to ranks and watch the table.</p>
+    <div class="ctrl"><button class="btn pri" id="spToggle" type="button">Convert to ranks</button><button class="btn" id="spReset" type="button">Reset dots</button></div>
+    <div class="stage">
+      <div><div id="spPlot"></div></div>
+      <div>
+        <div class="gauges" id="spGauges"></div>
+        <p class="read" id="spNote" style="margin-top:12px"></p>
+      </div>
+    </div>
+    <div class="tblwrap" style="margin-top:14px"><table class="tbl" id="spTbl"></table></div>
+  </div>
+
+  <div class="blk"><h3>The math</h3>
+    <div class="eq m" data-eq="spearman"></div>
+    <p><b>Ties:</b> when values tie, each gets the average of the ranks it would have taken. Type some numbers to see.</p>
+    <div class="ctrl"><input id="tieIn" type="text" value="10, 20, 20, 40" aria-label="Numbers separated by commas" style="font:inherit;padding:6px 10px;border:1px solid var(--axis);border-radius:8px;background:var(--surf);color:var(--ink);min-width:220px"></div>
+    <p class="read" id="tieOut"></p>
+    <p><b>Shortcut</b> when there are no ties: let d be the difference between the two ranks of a point.</p>
+    <div class="eq m" data-eq="spearman2"></div>
+    <p>If the ranks match exactly, every d is 0 and ρ = 1. The bigger the rank disagreements, the smaller ρ gets.</p>
+  </div>
+
+  <div class="blk"><h3>Try it: why outliers hurt Pearson more</h3>
+    <p>Make the biggest signup number larger. The order of the dots never changes, so Spearman stays put.</p>
+    <div class="stage">
+      <div><div id="outPlot"></div></div>
+      <div>
+        <label class="sl" for="outSl">Biggest value V: <b id="outLab">200</b></label>
+        <input id="outSl" type="range" min="60" max="5000" step="10" value="200">
+        <div class="gauges" id="outGauges" style="margin-top:14px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="blk"><h3>Code</h3><div data-code="spearman"></div></div>
+  <div class="blk"><h3>Common confusions</h3><div data-conf="spearman"></div></div>
+  <div class="blk"><h3>Check yourself</h3><div data-qs="spearman"></div></div>
+</section>
+
+<!-- 5 CHOOSE -->
+<section class="sec" id="choose">
+  <h2>Pearson or Spearman: how to choose</h2>
+  <p class="lead">Ask two questions about your scatter plot. Is it a straight line? Does it at least consistently rise or fall?</p>
+
+  <div class="blk"><h3>Comparison</h3>
+    <div class="tblwrap"><table class="tbl cmp"><thead><tr><th></th><th style="color:var(--s1)">Pearson r</th><th style="color:var(--s2)">Spearman ρ</th></tr></thead><tbody>
+      <tr><td>Detects</td><td>Linear relationships</td><td>Monotonic relationships (any rising or falling shape)</td></tr>
+      <tr><td>Works on</td><td>Raw numeric values</td><td>Ranks of the values</td></tr>
+      <tr><td>Sensitive to outliers</td><td>Yes, a lot</td><td>Much less</td></tr>
+      <tr><td>Unchanged by</td><td>Linear changes of units</td><td>Any increasing transformation (log, exp, square root)</td></tr>
+      <tr><td>Ordinal data (ratings)</td><td>No</td><td>Yes</td></tr>
+      <tr><td>Uses magnitude</td><td>Yes</td><td>No, only order</td></tr>
+      <tr><td>Perfect score means</td><td>Exactly on a straight line</td><td>Perfectly ordered</td></tr>
+    </tbody></table></div>
+  </div>
+
+  <div class="blk"><h3>Try it: read the gap</h3>
+    <p>Computing both is a diagnostic. Hover a bar for its value.</p>
+    <div class="legend"><span><i class="p1"></i>Pearson r</span><span><i class="p2"></i>Spearman ρ</span></div>
+    <div class="stage one"><div id="gapChart"></div></div>
+    <div class="tblwrap" style="margin-top:12px"><table class="tbl" id="gapTbl"></table></div>
+  </div>
+
+  <div class="blk"><h3>Try it: which one should I use?</h3>
+    <div class="stage">
+      <form class="wiz" id="wiz" onsubmit="return false">
+        <fieldset><legend>What does the scatter plot look like?</legend>
+          <label><input type="radio" name="shape" value="line" checked> Roughly a straight line</label>
+          <label><input type="radio" name="shape" value="curve"> Curved, but always rising (or always falling)</label>
+          <label><input type="radio" name="shape" value="u"> Goes down then up (or up then down)</label>
+        </fieldset>
+        <fieldset><legend>Are there wild outliers or heavy skew (income, followers, prices)?</legend>
+          <label><input type="radio" name="out" value="no" checked> No</label>
+          <label><input type="radio" name="out" value="yes"> Yes</label>
+        </fieldset>
+        <fieldset><legend>Is the data ranks or ratings (1 to 5 stars)?</legend>
+          <label><input type="radio" name="ord" value="no" checked> No, real measurements</label>
+          <label><input type="radio" name="ord" value="yes"> Yes</label>
+        </fieldset>
+      </form>
+      <div class="verdict" id="verdict" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div class="blk"><h3>Code</h3><div data-code="choose"></div></div>
+  <div class="blk"><h3>Common confusions</h3><div data-conf="choose"></div></div>
+  <div class="blk"><h3>Check yourself</h3><div data-qs="choose"></div></div>
+</section>
+
+<!-- 6 CAUTIONS -->
+<section class="sec" id="cautions">
+  <h2>Cautions and how it is used in ML</h2>
+  <p class="lead">A correlation is evidence of a pattern, not an explanation of it.</p>
+
+  <div class="blk"><h3>Correlation is not causation</h3>
+    <p>Ice cream sales and sunburns are correlated. Hot sunny weather drives both. A hidden driver like that is a <b>confounder</b>. Whenever X and Y are correlated there are three explanations: X causes Y, Y causes X, or a third variable causes both (or it is coincidence).</p>
+    <p><b>Try it:</b> hold temperature roughly fixed and see what happens to the link.</p>
+    <div class="stage">
+      <div><div id="confPlot"></div></div>
+      <div>
+        <svg viewBox="0 0 300 150" class="plot" role="img" aria-label="Hot weather causes both ice cream sales and sunburns" style="margin-bottom:8px">
+          <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--ink2)"/></marker></defs>
+          <rect x="95" y="6" width="110" height="34" rx="8" fill="var(--mid)" stroke="var(--axis)"/><text x="150" y="28" text-anchor="middle" style="fill:var(--ink);font-size:13px;font-weight:600">Hot weather</text>
+          <rect x="6" y="104" width="118" height="34" rx="8" fill="var(--mid)" stroke="var(--axis)"/><text x="65" y="126" text-anchor="middle" style="fill:var(--ink);font-size:13px;font-weight:600">Ice cream sales</text>
+          <rect x="176" y="104" width="118" height="34" rx="8" fill="var(--mid)" stroke="var(--axis)"/><text x="235" y="126" text-anchor="middle" style="fill:var(--ink);font-size:13px;font-weight:600">Sunburns</text>
+          <line x1="130" y1="42" x2="80" y2="100" stroke="var(--ink2)" stroke-width="1.6" marker-end="url(#ar)"/>
+          <line x1="170" y1="42" x2="220" y2="100" stroke="var(--ink2)" stroke-width="1.6" marker-end="url(#ar)"/>
+          <line x1="128" y1="121" x2="172" y2="121" stroke="var(--s1)" stroke-width="2" stroke-dasharray="4 3" marker-start="url(#ar)" marker-end="url(#ar)"/>
+          <text x="150" y="98" text-anchor="middle" style="fill:var(--s1);font-size:12px;font-weight:700" id="confR">r = 0.73</text>
+        </svg>
+        <label class="sl" for="confSl">Temperature band: <b id="confLab">all days</b></label>
+        <input id="confSl" type="range" min="1" max="30" step="1" value="30">
+        <p class="read" id="confOut"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="blk"><h3>Small samples are noisy</h3>
+    <p>Unrelated variables still show some correlation by luck. Pick a sample size and run 2,000 pairs of completely unrelated random numbers.</p>
+    <div class="ctrl"><span class="seg" id="nSeg"></span><button class="btn pri" id="simDraw" type="button">Draw one sample</button></div>
+    <div class="stage">
+      <div><div id="simPlot"></div><p class="read" id="simOne" style="margin-top:6px"></p></div>
+      <div><div class="legend"><span><i class="p1"></i>within ±0.5</span><span><i class="p2"></i>beyond ±0.5</span></div><div id="simHist"></div><p class="read" id="simOut"></p></div>
+    </div>
+    <p class="note" style="margin-top:8px">This is the signal-versus-noise story from hypothesis testing: the null hypothesis is "the true correlation is 0", and the p-value returned by the code tests it. Also note that strength is not importance: with a huge dataset even r = 0.02 can be "significant" yet useless.</p>
+  </div>
+
+  <div class="blk"><h3>Uses in ML: the correlation matrix</h3>
+    <p>A synthetic housing table with 300 rows. Switch the method and click any cell to see that pair.</p>
+    <div class="ctrl"><span class="seg" id="hmSeg"><button class="btn on" data-m="p" type="button">Pearson</button><button class="btn" data-m="s" type="button">Spearman</button></span></div>
+    <div class="stage">
+      <div><div id="heat"></div></div>
+      <div><div id="pairPlot"></div><div class="gauges" id="pairGauges" style="margin-top:10px"></div><p class="read" id="pairText"></p></div>
+    </div>
+    <div class="threecol" style="margin-top:14px">
+      <div><b>Feature selection</b>Features correlated with the target may be useful. Only linear or monotonic signal is detected.</div>
+      <div><b>Multicollinearity</b>Two features that correlate strongly with each other carry duplicate information. Keep one, or combine them.</div>
+      <div><b>Leakage warning</b>A feature with a suspiciously huge correlation to the target (like 0.99) often secretly contains the answer.</div>
+      <div><b>Model evaluation</b>Correlation between predictions and truth is a quick sanity check, but it ignores bias. Pair it with MAE.</div>
+      <div><b>Ranking systems</b>Spearman is the natural measure of agreement between two rankings.</div>
+      <div><b>Heatmaps</b>The standard first look at a tabular dataset.</div>
+    </div>
+  </div>
+
+  <div class="blk"><h3>Code</h3><div data-code="cautions"></div></div>
+  <div class="blk"><h3>Common confusions</h3><div data-conf="cautions"></div></div>
+  <div class="blk"><h3>Check yourself</h3><div data-qs="cautions"></div></div>
+</section>
+
+<section class="sec quiz" id="quiz">
+  <h2>Quick quiz</h2>
+  <p class="lead">Five questions. Pick an answer to see why.</p>
+  <div id="quizBox"></div>
+  <p class="score" id="quizScore" aria-live="polite"></p>
+</section>
+
+<section class="sec" id="cheat">
+  <h2>Cheat sheet</h2>
+  <div class="blk"><h3>Putting it together</h3>
+    <ol>
+      <li>Make a <b>scatter plot</b> first, always.</li>
+      <li>Correlation compresses "do they move together?" into one number from −1 to +1: sign is direction, size is strength.</li>
+      <li><b style="color:var(--s1)">Pearson</b> measures <b>linear</b> association using raw values.</li>
+      <li><b style="color:var(--s2)">Spearman</b> measures <b>monotonic</b> association using only ranks, so it handles curves, skew and outliers better.</li>
+      <li>Compute <b>both</b> when unsure. A big gap is a hint to look at the plot.</li>
+      <li>A coefficient from few points is <b>noisy</b>. Check the sample size and the p-value.</li>
+      <li><b>Correlation is not causation</b>, and r = 0 does not mean "unrelated".</li>
+    </ol>
+  </div>
+  <div class="blk"><h3>Terms</h3>
+    <div class="tblwrap"><table class="tbl cmp"><tbody>
+      <tr><td>Correlation</td><td>How tightly two variables move together, from −1 to +1</td></tr>
+      <tr><td>Covariance</td><td>The raw "do they move together" score. Depends on units.</td></tr>
+      <tr><td>Pearson r</td><td>Covariance divided by both standard deviations: strength of the straight-line relationship</td></tr>
+      <tr><td>Rank</td><td>Position of a value when sorted (1 = smallest)</td></tr>
+      <tr><td>Spearman ρ</td><td>Pearson computed on the ranks: strength of the monotonic relationship</td></tr>
+      <tr><td>Monotonic</td><td>Consistently rising (or consistently falling), any shape</td></tr>
+      <tr><td>Outlier</td><td>A dot far from the pack that can distort r</td></tr>
+      <tr><td>Confounder</td><td>A hidden third variable driving both</td></tr>
+      <tr><td>r²</td><td>Share of variation in y accounted for linearly by x</td></tr>
+    </tbody></table></div>
+  </div>
+  <div class="blk"><h3>Formulas</h3>
+    <div class="eq m" data-eq="pearson"></div>
+    <div class="eq m" data-eq="spearman3"></div>
+  </div>
+  <div class="blk"><h3>Three takeaways</h3>
+    <div class="threecol">
+      <div><b>1</b>Correlation measures tightness and direction, not slope and not cause.</div>
+      <div><b>2</b>Pearson looks for a line. Spearman looks for a trend.</div>
+      <div><b>3</b>The number can lie. Plot the data and mind the sample size.</div>
+    </div>
+  </div>
+</section>
+</main>
+<footer>Self-contained page: no internet connection or external libraries needed. Everything computes in your browser.</footer>
+<div class="tip" id="tip" role="tooltip"></div>
+<script>
+"use strict";
+/* ---------- helpers ---------- */
+const $=(s,e=document)=>e.querySelector(s);
+const $$=(s,e=document)=>[...e.querySelectorAll(s)];
+const NS="http://www.w3.org/2000/svg";
+function S(tag,at={},par){const e=document.createElementNS(NS,tag);for(const k in at)e.setAttribute(k,at[k]);if(par)par.appendChild(e);return e}
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const MINUS="−";
+const sgn=v=>isNaN(v)?"–":(v<0?MINUS:"+")+Math.abs(v).toFixed(2);
+const num=v=>String(+v.toFixed(6));
+
+/* ---------- stats ---------- */
+const mean=a=>a.reduce((s,v)=>s+v,0)/a.length;
+function pearson(x,y){const mx=mean(x),my=mean(y);let a=0,b=0,c=0;for(let i=0;i<x.length;i++){const dx=x[i]-mx,dy=y[i]-my;a+=dx*dy;b+=dx*dx;c+=dy*dy}return b&&c?a/Math.sqrt(b*c):NaN}
+function ranks(a){const idx=a.map((v,i)=>i).sort((i,j)=>a[i]-a[j]);const r=new Array(a.length);let i=0;while(i<idx.length){let j=i;while(j+1<idx.length&&a[idx[j+1]]===a[idx[i]])j++;const avg=(i+j)/2+1;for(let k=i;k<=j;k++)r[idx[k]]=avg;i=j+1}return r}
+const spearman=(x,y)=>pearson(ranks(x),ranks(y));
+const cov=(x,y)=>{const mx=mean(x),my=mean(y);let s=0;for(let i=0;i<x.length;i++)s+=(x[i]-mx)*(y[i]-my);return s/(x.length-1)};
+window.__corr={pearson,spearman,ranks,cov};
+function rng32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function gauss(r){let u=0,v=0;while(!u)u=r();v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function standardize(a){const m=mean(a);const s=Math.sqrt(a.reduce((q,v)=>q+(v-m)*(v-m),0)/a.length);return a.map(v=>(v-m)/s)}
+function cloudBase(n,seed){const r=rng32(seed);const cl=v=>Math.max(-2.4,Math.min(2.4,v));let a=[],b=[];for(let i=0;i<n;i++){a.push(cl(gauss(r)));b.push(cl(gauss(r)))}
+  a=standardize(a);const sab=a.reduce((s,v,i)=>s+v*b[i],0)/n;b=standardize(b.map((v,i)=>v-sab*a[i]));return{a,b}}
+const cloud=(B,r)=>B.a.map((x,i)=>({x,y:r*x+Math.sqrt(1-r*r)*B.b[i]}));
+function niceTicks(a,b,c=5){const span=b-a;const raw=span/c;const p=Math.pow(10,Math.floor(Math.log10(raw)));const f=raw/p;const st=(f<1.5?1:f<3?2:f<7?5:10)*p;const t=[];for(let v=Math.ceil(a/st-1e-9)*st;v<=b+1e-9;v+=st)t.push(+v.toFixed(10));return t}
+
+/* ---------- tooltip ---------- */
+const tipEl=$("#tip");
+function showTip(html,e){tipEl.innerHTML=html;tipEl.style.display="block";const w=tipEl.offsetWidth;let x=e.clientX+12,y=e.clientY+12;if(x+w>innerWidth-8)x=e.clientX-w-12;tipEl.style.left=x+"px";tipEl.style.top=y+"px"}
+function hideTip(){tipEl.style.display="none"}
+
+/* ---------- tween ---------- */
+function tween(dur,fn,done){if(reduce){fn(1);done&&done();return}const t0=performance.now();(function st(now){const t=Math.min(1,(now-t0)/dur);const e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;fn(e);if(t<1)requestAnimationFrame(st);else done&&done()})(t0)}
+
+/* ---------- scatter plot ---------- */
+class Scatter{
+  constructor(host,o){
+    this.o=Object.assign({w:560,h:340,ml:60,mr:14,mt:12,mb:42,xd:[0,1],yd:[0,1],r:6.5,xlabel:"",ylabel:"",draggable:false,lockX:false,quad:false,means:false,noTicks:false,ticksX:null,ticksY:null,cls:()=>"",tip:null,onChange:null,label:"Scatter plot"},o);
+    const q=this.o;this.xd=q.xd.slice();this.yd=q.yd.slice();this.pts=[];this.gs=[];this.tx=q.ticksX;this.ty=q.ticksY;
+    this.svg=S("svg",{viewBox:`0 0 ${q.w} ${q.h}`,class:"plot"+(q.draggable?" drag":""),role:"img","aria-label":q.label});
+    this.gStatic=S("g",{},this.svg);this.gQuad=S("g",{},this.svg);this.gPts=S("g",{},this.svg);
+    if(q.quad){this.qr=["p","n","p","n"].map(c=>S("rect",{class:"qr "+c},this.gQuad));this.qt=["p","n","n","p"].map(c=>S("text",{class:"qt "+c},this.gQuad));["+ votes","− votes","− votes","+ votes"].forEach((t,i)=>this.qt[i].textContent=t)}
+    if(q.quad||q.means){this.mv=S("line",{class:"mean"},this.gQuad);this.mh=S("line",{class:"mean"},this.gQuad)}
+    host.appendChild(this.svg);this.drawStatic(true);
+  }
+  X(v){const q=this.o;return q.ml+(v-this.xd[0])/(this.xd[1]-this.xd[0])*(q.w-q.ml-q.mr)}
+  Y(v){const q=this.o;return q.h-q.mb-(v-this.yd[0])/(this.yd[1]-this.yd[0])*(q.h-q.mt-q.mb)}
+  toData(e){const q=this.o,p=this.svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const m=p.matrixTransform(this.svg.getScreenCTM().inverse());
+    return{x:this.xd[0]+(m.x-q.ml)/(q.w-q.ml-q.mr)*(this.xd[1]-this.xd[0]),y:this.yd[0]+(q.h-q.mb-m.y)/(q.h-q.mt-q.mb)*(this.yd[1]-this.yd[0])}}
+  setDomain(xd,yd,opt={}){this.xd=xd.slice();this.yd=yd.slice();if("tx"in opt)this.tx=opt.tx;if("ty"in opt)this.ty=opt.ty;if(opt.xlabel!=null)this.o.xlabel=opt.xlabel;if(opt.ylabel!=null)this.o.ylabel=opt.ylabel;this.drawStatic(opt.ticks!==false);this.render()}
+  drawStatic(ticks){
+    const q=this.o,g=this.gStatic;g.textContent="";
+    const tx=this.tx||niceTicks(this.xd[0],this.xd[1]),ty=this.ty||niceTicks(this.yd[0],this.yd[1]);
+    if(!q.noTicks){tx.forEach(v=>{const x=this.X(v);S("line",{class:"gl",x1:x,x2:x,y1:q.mt,y2:q.h-q.mb},g);if(ticks)S("text",{x,y:q.h-q.mb+16,"text-anchor":"middle"},g).textContent=num(v)});
+      ty.forEach(v=>{const y=this.Y(v);S("line",{class:"gl",x1:q.ml,x2:q.w-q.mr,y1:y,y2:y},g);if(ticks)S("text",{x:q.ml-8,y:y+4,"text-anchor":"end"},g).textContent=num(v)})}
+    S("line",{class:"ax",x1:q.ml,x2:q.w-q.mr,y1:q.h-q.mb,y2:q.h-q.mb},g);S("line",{class:"ax",x1:q.ml,x2:q.ml,y1:q.mt,y2:q.h-q.mb},g);
+    S("text",{class:"axl",x:(q.ml+q.w-q.mr)/2,y:q.h-6,"text-anchor":"middle"},g).textContent=q.xlabel;
+    const yl=S("text",{class:"axl","text-anchor":"middle",transform:`translate(13 ${(q.mt+q.h-q.mb)/2}) rotate(-90)`},g);yl.textContent=q.ylabel}
+  set(pts){
+    if(pts.length!==this.gs.length){this.gPts.textContent="";this.gs=[];const q=this.o;
+      pts.forEach((p,i)=>{const g=S("g",{class:"hitg"},this.gPts);const dr=q.draggable;
+        const hit=dr?S("circle",{class:"hit",r:q.r+9},g):null;const c=S("circle",{class:"pt",r:q.r},g);if(dr){g.setAttribute("tabindex","0");g.setAttribute("role","slider");}
+        this.bind(g,hit,i);this.gs.push({g,hit,c})})}
+    this.pts=pts;this.render()}
+  bind(g,hit,i){
+    const q=this.o;
+    g.addEventListener("pointerenter",e=>{if(q.tip&&this.drag==null)showTip(q.tip(i,this.pts[i]),e)});
+    g.addEventListener("pointermove",e=>{if(this.drag===i){this.moveTo(i,this.toData(e));if(q.tip)showTip(q.tip(i,this.pts[i]),e)}else if(q.tip&&this.drag==null)showTip(q.tip(i,this.pts[i]),e)});
+    g.addEventListener("pointerleave",()=>{if(this.drag==null)hideTip()});
+    g.addEventListener("pointerdown",e=>{if(!q.draggable)return;g.setPointerCapture(e.pointerId);this.drag=i;e.preventDefault()});
+    const end=e=>{if(this.drag===i){this.drag=null;hideTip()}};g.addEventListener("pointerup",end);g.addEventListener("pointercancel",end);
+    g.addEventListener("keydown",e=>{if(!q.draggable)return;const k={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,1],ArrowDown:[0,-1]}[e.key];if(!k)return;e.preventDefault();
+      const m=e.shiftKey?5:1,p=this.pts[i];this.moveTo(i,{x:p.x+k[0]*m*(this.xd[1]-this.xd[0])/60,y:p.y+k[1]*m*(this.yd[1]-this.yd[0])/60})});
+  }
+  moveTo(i,d){const p=this.pts[i];const cl=(v,a)=>Math.max(a[0],Math.min(a[1],v));if(!this.o.lockX)p.x=cl(d.x,this.xd);p.y=cl(d.y,this.yd);this.render();this.o.onChange&&this.o.onChange(this.pts,i)}
+  render(){
+    const q=this.o,P=this.pts;if(!P.length)return;
+    const mx=mean(P.map(p=>p.x)),my=mean(P.map(p=>p.y));
+    if(this.mv){this.mv.setAttribute("x1",this.X(mx));this.mv.setAttribute("x2",this.X(mx));this.mv.setAttribute("y1",q.mt);this.mv.setAttribute("y2",q.h-q.mb);
+      this.mh.setAttribute("x1",q.ml);this.mh.setAttribute("x2",q.w-q.mr);this.mh.setAttribute("y1",this.Y(my));this.mh.setAttribute("y2",this.Y(my))}
+    if(this.qr){const L=q.ml,R=q.w-q.mr,T=q.mt,B=q.h-q.mb,cx=this.X(mx),cy=this.Y(my);
+      const rs=[[cx,T,R-cx,cy-T],[L,T,cx-L,cy-T],[cx,cy,R-cx,B-cy],[L,cy,cx-L,B-cy]];
+      rs.forEach((r,i)=>{const e=this.qr[i];e.setAttribute("x",r[0]);e.setAttribute("y",r[1]);e.setAttribute("width",Math.max(0,r[2]));e.setAttribute("height",Math.max(0,r[3]))});
+      const ts=[[R-6,T+16,"end"],[L+6,T+16,"start"],[R-6,B-8,"end"],[L+6,B-8,"start"]];
+      ts.forEach((t,i)=>{const e=this.qt[i];e.setAttribute("x",t[0]);e.setAttribute("y",t[1]);e.setAttribute("text-anchor",t[2])});
+      // quadrants: 0 TR (+), 1 TL (-), 2 BR (-), 3 BL (+)
+      [1,2].forEach(i=>this.qr[i].setAttribute("class","qr n"));[0,3].forEach(i=>this.qr[i].setAttribute("class","qr p"))}
+    P.forEach((p,i)=>{const o=this.gs[i];const x=this.X(p.x),y=this.Y(p.y);
+      o.c.setAttribute("cx",x);o.c.setAttribute("cy",y);if(o.hit){o.hit.setAttribute("cx",x);o.hit.setAttribute("cy",y)}
+      let c="pt";if(q.quad){const v=(p.x-mx)*(p.y-my);c+=v>1e-12?" pos":v<-1e-12?" neg":" zero"}
+      const extra=q.cls(i,p);if(extra)c+=" "+extra;o.c.setAttribute("class",c);
+      if(q.draggable)o.g.setAttribute("aria-label",`Point ${i+1}: x ${p.x.toFixed(2)}, y ${p.y.toFixed(2)}. Arrow keys move it.`)})
+  }
+}
+
+/* ---------- gauge ---------- */
+function Gauge(host,{label,cls}){
+  const wrap=document.createElement("div");
+  wrap.innerHTML=`<div class="g-row"><span class="g-lab"><i class="${cls}"></i>${label}</span><span class="g-val">–</span></div><div class="g-track"><i class="g-mid"></i><b class="g-fill ${cls}"></b><b class="g-mark ${cls}"></b></div><div class="g-ends"><span>${MINUS}1</span><span>0</span><span>+1</span></div>`;
+  host.appendChild(wrap);
+  const val=$(".g-val",wrap),mark=$(".g-mark",wrap),fill=$(".g-fill",wrap);
+  return{set(v){val.textContent=sgn(v);if(isNaN(v)){mark.style.left="50%";fill.style.width="0";return}const p=(v+1)/2*100;mark.style.left=p+"%";fill.style.left=Math.min(50,p)+"%";fill.style.width=Math.abs(p-50)+"%"}}
+}
+const gaugePair=host=>({p:Gauge(host,{label:"Pearson r",cls:"p1"}),s:Gauge(host,{label:"Spearman ρ",cls:"p2"}),
+  set(x,y){this.p.set(pearson(x,y));this.s.set(spearman(x,y))}});
+
+/* ---------- theme ---------- */
+const root=document.documentElement,themeBtn=$("#themeBtn");
+const isDark=()=>root.dataset.theme?root.dataset.theme==="dark":matchMedia("(prefers-color-scheme: dark)").matches;
+function labelTheme(){themeBtn.textContent=isDark()?"Light mode":"Dark mode"}
+try{const t=localStorage.getItem("corr-theme");if(t)root.dataset.theme=t}catch(e){}
+themeBtn.addEventListener("click",()=>{const t=isDark()?"light":"dark";root.dataset.theme=t;try{localStorage.setItem("corr-theme",t)}catch(e){}labelTheme();document.dispatchEvent(new Event("themechange"))});
+labelTheme();
+
+/* ---------- math snippets ---------- */
+const sb=(a,b)=>`<i>${a}</i><sub>${b}</sub>`;
+const bar=a=>`<span class="bar"><i>${a}</i></span>`;
+const sum=(t,b)=>`<span class="sum"><small>${t}</small><b>∑</b><small>${b}</small></span>`;
+const fr=(n,d)=>`<span class="fr"><span>${n}</span><span>${d}</span></span>`;
+const rt=x=>`<span class="sq"><span>√</span><span class="rt">${x}</span></span>`;
+const dxs=`(${sb("x","i")} ${MINUS} ${bar("x")})`,dys=`(${sb("y","i")} ${MINUS} ${bar("y")})`;
+const EQ={
+  pearson:`<i>r</i> = ${fr(`${sum("<i>n</i>","<i>i</i>=1")} ${dxs}${dys}`,`${rt(`${sum("<i>n</i>","<i>i</i>=1")} ${dxs}<sup>2</sup>`)} ${rt(`${sum("<i>n</i>","<i>i</i>=1")} ${dys}<sup>2</sup>`)}`)}`,
+  pearson2:`<i>r</i> = ${fr("cov(<i>X</i>, <i>Y</i>)",`<i>s<sub>X</sub></i> <i>s<sub>Y</sub></i>`)} &nbsp;=&nbsp; ${fr("1",`<i>n</i> ${MINUS} 1`)} ${sum("<i>n</i>","<i>i</i>=1")} <i>z</i><sub><i>x<sub>i</sub></i></sub> <i>z</i><sub><i>y<sub>i</sub></i></sub>`,
+  spearman:`<i>ρ</i> = <i>r</i>( rank(<i>x</i>), rank(<i>y</i>) )`,
+  spearman2:`<i>ρ</i> = 1 ${MINUS} ${fr(`6 ${sum("<i>n</i>","<i>i</i>=1")} <i>d<sub>i</sub></i><sup>2</sup>`,`<i>n</i> ( <i>n</i><sup>2</sup> ${MINUS} 1 )`)}`,
+  spearman3:`<i>ρ</i> = <i>r</i>( rank(<i>x</i>), rank(<i>y</i>) ) &nbsp;&nbsp;|&nbsp;&nbsp; <i>ρ</i> = 1 ${MINUS} ${fr(`6 ${sum("<i>n</i>","<i>i</i>=1")} <i>d<sub>i</sub></i><sup>2</sup>`,`<i>n</i> ( <i>n</i><sup>2</sup> ${MINUS} 1 )`)} &nbsp;(no ties)`
+};
+$$("[data-eq]").forEach(e=>e.innerHTML=EQ[e.dataset.eq]);
+</script>
+<script>
+"use strict";
+const CODE={
+what:`import numpy as np
+import matplotlib.pyplot as plt
+
+rng = np.random.default_rng(0)
+x = rng.normal(size=200)
+
+fig, axes = plt.subplots(1, 4, figsize=(14, 3))
+for ax, (r_true, title) in zip(axes, [(0.95, "strong +"), (0.5, "weak +"), (0.0, "none"), (-0.8, "strong -")]):
+    y = r_true * x + np.sqrt(1 - r_true**2) * rng.normal(size=200)
+    ax.scatter(x, y, s=8)
+    ax.set_title(f"{title}  (r = {np.corrcoef(x, y)[0, 1]:.2f})")
+plt.tight_layout()
+plt.show()`,
+pearson:`import numpy as np
+from scipy import stats
+
+hours = np.array([1, 2, 3, 4, 5])
+score = np.array([2, 4, 5, 4, 5])
+
+r, p = stats.pearsonr(hours, score)
+print(r)   # 0.7746
+print(p)   # 0.124  (only 5 points, so not significant)
+
+print(np.corrcoef(hours, score)[0, 1])   # 0.7746, same thing`,
+breaks:`import numpy as np
+from scipy import stats
+
+# Always rising, not linear
+x = np.arange(1, 9); y = np.exp(x)
+print(stats.pearsonr(x, y)[0])    # ~0.776
+print(stats.spearmanr(x, y)[0])   # 1.0
+
+# One bad point
+y_clean = np.array([2, 3, 3, 4, 5, 5, 6, 7])
+y_bad = y_clean.copy(); y_bad[-1] = -20
+print(stats.pearsonr(x, y_clean)[0], stats.pearsonr(x, y_bad)[0])     # 0.986, -0.448
+print(stats.spearmanr(x, y_clean)[0], stats.spearmanr(x, y_bad)[0])   # 0.988, 0.313
+
+# U-shape
+xu = np.arange(-5, 6)
+print(stats.pearsonr(xu, xu**2)[0])   # ~0`,
+spearman:`import numpy as np
+import pandas as pd
+from scipy import stats
+
+month   = np.array([1, 2, 3, 4, 5])
+signups = np.array([10, 30, 20, 50, 200])
+
+rho, p = stats.spearmanr(month, signups)
+print(rho, p)                              # 0.9, 0.037
+print(stats.pearsonr(month, signups)[0])   # 0.805
+
+# Spearman really is "Pearson on ranks"
+print(stats.pearsonr(stats.rankdata(month), stats.rankdata(signups))[0])   # 0.9
+
+print(stats.rankdata([10, 20, 20, 40]))    # [1.  2.5 2.5 4. ]
+
+df = pd.DataFrame({"hours": [1, 2, 3, 4, 5], "score": [2, 4, 5, 4, 5], "signups": [10, 30, 20, 50, 200]})
+print(df.corr(method="pearson").round(2))
+print(df.corr(method="spearman").round(2))`,
+choose:`from scipy import stats
+
+def compare(x, y):
+    r = stats.pearsonr(x, y)[0]
+    rho = stats.spearmanr(x, y)[0]
+    print(f"Pearson {r:.2f} | Spearman {rho:.2f} | gap {abs(rho - r):.2f}")`,
+cautions:`import seaborn as sns
+import matplotlib.pyplot as plt
+
+corr = df.corr(method="spearman")   # or "pearson"
+sns.heatmap(corr, annot=True, vmin=-1, vmax=1, cmap="coolwarm")
+plt.show()`
+};
+const CONF={
+what:[["Correlation tells me how steep the relationship is.","No. It measures how tight the band of dots is. A shallow band that is very tight can still have r near 1. Steepness is the slope."],
+ ["r = 0 means there is no relationship at all.","It means no relationship of the measured type. A U-shape has r = 0 and is perfectly predictable."],
+ ["−0.9 is weaker than +0.3 because it is negative.","The sign is direction only. Strength is the size, so −0.9 is much stronger."]],
+pearson:[["Pearson works on any kind of relationship.","It measures linear association only. A perfect curve can score low."],
+ ["r = 0.775 means 77.5% is explained.","The share of variation accounted for is r², about 0.60, and \"explained\" is not \"caused\"."],
+ ["The r from my data is the true correlation.","It is computed from a sample, so it is noisy. Always think about how many points you have."]],
+breaks:[["r = 0 means the variables are independent.","No. y = x² has r = 0 and is completely determined by x."],
+ ["r is high, so a straight line is a good model.","Not necessarily. Check the plot for curvature and outliers."],
+ ["Remove the outlier so the correlation looks better.","Only if you have a reason to believe it is an error, not because it is inconvenient."]],
+spearman:[["Spearman is more accurate than Pearson.","It answers a different question: monotonic versus linear."],
+ ["Spearman detects every pattern.","It still misses non-monotonic patterns such as a U-shape."],
+ ["Spearman keeps all the information, and the shortcut formula always works.","It throws away magnitude. The d² shortcut is exact only when there are no ties."]],
+choose:[["Use Spearman whenever the data is not normal.","Roughly right, but the real question is whether the pattern is linear or merely monotonic."],
+ ["A big gap between the two coefficients means I made a mistake.","The gap is information. It usually signals curvature or an outlier. Go look at the plot."]],
+cautions:[["Highly correlated features should both be kept, since both predict the target.","Often one is redundant. Check, do not assume."],
+ ["No correlation with the target, so drop the feature.","A non-monotonic or interaction effect can hide behind r ≈ 0. Click \"odd_feat\" in the matrix above."],
+ ["A tiny p-value means a big, important effect.","With a huge dataset even r = 0.02 can be significant yet useless. Report the size of r."]]
+};
+const QS={
+what:[["Which is stronger, r = −0.8 or r = +0.5?","r = −0.8. Strength is the size, the sign is direction."],["Name two things in your life that are negatively correlated.","Open answer. Examples: hours of TV and exam score, temperature and heating bill."]],
+pearson:[["If I measure study time in minutes instead of hours, does r change?","No. Units cancel. The covariance does change, as the units card shows."],
+ ["If r = 0.775, can I say 77.5% of scores are explained by hours?","No. The share of variation is r² ≈ 0.60, and explained is not caused."],
+ ["What would the quadrant votes look like if r were near −1?","Almost all dots in the top-left and bottom-right quadrants."]],
+breaks:[["Before computing any correlation, what is the first thing to do?","Plot the data."],["Sketch data with r = 0 but a clear relationship.","A U-shape, such as y = x²."]],
+spearman:[["If I take the logarithm of y, does Spearman change? Does Pearson?","Spearman does not change, because ranks do not change. Pearson does."],
+ ["Two judges rank 10 dishes. How would you measure their agreement?","Spearman correlation between the two rankings."],
+ ["Why can a huge outlier hurt Pearson more than Spearman?","Pearson uses the raw size of the deviation. Spearman uses only its rank."]],
+choose:[["House size against price, with a few mansions. Which first?","Compute both. Expect Spearman to be steadier."],
+ ["Customer satisfaction on a 1 to 5 scale against number of support tickets. Which one?","Spearman, because the scale is ordinal."]],
+cautions:[["Cities with more firefighters have more fire damage. Should we cut firefighters?","No. Bigger fires bring more firefighters: a confounder."],
+ ["Two of your features have r = 0.98. What do you do?","Keep one, or combine them, and check the model."]]
+};
+$$("[data-code]").forEach(h=>{const d=document.createElement("details");d.className="code";d.innerHTML=`<summary>Show Python</summary><pre></pre>`;const pre=$("pre",d);pre.textContent=CODE[h.dataset.code];
+  const b=document.createElement("button");b.className="btn cp";b.type="button";b.textContent="Copy";b.onclick=()=>{const t=CODE[h.dataset.code];const done=()=>{b.textContent="Copied";setTimeout(()=>b.textContent="Copy",1200)};
+    if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(t).then(done,()=>fb(t,done));else fb(t,done)};
+  function fb(t,done){const a=document.createElement("textarea");a.value=t;a.style.position="fixed";a.style.opacity="0";document.body.appendChild(a);a.select();try{document.execCommand("copy");done()}catch(e){}a.remove()}
+  pre.prepend(b);h.appendChild(d)});
+$$("[data-conf]").forEach(h=>{const w=document.createElement("div");w.className="cf";CONF[h.dataset.conf].forEach(([m,r])=>{const b=document.createElement("button");b.type="button";b.className="flip";b.setAttribute("aria-expanded","false");
+  b.innerHTML=`<span class="tag">Myth</span><span class="my"></span><span class="hint">Click to see the reality</span><span class="re"><span class="tag">Reality</span><span class="rt2"></span></span>`;
+  $(".my",b).textContent=m;$(".rt2",b).textContent=r;b.onclick=()=>b.setAttribute("aria-expanded",b.getAttribute("aria-expanded")==="true"?"false":"true");w.appendChild(b)});h.appendChild(w)});
+$$("[data-qs]").forEach(h=>{const w=document.createElement("div");w.className="qs";QS[h.dataset.qs].forEach(([q,a])=>{const d=document.createElement("details");d.innerHTML=`<summary></summary><p></p>`;$("summary",d).textContent=q;$("p",d).textContent=a;w.appendChild(d)});h.appendChild(w)});
+</script>
+<script>
+"use strict";
+/* ===== HERO ===== */
+const HERO0=[[1,2],[2,4],[3,5],[4,4],[5,5]];
+const heroPts=HERO0.map(([x,y])=>({x,y}));
+const heroG=gaugePair($("#heroGauges"));
+const heroPlot=new Scatter($("#heroPlot"),{xd:[0,6],yd:[0,6],ticksX:[1,2,3,4,5],ticksY:[1,2,3,4,5],xlabel:"hours studied",ylabel:"quiz score (out of 5)",draggable:true,r:9,label:"Five students, draggable dots",
+  tip:(i,p)=>`Student ${i+1}: ${p.x.toFixed(1)} h, score ${p.y.toFixed(1)}`,onChange:()=>heroUpd()});
+function heroUpd(){heroG.set(heroPts.map(p=>p.x),heroPts.map(p=>p.y))}
+heroPlot.set(heroPts);heroUpd();
+$("#heroReset").onclick=()=>{HERO0.forEach(([x,y],i)=>{heroPts[i].x=x;heroPts[i].y=y});heroPlot.render();heroUpd()};
+
+/* ===== 1 WHAT ===== */
+const B1=cloudBase(70,7);
+const cloudG=gaugePair($("#cloudGauges"));
+const cloudPlot=new Scatter($("#cloudPlot"),{xd:[-3.5,3.5],yd:[-3.5,3.5],noTicks:true,xlabel:"hours studied",ylabel:"quiz score",r:4.5,label:"Scatter cloud with adjustable correlation",
+  tip:null});
+function strengthIdx(a){return a<.2?0:a<.4?1:a<.6?2:a<.8?3:4}
+const STRW=["negligible or very weak","weak","moderate","strong","very strong"];
+function cloudUpd(){const r=+$("#rSlider").value;$("#rLabel").textContent=sgn(r);const pts=cloud(B1,r);cloudPlot.set(pts);cloudG.set(pts.map(p=>p.x),pts.map(p=>p.y));
+  $("#dirChip").textContent=r>.05?"up together":r<-.05?"opposite directions":"no pattern";
+  const k=strengthIdx(Math.abs(r));$("#strChip").textContent=STRW[k];$$("#strTbl tbody tr").forEach((tr,i)=>tr.classList.toggle("hi",i===k))}
+$("#rSlider").addEventListener("input",cloudUpd);cloudUpd();
+
+/* guess game */
+const guessPlot=new Scatter($("#guessPlot"),{xd:[-3.5,3.5],yd:[-3.5,3.5],noTicks:true,xlabel:"x",ylabel:"y",r:4.5,label:"Cloud with hidden correlation"});
+let gRound={r:0,done:false},gStats={n:0,err:0};
+function gNew(){gRound={r:Math.round((Math.random()*2-1)*20)/20,done:false};const B=cloudBase(60,Math.floor(Math.random()*1e9));guessPlot.set(cloud(B,gRound.r));
+  $("#guessSl").value=0;$("#guessLab").textContent="0.00";$("#guessOut").textContent="Look at the cloud, set your guess, then check.";$("#guessCheck").disabled=false}
+$("#guessSl").addEventListener("input",e=>$("#guessLab").textContent=sgn(+e.target.value).replace("+",""));
+$("#guessCheck").onclick=()=>{if(gRound.done)return;gRound.done=true;const g=+$("#guessSl").value,e=Math.abs(g-gRound.r);gStats.n++;gStats.err+=e;
+  $("#guessOut").innerHTML=`True correlation: <b>${sgn(gRound.r)}</b>. You were off by <b>${e.toFixed(2)}</b>. ${e<=.1?"Great eye.":e<=.2?"Close.":"Look at how tight the band is, not how steep."}`;
+  $("#guessTally").textContent=`Rounds: ${gStats.n}. Average error: ${(gStats.err/gStats.n).toFixed(2)}.`;$("#guessCheck").disabled=true};
+$("#guessNext").onclick=gNew;gNew();
+
+/* ===== 2 PEARSON: quadrant ===== */
+const QP={start:[[1,2],[2,1.5],[3,4],[4,3],[5,5.5],[6,5],[7,7.5],[8,6.5]],
+  up:[[1,1],[2,2.2],[3,2.8],[4,4.2],[5,5],[6,6.3],[7,7],[8,8]],
+  mix:[[1,6],[2,2],[3,7],[4,3],[5,6.5],[6,2.5],[7,5],[8,4]],
+  down:[[1,8],[2,7.1],[3,6.2],[4,5.5],[5,4.2],[6,3.3],[7,2.1],[8,1]]};
+const quadPts=QP.start.map(([x,y])=>({x,y}));
+const quadG=Gauge($("#quadGauges"),{label:"Pearson r",cls:"p1"});
+const quadPlot=new Scatter($("#quadPlot"),{xd:[0,9],yd:[0,9],xlabel:"x",ylabel:"y",quad:true,draggable:true,r:8,label:"Draggable dots over four quadrants",ticksX:[0,3,6,9],ticksY:[0,3,6,9],
+  tip:(i,p)=>`(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`,onChange:()=>quadUpd()});
+function quadUpd(){const x=quadPts.map(p=>p.x),y=quadPts.map(p=>p.y);quadG.set(pearson(x,y));
+  const mx=mean(x),my=mean(y);let pos=0,neg=0,tot=0;quadPts.forEach(p=>{const v=(p.x-mx)*(p.y-my);tot+=v;if(v>1e-9)pos++;else if(v<-1e-9)neg++});
+  $("#quadKv").innerHTML=`<span>Votes positive</span><span>${pos}</span><span>Votes negative</span><span>${neg}</span><span>Vote total (top of formula)</span><span>${sgn(tot).replace("+","")}</span>`}
+quadPlot.set(quadPts);quadUpd();
+$$("[data-qp]").forEach(b=>b.onclick=()=>{QP[b.dataset.qp].forEach(([x,y],i)=>{quadPts[i].x=x;quadPts[i].y=y});quadPlot.render();quadUpd()});
+
+/* ===== 2 PEARSON: worked example ===== */
+const EX=[[1,2],[2,4],[3,5],[4,4],[5,5]];let exShown=0;
+const exPts=EX.map(([x,y])=>({x,y}));
+const exPlot=new Scatter($("#exPlot"),{xd:[0,6],yd:[0,6],ticksX:[1,2,3,4,5],ticksY:[1,2,3,4,5],xlabel:"hours studied",ylabel:"quiz score",means:true,r:8,label:"Five students and the two means",
+  cls:i=>{if(i>=exShown)return"hid";const v=(EX[i][0]-3)*(EX[i][1]-4);return(v>0?"pos":v<0?"neg":"zero")+(i===exShown-1?" hl":"")}});
+exPlot.set(exPts);
+function exRender(){
+  let h=`<thead><tr><th>#</th><th class="n">x</th><th class="n">y</th><th class="n">x${MINUS}x̄</th><th class="n">y${MINUS}ȳ</th><th class="n">product</th><th class="n">(x${MINUS}x̄)²</th><th class="n">(y${MINUS}ȳ)²</th></tr></thead><tbody>`;
+  let sp=0,sx=0,sy=0;
+  const F=v=>v<0?MINUS+(-v):v;
+  EX.forEach(([x,y],i)=>{const on=i<exShown,dx=x-3,dy=y-4;if(on){sp+=dx*dy;sx+=dx*dx;sy+=dy*dy}
+    h+=`<tr class="${on?(i===exShown-1?"hi":""):"hide"}"><td>${i+1}</td><td class="n">${on?x:"·"}</td><td class="n">${on?y:"·"}</td><td class="n">${on?F(dx):"·"}</td><td class="n">${on?F(dy):"·"}</td><td class="n">${on?F(dx*dy):"·"}</td><td class="n">${on?dx*dx:"·"}</td><td class="n">${on?dy*dy:"·"}</td></tr>`});
+  h+=`<tr><th colspan="5">Sum</th><th class="n">${sp}</th><th class="n">${sx}</th><th class="n">${sy}</th></tr></tbody>`;
+  $("#exTbl").innerHTML=h;exPlot.render();
+  $("#exResult").innerHTML=exShown<5?`Means: x̄ = 3 and ȳ = 4. Students added: <b>${exShown}</b> of 5.`:
+    `<b>r</b> = ${sp} / (√${sx} · √${sy}) = ${sp} / √${sx*sy} = <b>${(sp/Math.sqrt(sx*sy)).toFixed(3)}</b>. Strong positive, though not perfect: student 4 studied more than student 3 and scored lower.`}
+$("#exNext").onclick=()=>{if(exShown<5)exShown++;exRender()};$("#exAll").onclick=()=>{exShown=5;exRender()};$("#exReset").onclick=()=>{exShown=0;exRender()};exRender();
+
+/* units */
+const UN=[{xs:1,ys:1,t:"hours, score out of 5"},{xs:60,ys:1,t:"minutes, score out of 5"},{xs:60,ys:20,t:"minutes, score out of 100"}];
+function unitUpd(k){const u=UN[k];const x=EX.map(p=>p[0]*u.xs),y=EX.map(p=>p[1]*u.ys);
+  $("#unitKv").innerHTML=`<span>Covariance</span><span>${cov(x,y).toFixed(2)}</span><span>Pearson r</span><span>${pearson(x,y).toFixed(3)}</span>`;
+  $$("#unitSeg .btn").forEach((b,i)=>b.classList.toggle("on",i===k))}
+$$("#unitSeg .btn").forEach(b=>b.onclick=()=>unitUpd(+b.dataset.u));unitUpd(0);
+</script>
+<script>
+"use strict";
+/* ===== 3 BREAKS ===== */
+const AX=[10,8,13,9,11,14,6,4,12,7,5];
+const ANS=[
+ [8.04,6.95,7.58,8.81,8.33,9.96,7.24,4.26,10.84,4.82,5.68],
+ [9.14,8.14,8.74,8.77,9.26,8.10,6.13,3.10,9.13,7.26,4.74],
+ [7.46,6.77,12.74,7.11,7.81,8.84,6.08,5.39,8.15,6.42,5.73],
+ [6.58,5.76,7.71,8.84,8.47,7.04,5.25,12.50,5.56,7.91,6.89]];
+const AXX=[AX,AX,AX,[8,8,8,8,8,8,8,19,8,8,8]];
+const CASES={
+ exp:{x:[1,2,3,4,5,6,7,8],y:()=>[1,2,3,4,5,6,7,8].map(Math.exp),xd:[0,9],yd:[0,3300],xl:"x",yl:"y = e^x",
+   txt:()=>"Higher x always means higher y, so the relationship is perfectly predictable. But it is not a straight line, so Pearson is well below 1. Spearman only checks the order, so it is exactly 1."},
+ out:{x:[1,2,3,4,5,6,7,8],y:()=>[2,3,3,4,5,5,6,7],xd:[0,9],yd:[-25,12],xl:"x",yl:"y",
+   txt:(pts)=>{const x=pts.map(p=>p.x),y=pts.map(p=>p.y);const dp=pearson(x,y),ds=spearman(x,y);
+     return `Clean data gives about +0.99 for both. Drag the last dot down, or press the button. Right now Pearson has moved ${Math.abs(dp-0.9864).toFixed(2)} from its clean value, Spearman ${Math.abs(ds-0.9880).toFixed(2)}. With the glitch at −20, Pearson flips to −0.45 while Spearman only falls to +0.31: it cares about the glitch's rank, not how extreme it is.`}},
+ u:{x:[-5,-4,-3,-2,-1,0,1,2,3,4,5],y:()=>[-5,-4,-3,-2,-1,0,1,2,3,4,5].map(v=>v*v),xd:[-6,6],yd:[-2,28],xl:"x",yl:"y = x²",
+   txt:()=>"A perfect, completely deterministic relationship, yet both coefficients sit near 0. Down then up is not a consistent trend. Neither Pearson nor Spearman can detect non-monotonic patterns."}
+};
+let caseKey="exp",casePts=[],casePlots=[];
+const caseG=gaugePair($("#caseGauges"));
+function caseBuild(){
+  const host=$("#casePlots");host.textContent="";casePlots=[];casePts=[];
+  const gh=$("#caseGauges");
+  if(caseKey==="ans"){
+    gh.style.display="none";
+    const grid=document.createElement("div");grid.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:10px";host.appendChild(grid);
+    ANS.forEach((ys,k)=>{const cell=document.createElement("div");const cap=document.createElement("div");cap.className="read";cap.style.marginBottom="2px";const pl=document.createElement("div");cell.append(cap,pl);grid.appendChild(cell);
+      const pts=AXX[k].map((x,i)=>({x,y:ys[i]}));
+      const sc=new Scatter(pl,{w:300,h:230,ml:34,mr:8,mt:8,mb:30,xd:[2,21],yd:[2,14],ticksX:[5,10,15,20],ticksY:[4,8,12],xlabel:"x",ylabel:"y",r:4.5,draggable:true,label:`Anscombe dataset ${["I","II","III","IV"][k]}`,
+        tip:(i,p)=>`(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`,onChange:()=>upCap()});
+      sc.set(pts);casePlots.push(sc);casePts.push(pts);
+      const upCap=()=>{const x=pts.map(p=>p.x),y=pts.map(p=>p.y);cap.innerHTML=`<b>${["I","II","III","IV"][k]}</b>: <span style="color:var(--s1)">r ${sgn(pearson(x,y))}</span>, <span style="color:var(--s2)">ρ ${sgn(spearman(x,y))}</span>`};upCap()});
+    $("#caseText").innerHTML="Four datasets with almost identical Pearson r (about 0.816) and four very different pictures: a clean line, a smooth curve, a line with one outlier, and a vertical stack with one lever-arm point. <b>The number alone can hide the story.</b>";
+    return}
+  gh.style.display="";const c=CASES[caseKey];const pts=c.x.map((x,i)=>({x,y:c.y()[i]}));casePts=[pts];
+  const sc=new Scatter(host,{xd:c.xd,yd:c.yd,xlabel:c.xl,ylabel:c.yl,draggable:true,r:7,label:"Draggable case study",tip:(i,p)=>`(${p.x.toFixed(1)}, ${p.y.toFixed(1)})`,onChange:()=>caseUpd()});
+  sc.set(pts);casePlots=[sc];caseUpd()}
+function caseUpd(){if(caseKey==="ans")return;const pts=casePts[0],x=pts.map(p=>p.x),y=pts.map(p=>p.y);caseG.set(x,y);$("#caseText").innerHTML=CASES[caseKey].txt(pts)}
+$$("#caseSeg .btn").forEach(b=>b.onclick=()=>{caseKey=b.dataset.c;$$("#caseSeg .btn").forEach(q=>q.classList.toggle("on",q===b));$("#caseGlitch").hidden=caseKey!=="out";caseBuild()});
+$("#caseReset").onclick=caseBuild;
+$("#caseGlitch").onclick=()=>{const p=casePts[0][casePts[0].length-1];p.y=-20;casePlots[0].render();caseUpd()};
+caseBuild();
+
+/* ===== 4 SPEARMAN ===== */
+const SP0=[[1,10],[2,30],[3,20],[4,50],[5,200]];
+const spPts=SP0.map(([x,y])=>({x,y}));
+const spG=gaugePair($("#spGauges"));
+const RAWD={xd:[0,6],yd:[0,230]};
+const spPlot=new Scatter($("#spPlot"),{xd:RAWD.xd,yd:RAWD.yd,ticksX:[1,2,3,4,5],xlabel:"month since launch",ylabel:"daily signups",draggable:true,r:9,label:"Months against signups, draggable",
+  tip:(i,p)=>`month ${p.x.toFixed(1)}, ${Math.round(p.y)} signups`,onChange:()=>spUpd()});
+spPlot.set(spPts);
+let spRank=false,spBusy=false;
+function spUpd(){
+  const x=spPts.map(p=>p.x),y=spPts.map(p=>p.y),rx=ranks(x),ry=ranks(y),n=x.length;
+  spG.set(x,y);
+  const ties=new Set(rx).size<n||new Set(ry).size<n;
+  let h=`<thead><tr><th class="n">month</th><th class="n">signups</th><th class="n">rank of month</th><th class="n">rank of signups</th><th class="n">d</th><th class="n">d²</th></tr></thead><tbody>`;let sd=0;
+  for(let i=0;i<n;i++){const d=rx[i]-ry[i];sd+=d*d;h+=`<tr><td class="n">${x[i].toFixed(spRank?1:1)}</td><td class="n">${Math.round(y[i])}</td><td class="n">${rx[i]}</td><td class="n">${ry[i]}</td><td class="n">${d<0?MINUS:""}${Math.abs(d)}</td><td class="n">${d*d}</td></tr>`}
+  h+=`<tr><th colspan="5">Sum of d²</th><th class="n">${sd}</th></tr></tbody>`;$("#spTbl").innerHTML=h;
+  const rho=spearman(x,y),pr=pearson(x,y);
+  $("#spNote").innerHTML=(ties?`There are ties, so the shortcut formula is not exact. Pearson on the ranks gives <b>${rho.toFixed(3)}</b>.`:
+    `Shortcut: 1 ${MINUS} 6·${sd} / (${n}·${n*n-1}) = <b>${(1-6*sd/(n*(n*n-1))).toFixed(3)}</b>. Pearson on the ranks: <b>${rho.toFixed(3)}</b>. Same number.`)+` Pearson on the raw values: <b>${pr.toFixed(3)}</b>.`}
+spUpd();
+$("#spToggle").onclick=()=>{if(spBusy)return;spBusy=true;
+  const from=spPts.map(p=>({x:p.x,y:p.y})),rx=ranks(spPts.map(p=>p.x)),ry=ranks(spPts.map(p=>p.y)),to=spPts.map((p,i)=>({x:rx[i],y:ry[i]}));
+  const n=spPts.length,RD={xd:[.5,n+.5],yd:[.5,n+.5]};
+  const goRank=!spRank;const A=goRank?from:to,Bp=goRank?to:from,D0=goRank?RAWD:RD,D1=goRank?RD:RAWD;
+  spPlot.o.draggable=false;spPlot.svg.classList.remove("drag");
+  const tmp=spPts.map(()=>({x:0,y:0}));spPlot.set(tmp);
+  tween(700,t=>{tmp.forEach((p,i)=>{p.x=A[i].x+(Bp[i].x-A[i].x)*t;p.y=A[i].y+(Bp[i].y-A[i].y)*t});
+    spPlot.xd=[0,1].map(k=>D0.xd[k]+(D1.xd[k]-D0.xd[k])*t);spPlot.yd=[0,1].map(k=>D0.yd[k]+(D1.yd[k]-D0.yd[k])*t);spPlot.drawStatic(false);spPlot.render()},
+   ()=>{spRank=goRank;
+     const ticks=[1,2,3,4,5];
+     if(spRank){spPlot.setDomain(RD.xd,RD.yd,{tx:ticks,ty:ticks,xlabel:"rank of month",ylabel:"rank of signups"});spPlot.set(to.map(p=>({...p})));}
+     else{spPlot.setDomain(RAWD.xd,RAWD.yd,{tx:ticks,ty:null,xlabel:"month since launch",ylabel:"daily signups"});spPlot.o.draggable=true;spPlot.svg.classList.add("drag");spPlot.set(spPts)}
+     $("#spToggle").textContent=spRank?"Back to raw values":"Convert to ranks";spBusy=false})};
+$("#spReset").onclick=()=>{if(spRank||spBusy)return;SP0.forEach(([x,y],i)=>{spPts[i].x=x;spPts[i].y=y});spPlot.render();spUpd()};
+
+/* ties */
+function tieUpd(){const v=$("#tieIn").value.split(",").map(s=>parseFloat(s)).filter(v=>!isNaN(v));$("#tieOut").innerHTML=v.length?`Values: ${v.join(", ")}<br>Ranks: <b>${ranks(v).join(", ")}</b>`:"Type some numbers separated by commas."}
+$("#tieIn").addEventListener("input",tieUpd);tieUpd();
+
+/* outlier slider */
+const outG=gaugePair($("#outGauges"));
+const outX=[1,2,3,4,5],outBase=[10,30,20,50];
+const outPlot=new Scatter($("#outPlot"),{xd:[0,6],yd:[0,230],ticksX:[1,2,3,4,5],xlabel:"month",ylabel:"signups",r:8,label:"Months against signups with a growing last value",cls:i=>i===4?"o2":""});
+function outUpd(){const V=+$("#outSl").value;$("#outLab").textContent=V;const y=[...outBase,V];
+  outPlot.setDomain([0,6],[0,V*1.12],{ty:null,tx:[1,2,3,4,5]});outPlot.set(outX.map((x,i)=>({x,y:y[i]})));outG.set(outX,y)}
+$("#outSl").addEventListener("input",outUpd);outUpd();
+</script>
+<script>
+"use strict";
+/* ===== 5 CHOOSE: gap chart ===== */
+const DS=[
+ {n:"A: hours vs score",sh:"A: hours, score",x:[1,2,3,4,5],y:[2,4,5,4,5],read:"Close together: a fairly linear story."},
+ {n:"B: months vs signups",sh:"B: months, signups",x:[1,2,3,4,5],y:[10,30,20,50,200],read:"Spearman is higher: rising, but bending, with one big value."},
+ {n:"C: clean data + one bad point",sh:"C: one bad point",x:[1,2,3,4,5,6,7,8],y:[2,3,3,4,5,5,6,-20],read:"Huge gap: go check for an outlier."},
+ {n:"D: always rising curve",sh:"D: rising curve",x:[1,2,3,4,5,6,7,8],y:[1,2,3,4,5,6,7,8].map(Math.exp),read:"Spearman is 1: perfectly ordered, but not a line."}];
+DS.forEach(d=>{d.r=pearson(d.x,d.y);d.s=spearman(d.x,d.y)});
+function gapChart(){
+  const host=$("#gapChart");host.textContent="";const W=720,H=300,ml=44,mr=10,mt=14,mb=50;
+  const svg=S("svg",{viewBox:`0 0 ${W} ${H}`,class:"plot",role:"img","aria-label":"Pearson and Spearman for four datasets"},host);
+  const Y=v=>mt+(1-v)/2*(H-mt-mb);
+  [-1,-.5,0,.5,1].forEach(v=>{S("line",{class:v===0?"ax":"gl",x1:ml,x2:W-mr,y1:Y(v),y2:Y(v)},svg);S("text",{x:ml-8,y:Y(v)+4,"text-anchor":"end"},svg).textContent=v===0?"0":(v<0?MINUS:"")+Math.abs(v)});
+  const gw=(W-ml-mr)/DS.length,bw=34;
+  DS.forEach((d,i)=>{const cx=ml+gw*(i+.5);
+    [[d.r,-bw-3,"var(--s1)","Pearson r"],[d.s,3,"var(--s2)","Spearman ρ"]].forEach(([v,dx,col,nm])=>{
+      const y0=Y(0),y1=Y(v),top=Math.min(y0,y1),h=Math.abs(y1-y0)||1;
+      const r=S("rect",{x:cx+dx,y:top,width:bw,height:h,rx:4,fill:col,tabindex:0},svg);
+      r.setAttribute("aria-label",`${d.n}: ${nm} ${sgn(v)}`);
+      const tp=e=>showTip(`<b>${d.n}</b><br>${nm}: ${sgn(v)}`,e);r.addEventListener("pointerenter",tp);r.addEventListener("pointermove",tp);r.addEventListener("pointerleave",hideTip);
+      S("text",{x:cx+dx+bw/2,y:v>=0?y1-5:y1+14,"text-anchor":"middle",style:"fill:var(--ink);font-weight:600"},svg).textContent=sgn(v)});
+    S("text",{x:cx,y:H-26,"text-anchor":"middle",style:"fill:var(--ink2);font-size:12.5px"},svg).textContent=d.sh})}
+gapChart();
+let gh=`<thead><tr><th>Dataset</th><th class="n" style="color:var(--s1)">Pearson</th><th class="n" style="color:var(--s2)">Spearman</th><th class="n">Gap</th><th>What the gap tells you</th></tr></thead><tbody>`;
+DS.forEach(d=>{gh+=`<tr><td>${d.n}</td><td class="n">${sgn(d.r)}</td><td class="n">${sgn(d.s)}</td><td class="n">${Math.abs(d.s-d.r).toFixed(2)}</td><td>${d.read}</td></tr>`});$("#gapTbl").innerHTML=gh+"</tbody>";
+
+/* wizard */
+function wizUpd(){const f=new FormData($("#wiz"));const sh=f.get("shape"),ou=f.get("out"),od=f.get("ord");let t,d;
+  if(sh==="u"){t="Neither one";d="A pattern that changes direction is invisible to both coefficients. Consider binning, a fitted model, or a measure such as mutual information. And always plot."}
+  else if(od==="yes"){t="Spearman";d="Ratings and ranks are ordinal: the distances between values are not meaningful, only the order is."}
+  else if(ou==="yes"){t="Spearman (and compute Pearson too)";d="Outliers and skew distort Pearson far more. A big gap between the two is itself a clue to inspect the plot."}
+  else if(sh==="curve"){t="Spearman";d="The pattern is monotonic but not linear, which is exactly what Spearman measures."}
+  else{t="Pearson";d="Roughly linear, no wild outliers, real measurements: Pearson is the natural fit. Computing Spearman as well costs nothing."}
+  $("#verdict").innerHTML=`<b>${t}</b><p style="margin:8px 0 0">${d}</p>`}
+$("#wiz").addEventListener("change",wizUpd);wizUpd();
+
+/* ===== 6 CONFOUNDER ===== */
+(function(){
+  const r=rng32(99),N=1500,T=[],I=[],Bn=[];for(let i=0;i<N;i++){const t=gauss(r);T.push(t);I.push(t+.6*gauss(r));Bn.push(t+.6*gauss(r))}
+  const pts=T.map((t,i)=>({x:I[i],y:Bn[i]}));
+  const pl=new Scatter($("#confPlot"),{xd:[-4,4],yd:[-4,4],noTicks:true,xlabel:"ice cream sales",ylabel:"sunburns",r:2.6,label:"Ice cream sales against sunburns",cls:i=>pts[i].on?"":"ghost"});
+  function upd(){const v=+$("#confSl").value,w=v/10,all=v>=30;$("#confLab").textContent=all?"all days":`only days within ±${w.toFixed(1)} σ of average`;
+    const xs=[],ys=[];pts.forEach((p,i)=>{p.on=all||Math.abs(T[i])<w;if(p.on){xs.push(p.x);ys.push(p.y)}});pl.set(pts);
+    const c=pearson(xs,ys);$("#confR").textContent="r = "+c.toFixed(2);
+    $("#confOut").innerHTML=all?`Across all days, ice cream and sunburns look strongly linked (<b>${sgn(c)}</b>).`:`Using only ${xs.length} days with nearly the same weather: <b>${sgn(c)}</b>. Hold the hidden driver fixed and the link fades.`}
+  $("#confSl").addEventListener("input",upd);upd()})();
+
+/* ===== 6 SMALL SAMPLES ===== */
+(function(){
+  const NS_=[5,10,30,100,500];let n=5;
+  const seg=$("#nSeg");NS_.forEach(v=>{const b=document.createElement("button");b.className="btn"+(v===5?" on":"");b.type="button";b.textContent="n = "+v;b.onclick=()=>{n=v;$$(".btn",seg).forEach(q=>q.classList.toggle("on",q===b));run();draw()};seg.appendChild(b)});
+  const pl=new Scatter($("#simPlot"),{xd:[-3.5,3.5],yd:[-3.5,3.5],noTicks:true,xlabel:"variable A (random)",ylabel:"variable B (random)",r:5,label:"One sample of two unrelated variables"});
+  function draw(){const x=[],y=[];for(let i=0;i<n;i++){x.push(Math.max(-3.4,Math.min(3.4,gauss(Math.random))));y.push(Math.max(-3.4,Math.min(3.4,gauss(Math.random))))}
+    pl.set(x.map((v,i)=>({x:v,y:y[i]})));const c=pearson(x,y);$("#simOne").innerHTML=`This sample, with n = ${n}, has <b>r = ${sgn(c)}</b>, and the two variables are unrelated by construction.`}
+  const hist=$("#simHist");
+  function run(){const R=2000,rs=[];for(let k=0;k<R;k++){const x=[],y=[];for(let i=0;i<n;i++){x.push(gauss(Math.random));y.push(gauss(Math.random))}rs.push(pearson(x,y))}
+    const bins=new Array(20).fill(0);rs.forEach(v=>{bins[Math.min(19,Math.max(0,Math.floor((v+1)/.1)))]++});
+    const W=360,H=230,ml=40,mr=8,mt=10,mb=34,mx=Math.max(...bins);hist.textContent="";
+    const svg=S("svg",{viewBox:`0 0 ${W} ${H}`,class:"plot",role:"img","aria-label":"Histogram of correlations between unrelated variables"},hist);
+    const Y=v=>H-mb-v/mx*(H-mt-mb);
+    niceTicks(0,mx,4).forEach(v=>{S("line",{class:"gl",x1:ml,x2:W-mr,y1:Y(v),y2:Y(v)},svg);S("text",{x:ml-6,y:Y(v)+4,"text-anchor":"end"},svg).textContent=v});
+    S("line",{class:"ax",x1:ml,x2:W-mr,y1:H-mb,y2:H-mb},svg);const bw=(W-ml-mr)/20;
+    bins.forEach((c,i)=>{const lo=-1+i*.1,hi=lo+.1,ext=Math.abs(lo+.05)>.5;const rc=S("rect",{x:ml+i*bw+1,y:Y(c),width:bw-2,height:H-mb-Y(c),rx:2,fill:ext?"var(--s2)":"var(--s1)"},svg);
+      const tp=e=>showTip(`r from ${sgn(lo)} to ${sgn(hi)}<br>${c} of ${R} samples`,e);rc.addEventListener("pointerenter",tp);rc.addEventListener("pointermove",tp);rc.addEventListener("pointerleave",hideTip)});
+    [-1,-.5,0,.5,1].forEach(v=>S("text",{x:ml+(v+1)/2*(W-ml-mr),y:H-mb+16,"text-anchor":"middle"},svg).textContent=v===0?"0":(v<0?MINUS:"")+Math.abs(v));
+    S("text",{class:"axl",x:(ml+W-mr)/2,y:H-4,"text-anchor":"middle"},svg).textContent="correlation r";
+    const f=rs.filter(v=>Math.abs(v)>.5).length/R*100;
+    $("#simOut").innerHTML=`With n = ${n}, about <b>${f<.05?"0":f<1?f.toFixed(1):Math.round(f)}%</b> of 2,000 pairs of unrelated variables showed |r| &gt; 0.5 by luck alone.`}
+  $("#simDraw").onclick=draw;run();draw()})();
+
+/* ===== 6 HEATMAP ===== */
+(function(){
+  const r=rng32(42),N=300,sqft=[],rooms=[],age=[],odd=[],price=[],m2=[];
+  for(let i=0;i<N;i++){const g=gauss(r),s=1500*Math.exp(.35*gauss(r));sqft.push(s);rooms.push(Math.max(1,Math.round(s/600+.7*gauss(r))));age.push(50*r());const u=2*r()-1;odd.push(u);
+    price.push(.1*s-age[i]+200*u*u+30*g);m2.push(s*.0929)}
+  const cols=[["sqft",sqft],["sqft_m2",m2],["rooms",rooms],["age",age],["odd_feat",odd],["price",price]];
+  const k=cols.length;let method="p",sel=[4,5];
+  const C=(m)=>cols.map(a=>cols.map(b=>m==="p"?pearson(a[1],b[1]):spearman(a[1],b[1])));
+  const hex=n=>getComputedStyle(root).getPropertyValue(n).trim();
+  const rgb=h=>{h=h.replace("#","");return[0,2,4].map(i=>parseInt(h.substr(i,2),16))};
+  const mixc=(a,b,t)=>a.map((v,i)=>Math.round(v+(b[i]-v)*t));
+  const lum=c=>{const f=v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)};return .2126*f(c[0])+.7152*f(c[1])+.0722*f(c[2])};
+  const host=$("#heat"),pairHost=$("#pairPlot");
+  const pg=gaugePair($("#pairGauges"));
+  const PP=new Scatter(pairHost,{w:360,h:250,ml:40,mr:10,mt:10,mb:34,noTicks:true,r:2.6,label:"Selected feature pair",xlabel:"",ylabel:""});
+  function pair(){const [i,j]=sel;const x=cols[i][1],y=cols[j][1];const pad=a=>{const lo=Math.min(...a),hi=Math.max(...a),p=(hi-lo)*.06||1;return[lo-p,hi+p]};
+    PP.setDomain(pad(x),pad(y),{xlabel:cols[i][0],ylabel:cols[j][0],ticks:false});PP.set(x.map((v,q)=>({x:v,y:y[q]})));pg.set(x,y);
+    const rp=pearson(x,y),rs=spearman(x,y);let t=`<b>${cols[i][0]}</b> vs <b>${cols[j][0]}</b>. `;
+    if(i===j)t+="A feature always matches itself perfectly.";
+    else if(Math.abs(rp)>.95)t+="Nearly identical information: a redundant pair. Keep one.";
+    else if(Math.abs(rp)<.1&&Math.abs(rs)<.1&&(cols[i][0]==="odd_feat"||cols[j][0]==="odd_feat"))t+="Both coefficients are near 0, yet the plot shows a clear U-shape. The relationship is real but not monotonic.";
+    else if(Math.abs(rs-rp)>.05)t+="The two coefficients differ because the data is skewed. Check the plot.";
+    else t+="Both coefficients agree: a mostly linear relationship.";
+    $("#pairText").innerHTML=t}
+  function draw(){host.textContent="";const M=C(method),cs=58,L=78,T=34,W=L+k*cs+6,H=T+k*cs+6;
+    const svg=S("svg",{viewBox:`0 0 ${W} ${H}`,class:"plot",role:"img","aria-label":"Correlation matrix"},host);
+    const neg=rgb(hex("--neg")),pos=rgb(hex("--pos")),mid=rgb(hex("--mid"));
+    cols.forEach((c,i)=>{S("text",{x:L+i*cs+cs/2,y:T-10,"text-anchor":"middle",style:"fill:var(--ink2);font-size:11px"},svg).textContent=c[0];S("text",{x:L-8,y:T+i*cs+cs/2+4,"text-anchor":"end",style:"fill:var(--ink2);font-size:11px"},svg).textContent=c[0]});
+    M.forEach((row,i)=>row.forEach((v,j)=>{const t=Math.abs(v),col=mixc(mid,v>=0?pos:neg,Math.min(1,t));const g=S("g",{tabindex:0,role:"button","aria-label":`${cols[i][0]} and ${cols[j][0]}: ${sgn(v)}`,style:"cursor:pointer"},svg);
+      S("rect",{x:L+j*cs+1,y:T+i*cs+1,width:cs-2,height:cs-2,rx:4,fill:`rgb(${col})`,stroke:(sel[0]===i&&sel[1]===j)||(sel[0]===j&&sel[1]===i)?"var(--ink)":"none","stroke-width":2.5},g);
+      S("text",{x:L+j*cs+cs/2,y:T+i*cs+cs/2+4,"text-anchor":"middle",style:`font-weight:600;font-size:12px;fill:${lum(col)>.4?"#0b0b0b":"#fff"}`},g).textContent=v.toFixed(2).replace("-",MINUS);
+      const pick=()=>{sel=[i,j];draw();pair()};g.addEventListener("click",pick);g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick()}});
+      const tp=e=>showTip(`${cols[i][0]} / ${cols[j][0]}<br>${method==="p"?"Pearson":"Spearman"} ${sgn(v)}`,e);g.addEventListener("pointerenter",tp);g.addEventListener("pointermove",tp);g.addEventListener("pointerleave",hideTip)}))}
+  $$("#hmSeg .btn").forEach(b=>b.onclick=()=>{method=b.dataset.m;$$("#hmSeg .btn").forEach(q=>q.classList.toggle("on",q===b));draw()});
+  document.addEventListener("themechange",draw);draw();pair();
+  window.__heat={C,cols}})();
+
+/* ===== QUIZ ===== */
+const QZ=[
+ {q:"Which relationship is stronger?",o:["r = +0.3","r = −0.9","They are equally strong"],a:1,w:"Strength is the size of the coefficient. The sign is only the direction."},
+ {q:"Why can one huge outlier hurt Pearson more than Spearman?",o:["Pearson ignores the order of the data","Pearson uses the raw size of the deviation, Spearman only its rank","Spearman deletes outliers automatically"],a:1,w:"An outlier is just \"the biggest value\" to Spearman, however extreme it is."},
+ {q:"y = x² for x from −5 to 5 gives Pearson and Spearman both near 0. What does that mean?",o:["x and y are unrelated","The relationship is perfectly predictable but not monotonic","Both coefficients are broken"],a:1,w:"Down then up is not a consistent trend, so neither coefficient can see it. Always plot."},
+ {q:"The same r = 0.7 comes from n = 5 in one study and n = 500 in another. Which is more convincing?",o:["n = 5","n = 500","Equally convincing"],a:1,w:"With few points, unrelated variables often show large r by luck. More data means less noise."},
+ {q:"You take the logarithm of y. What happens?",o:["Both coefficients change","Spearman is unchanged and Pearson changes","Pearson is unchanged and Spearman changes"],a:1,w:"Logarithm is an increasing transformation, so ranks do not change. Pearson sees different raw values."}];
+(function(){let got=0,done=0;const box=$("#quizBox");
+  QZ.forEach((z,qi)=>{const d=document.createElement("div");d.className="q";d.innerHTML=`<h4>${qi+1}. ${z.q}</h4>`;
+    z.o.forEach((t,oi)=>{const b=document.createElement("button");b.type="button";b.className="opt";b.textContent=t;b.onclick=()=>{if(d.classList.contains("done"))return;d.classList.add("done");done++;
+      $$(".opt",d)[z.a].classList.add("right");if(oi===z.a)got++;else b.classList.add("wrong");
+      $("#quizScore").textContent=`Score: ${got} of ${done} answered${done===QZ.length?" (finished)":""}`};d.appendChild(b)});
+    const w=document.createElement("div");w.className="why";w.textContent=z.w;d.appendChild(w);box.appendChild(d)})})();
+</script>
+</body>
+</html>

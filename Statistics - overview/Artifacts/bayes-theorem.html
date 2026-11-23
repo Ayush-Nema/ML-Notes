@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bayes' theorem: why a positive test is not a diagnosis</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #EDF0F5;
+    --panel: #FFFFFF;
+    --ink: #18212F;
+    --muted: #566175;
+    --line: #D3DAE6;
+    --accent: #2F5BEA;
+    --tint: #E6ECFD;
+    --sick: #C8365C;
+    --sick-tint: #FAE5EB;
+    --well: #9DB4DA;
+    --well-tint: #E8EEF8;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.55; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 18px 56px; }
+  h1 { font-family: var(--serif); font-weight: 700; font-size: clamp(1.9rem, 4.5vw, 2.8rem); line-height: 1.12; margin: 0 0 10px; letter-spacing: -0.01em; }
+  h2 { font-family: var(--serif); font-size: 1.3rem; margin: 0 0 8px; line-height: 1.25; }
+  p { margin: 0 0 10px; }
+  .lead { max-width: 62ch; font-size: 1.08rem; color: var(--muted); margin-bottom: 22px; }
+  .small { font-size: .93rem; color: var(--muted); }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; }
+  .stack { display: grid; gap: 18px; align-content: start; }
+  .layout { display: grid; gap: 18px; grid-template-columns: minmax(0, 1fr); margin-top: 18px; }
+  @media (min-width: 920px) {
+    .layout { grid-template-columns: 330px minmax(0, 1fr); align-items: start; }
+    .sticky { position: sticky; top: 16px; }
+  }
+  :focus-visible { outline: 3px solid #F0A02B; outline-offset: 2px; }
+  a { color: var(--accent); }
+
+  /* hero guess */
+  .hero { border-width: 2px; border-color: var(--accent); }
+  .hero .q { font-size: 1.12rem; max-width: 60ch; }
+  .row { display: flex; align-items: center; gap: 12px; }
+  input[type=range] { flex: 1; min-width: 0; height: 28px; accent-color: var(--accent); }
+  output { min-width: 4ch; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+  .btn { font: inherit; font-weight: 600; cursor: pointer; border: 1.5px solid var(--accent); background: #fff; color: var(--accent); border-radius: 10px; padding: 8px 14px; }
+  .btn:hover:not(:disabled) { background: var(--tint); }
+  .btn.solid { background: var(--accent); color: #fff; }
+  .btn.solid:hover:not(:disabled) { background: #2349c4; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .reveal { margin-top: 12px; padding: 12px; border-radius: 10px; background: var(--tint); }
+
+  /* controls */
+  .ctl { margin-bottom: 16px; }
+  .ctl label { display: block; font-weight: 600; }
+  .ctl .hint { font-size: .88rem; color: var(--muted); margin-bottom: 2px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { font: inherit; font-size: .9rem; border: 1.5px solid var(--line); background: #fff; color: var(--ink); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+  .chip:hover { border-color: var(--accent); }
+  .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .seg { display: flex; border: 1.5px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .seg button { flex: 1; font: inherit; border: 0; background: #fff; padding: 8px; cursor: pointer; color: var(--ink); }
+  .seg button + button { border-left: 1.5px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #fff; font-weight: 600; }
+
+  /* frequency tree */
+  .tree { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+  .node { border-radius: 8px; padding: 8px 6px; text-align: center; border: 1.5px solid transparent; transition: opacity .25s; }
+  .node .num { display: block; font-family: var(--serif); font-weight: 700; font-size: clamp(1.05rem, 3.2vw, 1.5rem); font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .node .lab { display: block; font-size: .8rem; line-height: 1.3; color: var(--muted); }
+  .root { grid-column: 1 / -1; background: #F2F4F8; border-color: var(--line); }
+  .g-sick { grid-column: span 2; background: var(--sick-tint); }
+  .g-well { grid-column: span 2; background: var(--well-tint); }
+  .leaf.sick { background: var(--sick-tint); }
+  .leaf.well { background: var(--well-tint); }
+  .node.dim { opacity: .32; }
+  .node.hl { border-color: var(--ink); }
+  .tree-note { font-size: .88rem; color: var(--muted); margin-top: 8px; }
+
+  /* positives field */
+  #waffle { width: 100%; max-width: 560px; height: auto; display: block; margin: 8px auto 0; }
+  #waffle circle.sick { fill: var(--sick); }
+  #waffle circle.well { fill: var(--well); }
+  .result { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin: 6px 0 4px; }
+  .big { font-family: var(--serif); font-weight: 700; font-size: clamp(2.8rem, 9vw, 4.2rem); line-height: 1; color: var(--sick); font-variant-numeric: tabular-nums; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 10px; font-size: .93rem; }
+  .legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+
+  /* formula */
+  .eq { font-family: var(--serif); font-size: 1.1rem; background: #F6F8FB; border-radius: 10px; padding: 12px 14px; overflow-x: auto; font-variant-numeric: tabular-nums; }
+  .eq .line { white-space: nowrap; margin: 2px 0; }
+  .parts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+  @media (min-width: 640px) { .parts { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .part { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+  .part b { display: block; font-family: var(--serif); font-size: 1.3rem; font-variant-numeric: tabular-nums; }
+  .part span { font-size: .85rem; color: var(--muted); display: block; line-height: 1.3; }
+  .part.post { border-color: var(--sick); background: var(--sick-tint); }
+
+  /* chain */
+  .chain { display: grid; gap: 8px; margin: 12px 0; }
+  .link { display: grid; grid-template-columns: 8.5em minmax(0, 1fr) 4.6em; gap: 10px; align-items: center; font-size: .95rem; }
+  .bar { height: 16px; background: #EEF1F6; border-radius: 8px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--sick); border-radius: 8px; transition: width .3s; }
+  .link .v { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  @media (max-width: 520px) { .link { grid-template-columns: 6.6em minmax(0, 1fr) 4.2em; gap: 6px; font-size: .88rem; } }
+  .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  @media (prefers-reduced-motion: reduce) { .node, .bar i { transition: none; } }
+
+  /* ---- theory additions ---- */
+  .toc { display: flex; gap: 8px; flex-wrap: wrap; margin: -6px 0 20px; }
+  .toc a { text-decoration: none; color: var(--ink); background: #fff; border: 1.5px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: .95rem; }
+  .toc a:hover { border-color: var(--accent); color: var(--accent); }
+  .theory { margin-top: 18px; display: grid; gap: 18px; }
+  .prose { max-width: 68ch; }
+  .math { font-family: var(--serif); font-size: 1.15rem; background: #F6F8FB; border-radius: 10px; padding: 12px 16px; margin: 10px 0; overflow-x: auto; font-variant-numeric: tabular-nums; line-height: 2; }
+  .math .ln { white-space: nowrap; }
+  .frac { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; margin: 0 .25em; line-height: 1.35; }
+  .frac > span:first-child { border-bottom: 1.5px solid currentColor; padding: 0 .35em .08em; }
+  .frac > span:last-child { padding: .08em .35em 0; }
+  .live { background: var(--tint); border-radius: 10px; padding: 10px 14px; margin: 10px 0; font-family: var(--serif); font-variant-numeric: tabular-nums; overflow-x: auto; line-height: 1.8; }
+  .live .ln { white-space: nowrap; }
+  .live .tag { font-family: var(--sans); font-size: .85rem; color: var(--muted); display: block; margin-bottom: 2px; }
+  .note { border-left: 4px solid #F0A02B; padding: 6px 12px; margin: 10px 0; max-width: 68ch; background: #FFF8EA; border-radius: 0 8px 8px 0; }
+  .theory ul, .theory ol { margin: 0 0 10px; padding-left: 1.3em; max-width: 68ch; }
+  .theory li { margin-bottom: 6px; }
+  .tbl { width: 100%; border-collapse: collapse; font-size: .95rem; font-variant-numeric: tabular-nums; }
+  .tbl th, .tbl td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .tbl th { color: var(--muted); font-weight: 600; font-size: .88rem; }
+  .tbl td.n { text-align: right; font-weight: 700; white-space: nowrap; }
+  .tblwrap { overflow-x: auto; }
+  #curve { width: 100%; height: auto; display: block; }
+  #curve text { font-family: var(--sans); font-size: 12.5px; fill: #566175; }
+  #curve text.hot { fill: #18212F; font-weight: 700; font-size: 13.5px; }
+  .qz { border: 0; padding: 0; margin: 0 0 22px; }
+  .qz legend { font-weight: 600; margin-bottom: 8px; padding: 0; max-width: 68ch; }
+  .qopts { display: grid; gap: 6px; max-width: 68ch; }
+  .qopt { font: inherit; text-align: left; background: #fff; border: 1.5px solid var(--line); border-radius: 10px; padding: 9px 12px; cursor: pointer; color: var(--ink); }
+  .qopt:hover { border-color: var(--accent); }
+  .qopt.ok { border-color: #17795C; background: #E4F3EE; }
+  .qopt.bad { border-color: #C23B3B; background: #FBE7E7; }
+  .qwhy { margin-top: 8px; max-width: 68ch; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Bayes' theorem: why a positive test is not a diagnosis</h1>
+  <p class="lead">Bayes' theorem tells you how to update a belief when new evidence arrives. The classic way to feel it is a medical screening test, so that is where we start.</p>
+
+  <nav class="toc" aria-label="Sections">
+    <a href="#explore">Play with it</a>
+    <a href="#theory">The theory and maths</a>
+    <a href="#quiz">Test yourself</a>
+  </nav>
+
+  <section class="panel hero" id="explore" aria-labelledby="gTitle">
+    <h2 id="gTitle">Take a guess first</h2>
+    <p class="q" id="scenario"></p>
+    <p class="q"><b>You test positive. How likely is it that you have the condition?</b></p>
+    <div class="row" style="max-width:520px; margin-bottom:10px">
+      <input type="range" id="guess" min="0" max="100" step="1" value="50" aria-label="Your guess, in percent">
+      <output id="guessOut" for="guess">50%</output>
+    </div>
+    <button class="btn solid" id="revealBtn">Check my guess</button>
+    <div class="reveal" id="revealBox" hidden aria-live="polite"></div>
+  </section>
+
+  <div class="layout">
+
+    <aside class="panel sticky" aria-labelledby="cTitle">
+      <h2 id="cTitle">Set up the test</h2>
+
+      <div class="ctl">
+        <label for="prev">How common is the condition?</label>
+        <div class="hint">The share of people tested who really have it.</div>
+        <div class="row"><input type="range" id="prev" min="0.1" max="50" step="0.1" value="1"><output id="prevOut" for="prev"></output></div>
+        <div class="chips" role="group" aria-label="Who is being tested">
+          <button class="chip" data-p="1">Routine screening</button>
+          <button class="chip" data-p="10">Has risk factors</button>
+          <button class="chip" data-p="40">Has symptoms</button>
+        </div>
+      </div>
+
+      <div class="ctl">
+        <label for="sens">Sensitivity</label>
+        <div class="hint">People who have it and test positive.</div>
+        <div class="row"><input type="range" id="sens" min="50" max="100" step="1" value="90"><output id="sensOut" for="sens"></output></div>
+      </div>
+
+      <div class="ctl">
+        <label for="fpr">False positive rate</label>
+        <div class="hint">People who don't have it but test positive anyway.</div>
+        <div class="row"><input type="range" id="fpr" min="0.5" max="30" step="0.5" value="5"><output id="fprOut" for="fpr"></output></div>
+      </div>
+
+      <div class="ctl" style="margin-bottom:0">
+        <div style="font-weight:600; margin-bottom:6px" id="modeLabel">The result you got</div>
+        <div class="seg" role="group" aria-labelledby="modeLabel">
+          <button id="modePos" aria-pressed="true">Positive</button>
+          <button id="modeNeg" aria-pressed="false">Negative</button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="stack">
+
+      <section class="panel" aria-labelledby="tTitle">
+        <h2 id="tTitle">Step 1: picture 10,000 people being tested</h2>
+        <p class="small">Counting whole people is easier than juggling percentages. Here is how the 10,000 split up.</p>
+        <div class="tree" id="tree"></div>
+        <div class="tree-note" id="treeNote"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="zTitle" aria-live="polite">
+        <h2 id="zTitle">Step 2: look only at people who got your result</h2>
+        <p class="small" id="zIntro"></p>
+        <div class="result">
+          <div class="big" id="bigNum"></div>
+          <div id="bigCap" style="max-width:26ch"></div>
+        </div>
+        <svg id="waffle" viewBox="0 0 600 480" role="img" aria-label="500 dots representing everyone with your test result"></svg>
+        <div class="legend">
+          <div><span class="sw" style="background:var(--sick)"></span>has the condition</div>
+          <div><span class="sw" style="background:var(--well)"></span>does not have it</div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="fTitle">
+        <h2 id="fTitle">Step 3: the same thing as Bayes' theorem</h2>
+        <p class="small">Steps 1 and 2 were Bayes' theorem in disguise. Here it is with your numbers.</p>
+        <div class="eq" id="eq"></div>
+        <div class="parts" id="parts"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="rTitle">
+        <h2 id="rTitle">Step 4: what if the result is positive again?</h2>
+        <p>Each new piece of evidence starts from where the last one left off. The answer after one positive test becomes the starting belief (the prior) for the next.</p>
+        <div class="chain" id="chain" aria-live="polite"></div>
+        <div class="btns">
+          <button class="btn solid" id="addTest">Add another positive test</button>
+          <button class="btn" id="resetTest">Start over</button>
+        </div>
+        <p class="small" style="margin-top:10px">This assumes each test makes its mistakes independently. Real tests are often wrong for shared reasons, so repeating the same test helps less than this shows.</p>
+      </section>
+    </div>
+  </div>
+
+
+  <div class="theory" id="theory">
+
+    <section class="panel" aria-labelledby="t1">
+      <h2 id="t1">Intuition: changing your mind by the right amount</h2>
+      <p class="prose">Bayes' theorem is a rule for updating a belief when evidence arrives. You start with a belief (the <b>prior</b>), you see something, and you end with a new belief (the <b>posterior</b>). Two things decide how far you move: how much more likely the evidence is if you are right than if you are wrong, and how believable your starting point was.</p>
+      <p class="prose">That is why a strong test cannot rescue a very unlikely hypothesis, and a weak one cannot dislodge a near-certain one.</p>
+      <p class="prose">The theorem exists because we usually know the wrong direction. Test makers can measure how the test behaves on people whose status is known, which gives <i>P</i>(positive | sick). You hold a result and want <i>P</i>(sick | positive). Bayes' theorem converts one into the other, and the conversion needs one extra ingredient: how common the condition was to begin with.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="t2">
+      <h2 id="t2">Where the formula comes from</h2>
+      <p class="prose">It takes four short steps from the definition of conditional probability (see the <a href="conditional-probability.html">previous file</a>). Let <i>A</i> be "has the condition" and <i>B</i> be "tests positive".</p>
+      <ol>
+        <li>The overlap can be written in two orders:
+          <div class="math">
+            <div class="ln"><i>P</i>(<i>A</i> ∩ <i>B</i>) = <i>P</i>(<i>A</i> | <i>B</i>) <i>P</i>(<i>B</i>)</div>
+            <div class="ln"><i>P</i>(<i>A</i> ∩ <i>B</i>) = <i>P</i>(<i>B</i> | <i>A</i>) <i>P</i>(<i>A</i>)</div>
+          </div></li>
+        <li>Both equal the same overlap, so set them equal:
+          <div class="math"><i>P</i>(<i>A</i> | <i>B</i>) <i>P</i>(<i>B</i>) = <i>P</i>(<i>B</i> | <i>A</i>) <i>P</i>(<i>A</i>)</div></li>
+        <li>Divide both sides by <i>P</i>(<i>B</i>). This is Bayes' theorem:
+          <div class="math"><i>P</i>(<i>A</i> | <i>B</i>) = <span class="frac"><span><i>P</i>(<i>B</i> | <i>A</i>) <i>P</i>(<i>A</i>)</span><span><i>P</i>(<i>B</i>)</span></span></div></li>
+        <li>You rarely know <i>P</i>(<i>B</i>) directly, so expand it with the law of total probability. A positive result comes either from a sick person or from a healthy one:
+          <div class="math"><i>P</i>(<i>A</i> | <i>B</i>) = <span class="frac"><span><i>P</i>(<i>B</i> | <i>A</i>) <i>P</i>(<i>A</i>)</span><span><i>P</i>(<i>B</i> | <i>A</i>) <i>P</i>(<i>A</i>) + <i>P</i>(<i>B</i> | <i>A</i><sup>c</sup>) <i>P</i>(<i>A</i><sup>c</sup>)</span></span></div></li>
+      </ol>
+      <p class="prose">In the explorer above, the top of that fraction is the red group in the tree (true positives) and the bottom is the red group plus the blue group (all positives). That is Step 2 in a single line.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="t3">
+      <h2 id="t3">The four pieces</h2>
+      <ul>
+        <li><b>Prior, <i>P</i>(<i>A</i>).</b> What you believed before seeing the result. Here it is the base rate: how common the condition is among the people being tested. It can also be a judgment call when no clean statistic exists.</li>
+        <li><b>Likelihood, <i>P</i>(<i>B</i> | <i>A</i>).</b> How well the hypothesis predicts the evidence. Here, how often sick people test positive. It is not the probability of the hypothesis, and the likelihoods of different hypotheses do not have to add up to 1.</li>
+        <li><b>Evidence, <i>P</i>(<i>B</i>).</b> How common this result is overall, sick and healthy people together. A result that is common even among healthy people is weak evidence.</li>
+        <li><b>Posterior, <i>P</i>(<i>A</i> | <i>B</i>).</b> Your updated belief. Today's posterior becomes tomorrow's prior.</li>
+      </ul>
+    </section>
+
+    <section class="panel" aria-labelledby="t4">
+      <h2 id="t4">The odds form: evidence is a multiplier</h2>
+      <p class="prose">Odds are another way to write a probability: odds = <i>p</i> ÷ (1 − <i>p</i>), and back again, <i>p</i> = odds ÷ (1 + odds). A 1% chance is odds of 1 to 99. Write Bayes' theorem for "sick" and for "not sick", divide one by the other, and the awkward <i>P</i>(<i>B</i>) cancels:</p>
+      <div class="math"><span class="frac"><span><i>P</i>(<i>A</i> | <i>B</i>)</span><span><i>P</i>(<i>A</i><sup>c</sup> | <i>B</i>)</span></span> = <span class="frac"><span><i>P</i>(<i>A</i>)</span><span><i>P</i>(<i>A</i><sup>c</sup>)</span></span> × <span class="frac"><span><i>P</i>(<i>B</i> | <i>A</i>)</span><span><i>P</i>(<i>B</i> | <i>A</i><sup>c</sup>)</span></span> &nbsp;&nbsp; i.e. &nbsp; posterior odds = prior odds × likelihood ratio</div>
+      <p class="prose">The likelihood ratio says how many times more likely this result is for a sick person than for a healthy one. It belongs to the test alone, so a positive result is worth the same multiplier for everyone. What differs between people is where they start.</p>
+      <div class="live" id="liveOdds" aria-live="polite"></div>
+      <p class="prose">Repeated independent tests simply multiply again, which is what Step 4 showed: each positive result multiplies the odds by the same factor. A multiplier of 18 turns a tiny prior into a modest one, and a large prior into near certainty.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="t5">
+      <h2 id="t5">Why the starting rate matters so much</h2>
+      <p class="prose">This curve keeps the test fixed (your sensitivity and false positive rate) and varies only how common the condition is. The dot marks your current setting.</p>
+      <svg id="curve" viewBox="0 0 600 300" role="img" aria-label="Chart of posterior probability against prevalence"></svg>
+      <p class="small prose" id="curveCap" aria-live="polite"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="t6">
+      <h2 id="t6">More than two hypotheses</h2>
+      <p class="prose">The denominator generalizes by adding one term per hypothesis. For hypotheses <i>H</i><sub>1</sub>, …, <i>H</i><sub><i>n</i></sub> that cover every possibility without overlapping, and evidence <i>E</i>:</p>
+      <div class="math"><i>P</i>(<i>H</i><sub><i>i</i></sub> | <i>E</i>) = <span class="frac"><span><i>P</i>(<i>E</i> | <i>H</i><sub><i>i</i></sub>) <i>P</i>(<i>H</i><sub><i>i</i></sub>)</span><span>Σ<sub><i>j</i></sub> <i>P</i>(<i>E</i> | <i>H</i><sub><i>j</i></sub>) <i>P</i>(<i>H</i><sub><i>j</i></sub>)</span></span></div>
+      <p class="prose"><b>Example.</b> A company has three factories. A, B and C make 50%, 30% and 20% of its phones, and their defect rates are 1%, 2% and 5%. One phone turns out to be defective. Which factory is it most likely from?</p>
+      <div class="tblwrap">
+        <table class="tbl">
+          <thead><tr><th>Factory</th><th>Prior share</th><th>Defect rate</th><th>Prior × defect rate</th><th>Posterior</th></tr></thead>
+          <tbody>
+            <tr><td>A</td><td>50%</td><td>1%</td><td>0.005</td><td class="n">23.8%</td></tr>
+            <tr><td>B</td><td>30%</td><td>2%</td><td>0.006</td><td class="n">28.6%</td></tr>
+            <tr><td>C</td><td>20%</td><td>5%</td><td>0.010</td><td class="n">47.6%</td></tr>
+            <tr><td><b>Total</b></td><td>100%</td><td></td><td><b>0.021</b></td><td class="n">100%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="prose" style="margin-top:10px">Factory C makes the fewest phones but is the most likely source of a faulty one, because its high defect rate outweighs its small share. Each posterior is its row's product divided by the column total of 0.021.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="t7">
+      <h2 id="t7">Medical test vocabulary</h2>
+      <p class="prose">Test results are usually reported with these names. The first two describe the test. The last two depend on who is tested, because they use the prior.</p>
+      <div class="tblwrap"><table class="tbl" id="vocab"></table></div>
+    </section>
+
+    <section class="panel" aria-labelledby="t8">
+      <h2 id="t8">Mistakes and limits</h2>
+      <ul>
+        <li><b>Base rate neglect.</b> Treating "the test is 90% sensitive" as "a positive means a 90% chance". It ignores the prior, which is exactly the number the theorem says you cannot skip.</li>
+        <li><b>The prosecutor's fallacy.</b> "A match this good happens by chance 1 time in 10,000, so there is a 1 in 10,000 chance the defendant is innocent." That swaps <i>P</i>(evidence | innocent) for <i>P</i>(innocent | evidence). The right answer also depends on how many people could have matched.</li>
+        <li><b>Priors are inputs, not facts.</b> When the base rate comes from good data, the posterior is solid. When it is a guess, the posterior is only as good as the guess, and reasonable people may start from different priors. With enough strong evidence, different starting points tend to converge.</li>
+        <li><b>Independence is an assumption.</b> Step 4 multiplied odds as if each test's errors were unrelated. If a person is a false positive because of something about their body, retesting with the same method may repeat the error.</li>
+        <li><b>Error rates are not always fixed.</b> Real sensitivity and false positive rates can differ between groups and conditions. Using one pair of numbers for everyone is a simplification.</li>
+      </ul>
+    </section>
+  </div>
+
+  <section class="panel" id="quiz" style="margin-top:18px" aria-labelledby="qTitle">
+    <h2 id="qTitle">Test yourself</h2>
+    <div id="quizBox"></div>
+    <p class="small" id="score"></p>
+  </section>
+
+  <section class="panel" style="margin-top:18px" aria-labelledby="kTitle">
+    <h2 id="kTitle">What to take away</h2>
+    <p>A test's accuracy and the chance you have the condition are different numbers. Bayes' theorem connects them through the starting rate: P(sick | positive) = P(positive | sick) × P(sick) ÷ P(positive).</p>
+    <p>When the condition is rare, even a small false positive rate produces a crowd of false alarms that outnumbers the real cases. Try the “Has symptoms” preset and watch the same test become far more convincing.</p>
+    <p class="small">Back to <a href="conditional-probability.html">conditional probability</a> (keep both files in the same folder for the link to work). The numbers here are illustrative and not taken from any specific real test.</p>
+  </section>
+</div>
+
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s);
+  const NS = "http://www.w3.org/2000/svg";
+  const N = 10000;
+  const st = { p: 1, s: 90, f: 5, mode: "pos", k: 1, revealed: false };
+
+  const fmtInt = (n) => n.toLocaleString("en-US");
+  const fmtPct = (x) => {
+    const v = x * 100;
+    if (v < 1) return v.toFixed(2).replace(/0$/, "") + "%";
+    return v.toFixed(1).replace(/\.0$/, "") + "%";
+  };
+  const fmtDec = (x) => {
+    const s = x.toFixed(4).replace(/0+$/, "");
+    return s.endsWith(".") ? s + "0" : s;
+  };
+  const bayes = (prior, L1, L0) => { const n = L1 * prior; return n / (n + L0 * (1 - prior)); };
+
+  // 500 dots, 25 columns x 20 rows
+  const waffle = $("#waffle");
+  const wdots = [];
+  for (let i = 0; i < 500; i++) {
+    const c = document.createElementNS(NS, "circle");
+    c.setAttribute("cx", (i % 25) * 24 + 12);
+    c.setAttribute("cy", Math.floor(i / 25) * 24 + 12);
+    c.setAttribute("r", 9);
+    waffle.appendChild(c);
+    wdots.push(c);
+  }
+
+  function model() {
+    const p = st.p / 100, s = st.s / 100, f = st.f / 100;
+    const S = Math.round(N * p), H = N - S;
+    const TP = Math.round(S * s), FN = S - TP;
+    const FP = Math.round(H * f), TN = H - FP;
+    return { p, s, f, S, H, TP, FN, FP, TN };
+  }
+
+  function node(cls, num, lab) {
+    return '<div class="node ' + cls + '"><span class="num">' + num + '</span><span class="lab">' + lab + "</span></div>";
+  }
+
+  function render() {
+    const m = model();
+    const pos = st.mode === "pos";
+    const word = pos ? "positive" : "negative";
+    const L1 = pos ? m.s : 1 - m.s;          // P(result | sick)
+    const L0 = pos ? m.f : 1 - m.f;          // P(result | not sick)
+    const num = L1 * m.p;
+    const ev = num + L0 * (1 - m.p);
+    const post = num / ev;
+
+    // control readouts
+    $("#prevOut").textContent = st.p + "%";
+    $("#sensOut").textContent = st.s + "%";
+    $("#fprOut").textContent = st.f + "%";
+    document.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", String(Number(c.dataset.p) === st.p)));
+    $("#modePos").setAttribute("aria-pressed", String(pos));
+    $("#modeNeg").setAttribute("aria-pressed", String(!pos));
+
+    // scenario text (always about a positive result)
+    $("#scenario").textContent =
+      "A clinic screens 10,000 people for a condition that affects " + st.p + "% of them. The test comes back positive for " + st.s +
+      "% of people who have it, and also for " + st.f + "% of people who don't.";
+
+    // tree
+    const hlPos = pos;
+    $("#tree").innerHTML =
+      node("root", fmtInt(N), "people tested") +
+      node("g-sick", fmtInt(m.S), "have the condition (" + st.p + "%)") +
+      node("g-well", fmtInt(m.H), "don't have it (" + (Math.round((100 - st.p) * 10) / 10) + "%)") +
+      node("leaf sick " + (hlPos ? "hl" : "dim"), fmtInt(m.TP), "test positive (" + st.s + "%)") +
+      node("leaf sick " + (hlPos ? "dim" : "hl"), fmtInt(m.FN), "test negative") +
+      node("leaf well " + (hlPos ? "hl" : "dim"), fmtInt(m.FP), "test positive (" + st.f + "%)") +
+      node("leaf well " + (hlPos ? "dim" : "hl"), fmtInt(m.TN), "test negative");
+    $("#treeNote").textContent = "Outlined boxes are the people with a " + word + " result. Add the two outlined numbers to get everyone in Step 2.";
+
+    // zoom panel
+    const A = pos ? m.TP : m.FN;   // sick with this result
+    const B = pos ? m.FP : m.TN;   // healthy with this result
+    const total = A + B;
+    const sickDots = Math.round(500 * A / total);
+    wdots.forEach((d, i) => d.setAttribute("class", i < sickDots ? "sick" : "well"));
+    $("#zIntro").textContent = fmtInt(total) + " people got a " + word + " result: " + fmtInt(A) + " who have the condition and " + fmtInt(B) + " who don't. Below they are drawn as 500 dots, so each dot is about " + (total / 500).toFixed(total / 500 < 10 ? 1 : 0).replace(/\.0$/, "") + " " + (total / 500 === 1 ? "person" : "people") + ".";
+    $("#bigNum").textContent = fmtPct(post);
+    $("#bigCap").textContent = pos
+      ? "chance you have the condition, given a positive test"
+      : "chance you still have the condition, given a negative test";
+    waffle.setAttribute("aria-label", "500 dots for everyone with a " + word + " result; " + sickDots + " are red, meaning they have the condition.");
+
+    // formula
+    const R = word;
+    $("#eq").innerHTML =
+      '<div class="line">P(sick | ' + R + ') = P(' + R + ' | sick) × P(sick) ÷ P(' + R + ')</div>' +
+      '<div class="line">P(' + R + ') = ' + fmtDec(L1) + ' × ' + fmtDec(m.p) + ' + ' + fmtDec(L0) + ' × ' + fmtDec(1 - m.p) + ' = ' + fmtDec(num) + ' + ' + fmtDec(L0 * (1 - m.p)) + ' = ' + fmtDec(ev) + '</div>' +
+      '<div class="line">P(sick | ' + R + ') = ' + fmtDec(num) + ' ÷ ' + fmtDec(ev) + ' = ' + fmtPct(post) + '</div>';
+    $("#parts").innerHTML =
+      '<div class="part"><b>' + fmtPct(m.p) + '</b><span>Prior: how likely before the test</span></div>' +
+      '<div class="part"><b>' + fmtPct(L1) + '</b><span>Likelihood: chance of a ' + R + ' if sick</span></div>' +
+      '<div class="part"><b>' + fmtPct(ev) + '</b><span>Evidence: chance of a ' + R + ' for anyone</span></div>' +
+      '<div class="part post"><b>' + fmtPct(post) + '</b><span>Posterior: how likely after the test</span></div>';
+
+    // chain of positive tests
+    const rows = [{ label: "Before testing", v: m.p }];
+    let cur = m.p;
+    for (let i = 1; i <= st.k; i++) {
+      cur = bayes(cur, m.s, m.f);
+      rows.push({ label: "After " + i + " positive" + (i > 1 ? "s" : ""), v: cur });
+    }
+    $("#chain").innerHTML = rows.map((r) =>
+      '<div class="link"><span>' + r.label + '</span><span class="bar"><i style="width:' + Math.max(r.v * 100, 0.6) + '%"></i></span><span class="v">' + fmtPct(r.v) + "</span></div>"
+    ).join("");
+    $("#addTest").disabled = st.k >= 5;
+
+    renderTheory(m);
+
+    // guess reveal
+    const box = $("#revealBox");
+    if (st.revealed) {
+      const truth = bayes(m.p, m.s, m.f);
+      const guess = Number($("#guess").value);
+      const posTotal = m.TP + m.FP;
+      box.hidden = false;
+      box.innerHTML =
+        "<p>You guessed <b>" + guess + "%</b>. The answer is <b>" + fmtPct(truth) + "</b>.</p>" +
+        "<p>Out of " + fmtInt(posTotal) + " positive results, " + fmtInt(m.TP) + " are people who have the condition. The other " + fmtInt(m.FP) +
+        " are healthy people caught by the " + st.f + "% false positive rate, applied to a much larger healthy group. Scroll down to see how that works.</p>";
+    } else {
+      box.hidden = true;
+    }
+  }
+
+  document.querySelectorAll(".chip").forEach((c) => c.addEventListener("click", () => {
+    st.p = Number(c.dataset.p); $("#prev").value = st.p; render();
+  }));
+  $("#prev").addEventListener("input", (e) => { st.p = +e.target.value; render(); });
+  $("#sens").addEventListener("input", (e) => { st.s = +e.target.value; render(); });
+  $("#fpr").addEventListener("input", (e) => { st.f = +e.target.value; render(); });
+  $("#modePos").addEventListener("click", () => { st.mode = "pos"; render(); });
+  $("#modeNeg").addEventListener("click", () => { st.mode = "neg"; render(); });
+  $("#addTest").addEventListener("click", () => { if (st.k < 5) { st.k++; render(); } });
+  $("#resetTest").addEventListener("click", () => { st.k = 1; render(); });
+  $("#guess").addEventListener("input", (e) => { $("#guessOut").textContent = e.target.value + "%"; if (st.revealed) render(); });
+  $("#revealBtn").addEventListener("click", () => { st.revealed = true; render(); });
+
+  /* ---------- theory section ---------- */
+  const fmtN = (x) => String(Number(x.toFixed(4)));
+  const oddsText = (o) => {
+    if (o < 1) { const r = 1 / o; return "1 to " + (r >= 100 ? Math.round(r) : String(Number(r.toFixed(1)))); }
+    return String(Number(o.toFixed(1))) + " to 1";
+  };
+
+  function drawCurve(m, L1, L0, post, pos) {
+    const Wc = 600, Hc = 300, l = 62, r = 16, t = 16, b = 44, iw = Wc - l - r, ih = Hc - t - b;
+    const lo = Math.log10(0.1), hi = Math.log10(50);
+    const X = (pc) => l + (Math.log10(pc) - lo) / (hi - lo) * iw;
+    const pts = []; let mx = 0;
+    for (let i = 0; i <= 80; i++) {
+      const pc = Math.pow(10, lo + (hi - lo) * i / 80);
+      const v = bayes(pc / 100, L1, L0);
+      pts.push([pc, v]); mx = Math.max(mx, v);
+    }
+    const ymax = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1].find((x) => x >= mx * 1.05) || 1;
+    const Y = (v) => t + ih - (v / ymax) * ih;
+    let g = "";
+    [0, 0.5, 1].forEach((k) => {
+      const y = Y(k * ymax);
+      g += '<line x1="' + l + '" x2="' + (Wc - r) + '" y1="' + y + '" y2="' + y + '" stroke="#D3DAE6" stroke-width="1"/>' +
+           '<text x="' + (l - 8) + '" y="' + (y + 4) + '" text-anchor="end">' + fmtPct(k * ymax) + "</text>";
+    });
+    [0.1, 1, 10, 50].forEach((pc) => {
+      const x = X(pc);
+      g += '<line x1="' + x + '" x2="' + x + '" y1="' + (t + ih) + '" y2="' + (t + ih + 5) + '" stroke="#566175"/>' +
+           '<text x="' + x + '" y="' + (t + ih + 19) + '" text-anchor="middle">' + pc + "%</text>";
+    });
+    const d = pts.map((q, i) => (i ? "L" : "M") + X(q[0]).toFixed(1) + " " + Y(q[1]).toFixed(1)).join(" ");
+    const mxp = X(st.p), myp = Y(post);
+    const right = mxp > Wc * 0.6;
+    g += '<path d="' + d + '" fill="none" stroke="#2F5BEA" stroke-width="3" stroke-linecap="round"/>' +
+         '<line x1="' + mxp + '" x2="' + mxp + '" y1="' + myp + '" y2="' + (t + ih) + '" stroke="#C8365C" stroke-dasharray="4 4"/>' +
+         '<circle cx="' + mxp + '" cy="' + myp + '" r="7" fill="#C8365C" stroke="#fff" stroke-width="2"/>' +
+         '<text class="hot" x="' + (right ? mxp - 12 : mxp + 12) + '" y="' + (myp - 10) + '" text-anchor="' + (right ? "end" : "start") + '">' + fmtPct(post) + " at " + st.p + "%</text>" +
+         '<text x="' + (l + iw / 2) + '" y="' + (Hc - 6) + '" text-anchor="middle">How common the condition is (log scale)</text>' +
+         '<text x="12" y="' + (t + ih / 2) + '" text-anchor="middle" transform="rotate(-90 12 ' + (t + ih / 2) + ')">Chance you have it</text>';
+    $("#curve").innerHTML = g;
+    $("#curveCap").textContent = "With this test, a " + (pos ? "positive" : "negative") + " result means a " + fmtPct(pts[0][1]) + " chance of having the condition if it affects 0.1% of people tested, and " + fmtPct(pts[pts.length - 1][1]) + " if it affects 50%. The test did not change. Only the starting rate did.";
+  }
+
+  function renderTheory(m) {
+    const pos = st.mode === "pos", word = pos ? "positive" : "negative";
+    const L1 = pos ? m.s : 1 - m.s, L0 = pos ? m.f : 1 - m.f;
+    const prior = m.p, po = prior / (1 - prior), LR = L1 / L0, postO = po * LR, postP = postO / (1 + postO);
+    const kO = po * Math.pow(m.s / m.f, st.k), kP = kO / (1 + kO);
+
+    $("#liveOdds").innerHTML =
+      '<span class="tag">With your numbers (' + word + " result)</span>" +
+      '<div class="ln">Prior odds = P(sick) ÷ P(healthy) = ' + fmtN(prior) + " ÷ " + fmtN(1 - prior) + " = " + fmtN(po) + " &nbsp;(" + oddsText(po) + ")</div>" +
+      '<div class="ln">Likelihood ratio = P(' + word + " | sick) ÷ P(" + word + " | healthy) = " + fmtN(L1) + " ÷ " + fmtN(L0) + " = " + fmtN(LR) + "</div>" +
+      '<div class="ln">Posterior odds = ' + fmtN(po) + " × " + fmtN(LR) + " = " + fmtN(postO) + " &nbsp;(" + oddsText(postO) + ")</div>" +
+      '<div class="ln">Probability = odds ÷ (1 + odds) = ' + fmtN(postO) + " ÷ " + fmtN(1 + postO) + " = <b>" + fmtPct(postP) + "</b></div>" +
+      '<div class="ln">After ' + st.k + " positive test" + (st.k > 1 ? "s" : "") + " in a row (Step 4): odds × " + fmtN(m.s / m.f) + (st.k > 1 ? "<sup>" + st.k + "</sup>" : "") + " = " + fmtN(kO) + " &nbsp;(" + oddsText(kO) + ") → <b>" + fmtPct(kP) + "</b></div>";
+
+    drawCurve(m, L1, L0, postP, pos);
+
+    const ppv = bayes(m.p, m.s, m.f), pSickNeg = bayes(m.p, 1 - m.s, 1 - m.f);
+    $("#vocab").innerHTML =
+      "<thead><tr><th>Name</th><th>Meaning</th><th>Written as</th><th style=\"text-align:right\">Your value</th></tr></thead><tbody>" +
+      "<tr><td>Sensitivity</td><td>Sick people the test catches</td><td>P(positive | sick)</td><td class=\"n\">" + fmtPct(m.s) + "</td></tr>" +
+      "<tr><td>Specificity</td><td>Healthy people the test clears (1 − false positive rate)</td><td>P(negative | healthy)</td><td class=\"n\">" + fmtPct(1 - m.f) + "</td></tr>" +
+      "<tr><td>Positive predictive value</td><td>Positives that are real</td><td>P(sick | positive)</td><td class=\"n\">" + fmtPct(ppv) + "</td></tr>" +
+      "<tr><td>Negative predictive value</td><td>Negatives that are truly healthy</td><td>P(healthy | negative)</td><td class=\"n\">" + fmtPct(1 - pSickNeg) + "</td></tr></tbody>";
+  }
+
+  /* ---------- quiz ---------- */
+  const QUIZ = [
+    { q: "A test is 99% sensitive and has a 1% false positive rate. The condition affects 1 in 1,000 people tested. You test positive. About how likely are you to have it?",
+      o: ["About 99%", "About 50%", "About 9%", "About 1%"], a: 2,
+      why: "Per 100,000 people: 100 are sick and 99 test positive; 99,900 are healthy and 999 test positive. So 99 of 1,098 positives are real, about 9%." },
+    { q: "Besides sensitivity and false positive rate, what do you need to find the chance that a positive result is real?",
+      o: ["The cost of the test", "How common the condition is among people tested", "How many people took the test", "The test's specificity"], a: 1,
+      why: "That is the prior, or base rate. Specificity is just 1 − false positive rate, so it adds nothing new, and the number of people only scales the counts." },
+    { q: "Your prior odds of a hypothesis are 1 to 9. New evidence has a likelihood ratio of 4. What are the posterior odds and probability?",
+      o: ["4 to 9, about 31%", "4 to 1, about 80%", "1 to 36, about 3%", "1 to 9, about 10%"], a: 0,
+      why: "Posterior odds = prior odds × likelihood ratio = (1/9) × 4 = 4/9. Probability = 4 ÷ (4 + 9) ≈ 31%." },
+    { q: "Which statement commits the prosecutor's fallacy?",
+      o: ["A match like this happens by chance 1 time in 10,000, so there is a 1 in 10,000 chance the defendant is innocent", "If the defendant were innocent, a match would be rare", "A match is much more likely if the defendant is guilty than if innocent", "How likely guilt is depends partly on how likely it was before the match"], a: 0,
+      why: "It swaps P(match | innocent) for P(innocent | match). The second needs the prior and the number of people who could also match." },
+  ];
+  (function buildQuiz() {
+    const box = $("#quizBox"), score = $("#score");
+    let done = 0, right = 0;
+    QUIZ.forEach((it) => {
+      const f = document.createElement("fieldset"); f.className = "qz";
+      const lg = document.createElement("legend"); lg.textContent = it.q; f.appendChild(lg);
+      const opts = document.createElement("div"); opts.className = "qopts";
+      const why = document.createElement("div"); why.className = "qwhy"; why.hidden = true; why.setAttribute("aria-live", "polite");
+      it.o.forEach((t, oi) => {
+        const b = document.createElement("button"); b.type = "button"; b.className = "qopt"; b.textContent = t;
+        b.addEventListener("click", () => {
+          if (f.dataset.done) return;
+          f.dataset.done = "1"; done++;
+          const ok = oi === it.a; if (ok) right++;
+          b.classList.add(ok ? "ok" : "bad");
+          if (!ok) b.textContent = "✗ " + t;
+          const good = opts.children[it.a]; good.classList.add("ok"); good.textContent = "✓ " + it.o[it.a];
+          why.hidden = false; why.textContent = (ok ? "Correct. " : "Not quite. ") + it.why;
+          score.textContent = "Score so far: " + right + " of " + done + " answered, out of " + QUIZ.length + " questions.";
+        });
+        opts.appendChild(b);
+      });
+      f.appendChild(opts); f.appendChild(why); box.appendChild(f);
+    });
+  })();
+
+  render();
+})();
+</script>
+</body>
+</html>

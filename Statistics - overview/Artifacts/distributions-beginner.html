@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binomial, Poisson and normal distributions: a beginner's guide with examples</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #EDF0F5; --panel: #FFFFFF; --ink: #18212F; --muted: #566175; --line: #D3DAE6;
+    --accent: #2F5BEA; --tint: #E6ECFD;
+    --bin: #2F5BEA; --bin-soft: #B7C8F7;
+    --poi: #D9780F; --poi-soft: #F4D3A8;
+    --nor: #C8365C; --nor-soft: #EDB1C1;
+    --good: #BFE3D8;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 66px; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.6; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 24px 18px 64px; }
+  h1 { font-family: var(--serif); font-weight: 700; font-size: clamp(1.9rem, 4.6vw, 2.8rem); line-height: 1.12; margin: 0 0 10px; letter-spacing: -0.01em; }
+  h2 { font-family: var(--serif); font-size: 1.3rem; margin: 0 0 8px; line-height: 1.25; }
+  h3 { font-family: var(--serif); font-size: 1.12rem; margin: 0 0 6px; }
+  p { margin: 0 0 10px; }
+  a { color: var(--accent); }
+  :focus-visible { outline: 3px solid #F0A02B; outline-offset: 2px; }
+  .lead { max-width: 64ch; font-size: 1.1rem; color: var(--muted); margin-bottom: 18px; }
+  .prose { max-width: 66ch; }
+  .small { font-size: .93rem; color: var(--muted); }
+  i.v { font-style: italic; }
+
+  .topnav { position: sticky; top: 0; z-index: 30; background: rgba(237,240,245,.95); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+  .topnav .in { max-width: 1080px; margin: 0 auto; padding: 8px 18px; display: flex; gap: 8px; overflow-x: auto; }
+  .topnav a { text-decoration: none; color: var(--ink); background: #fff; border: 1.5px solid var(--line); border-radius: 999px; padding: 5px 14px; font-size: .93rem; white-space: nowrap; }
+  .topnav a:hover { border-color: var(--accent); color: var(--accent); }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; min-width: 0; }
+  .stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: start; min-width: 0; }
+  .sec { margin-top: 44px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .sec.bin { --c: var(--bin); --cs: var(--bin-soft); }
+  .sec.poi { --c: var(--poi); --cs: var(--poi-soft); }
+  .sec.nor { --c: var(--nor); --cs: var(--nor-soft); }
+  .sec.all { --c: var(--accent); --cs: var(--tint); }
+  .sech { font-family: var(--serif); font-size: clamp(1.6rem, 3.6vw, 2.2rem); margin: 0; line-height: 1.15; border-bottom: 4px solid var(--c); padding-bottom: 6px; display: inline-block; justify-self: start; }
+  .kicker { color: var(--muted); margin: -6px 0 0; max-width: 70ch; }
+
+  .cards { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 760px) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .card { display: block; text-decoration: none; color: var(--ink); background: #fff; border: 1px solid var(--line); border-top: 5px solid var(--c); border-radius: 12px; padding: 14px; }
+  .card:hover { border-color: var(--c); }
+  .card.bin { --c: var(--bin); } .card.poi { --c: var(--poi); } .card.nor { --c: var(--nor); }
+  .card b { font-family: var(--serif); font-size: 1.15rem; display: block; margin-bottom: 4px; }
+  .card span { color: var(--muted); font-size: .94rem; display: block; }
+
+  .words { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin-top: 8px; }
+  .word { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #FAFBFD; }
+  .word b { display: block; font-family: var(--serif); }
+  .word span { font-size: .93rem; color: var(--muted); }
+
+  .fit { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); margin: 8px 0; }
+  @media (min-width: 720px) { .fit { grid-template-columns: 1fr 1fr; } }
+  .fit > div { border-radius: 10px; padding: 10px 14px; }
+  .fit .yes { background: #E8F5EF; } .fit .no { background: #FBEAEE; }
+  .fit b { display: block; margin-bottom: 4px; }
+  .fit ul { margin: 0; padding: 0; list-style: none; }
+  .fit li { padding-left: 1.4em; position: relative; margin-bottom: 4px; font-size: .95rem; }
+  .fit .yes li::before { content: "✓"; position: absolute; left: 0; color: #0F5E47; font-weight: 700; }
+  .fit .no li::before { content: "✗"; position: absolute; left: 0; color: #8A1F3C; font-weight: 700; }
+
+  .math { font-family: var(--serif); font-size: 1.12rem; background: #F6F8FB; border-radius: 10px; padding: 10px 14px; margin: 8px 0; overflow-x: auto; font-variant-numeric: tabular-nums; line-height: 1.9; }
+  .math .ln { white-space: nowrap; }
+  details.peek { border: 1.5px dashed var(--line); border-radius: 12px; padding: 8px 14px; margin-top: 12px; background: #FAFBFD; }
+  details.peek summary { cursor: pointer; font-weight: 600; color: var(--c, var(--accent)); }
+  details.peek[open] summary { margin-bottom: 6px; }
+  .note { border-left: 4px solid #F0A02B; padding: 6px 12px; margin: 10px 0; max-width: 66ch; background: #FFF8EA; border-radius: 0 8px 8px 0; }
+  .panel ul.plain, .panel ol.plain { margin: 0 0 10px; padding-left: 1.3em; max-width: 66ch; }
+  .panel li { margin-bottom: 5px; }
+
+  .live { background: var(--tint); border-radius: 10px; padding: 10px 14px; margin: 10px 0; overflow-x: auto; }
+  .live .tag { font-size: .85rem; color: var(--muted); display: block; margin-bottom: 2px; }
+
+  .scenarios { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); margin: 6px 0 4px; }
+  .scen { font: inherit; text-align: left; border: 1.5px solid var(--line); background: #fff; border-radius: 12px; padding: 10px 12px; cursor: pointer; color: var(--ink); }
+  .scen b { display: block; font-family: var(--serif); font-size: 1.02rem; }
+  .scen span { display: block; font-size: .88rem; color: var(--muted); line-height: 1.3; }
+  .scen:hover { border-color: var(--c); }
+  .scen[aria-pressed="true"] { border-color: var(--c); background: var(--cs); box-shadow: inset 0 0 0 1px var(--c); }
+
+  .answer { border: 1.5px solid var(--c); background: #fff; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+  .answer .ctx { color: var(--muted); margin-bottom: 2px; }
+  .answer .qq { font-weight: 600; }
+  .answer .bigp { font-family: var(--serif); font-size: clamp(2.4rem, 7vw, 3.3rem); font-weight: 700; line-height: 1.05; color: var(--c); font-variant-numeric: tabular-nums; margin: 2px 0; }
+  .answer .tip { margin-top: 8px; font-size: .95rem; color: var(--muted); }
+
+  .lab { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 940px) { .lab { grid-template-columns: 290px minmax(0, 1fr); align-items: start; } .lab > .controls { position: sticky; top: 76px; } }
+  .ctl { margin-bottom: 14px; }
+  .ctl label, .ctl .lbl { display: block; font-weight: 600; margin-bottom: 2px; }
+  .row { display: flex; align-items: center; gap: 12px; }
+  input[type=range] { flex: 1; min-width: 0; height: 28px; accent-color: var(--c, var(--accent)); }
+  output { min-width: 4.2ch; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { font: inherit; font-size: .9rem; border: 1.5px solid var(--line); background: #fff; color: var(--ink); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+  .chip:hover { border-color: var(--c, var(--accent)); }
+  .chip[aria-pressed="true"] { background: var(--c, var(--accent)); border-color: var(--c, var(--accent)); color: #fff; }
+  .seg { display: flex; flex-wrap: wrap; border: 1.5px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .seg button { flex: 1 1 auto; font: inherit; font-size: .92rem; border: 0; background: #fff; padding: 7px 8px; cursor: pointer; color: var(--ink); }
+  .seg button + button { border-left: 1.5px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--c, var(--accent)); color: #fff; font-weight: 600; }
+  .btn { font: inherit; font-weight: 600; cursor: pointer; border: 1.5px solid var(--c, var(--accent)); background: #fff; color: var(--c, var(--accent)); border-radius: 10px; padding: 8px 12px; }
+  .btn:hover { background: var(--cs, var(--tint)); }
+  .btn.solid { background: var(--c, var(--accent)); color: #fff; }
+  .btn.solid:hover { filter: brightness(.92); }
+  .btns { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  .check { display: flex; align-items: center; gap: 8px; margin: 4px 0 10px; }
+  .check input { width: 18px; height: 18px; accent-color: var(--c, var(--accent)); }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 10px; }
+  .stat { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: #FAFBFD; }
+  .stat b { display: block; font-family: var(--serif); font-size: 1.3rem; font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .stat span { font-size: .84rem; color: var(--muted); display: block; line-height: 1.25; }
+
+  svg.chart { width: 100%; height: auto; display: block; }
+  svg .grid { stroke: #E3E8F1; stroke-width: 1; }
+  svg .axis { stroke: #566175; stroke-width: 1.2; }
+  svg .tick { font: 12px var(--sans); fill: #566175; }
+  svg .axlab { font: 13px var(--sans); fill: #566175; }
+  svg .emp { fill: #18212F; stroke: #fff; stroke-width: 1.5; }
+  svg .lblb { font: 700 12.5px var(--sans); fill: #18212F; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: .9rem; margin: 6px 0 2px; color: var(--muted); }
+  .legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .legend .sw.c { border-radius: 50%; }
+
+  .dots { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 0; min-height: 34px; align-items: center; }
+  .dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: #E3E8F1; }
+  .dot.on { background: var(--bin); }
+  .arr { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; margin: 10px 0; }
+  .arr .a { border: 1px solid var(--line); border-radius: 8px; padding: 6px; display: flex; gap: 3px; justify-content: center; background: #FAFBFD; }
+  .hb { display: inline-block; width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 6px; font-size: .8rem; font-weight: 700; background: #E3E8F1; color: #566175; }
+  .hb.h { background: var(--bin); color: #fff; }
+
+  .tblwrap { overflow-x: auto; }
+  .tbl { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  .tbl th, .tbl td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .tbl th { color: var(--muted); font-weight: 600; font-size: .88rem; }
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .88rem; font-weight: 600; margin: 2px 4px 2px 0; }
+  .badge.ok { background: #DDF1EA; color: #0F5E47; }
+  .badge.no { background: #FBE1E7; color: #8A1F3C; }
+
+  .qz { border: 0; padding: 0; margin: 0 0 22px; }
+  .qz legend { font-weight: 600; margin-bottom: 8px; padding: 0; max-width: 66ch; }
+  .qopts { display: grid; gap: 6px; max-width: 66ch; }
+  .qopt { font: inherit; text-align: left; background: #fff; border: 1.5px solid var(--line); border-radius: 10px; padding: 9px 12px; cursor: pointer; color: var(--ink); }
+  .qopt:hover { border-color: var(--accent); }
+  .qopt.ok { border-color: #17795C; background: #E4F3EE; }
+  .qopt.bad { border-color: #C23B3B; background: #FBE7E7; }
+  .qwhy { margin-top: 8px; max-width: 66ch; }
+</style>
+</head>
+<body>
+
+<nav class="topnav" aria-label="Sections">
+  <div class="in">
+    <a href="#warmup">Warm-up</a>
+    <a href="#binomial">1 Binomial</a>
+    <a href="#poisson">2 Poisson</a>
+    <a href="#normal">3 Normal</a>
+    <a href="#together">Putting it together</a>
+    <a href="#practice">Practice</a>
+    <a href="#notes">Notes</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<header>
+  <h1>Three distributions, explained with examples</h1>
+  <p class="lead">Some results are more likely than others, and a <b>distribution</b> is simply the picture of how likely each result is. This guide covers three of the most useful ones: <b>binomial</b> (counting yes/no results), <b>Poisson</b> (counting events over time) and <b>normal</b> (the bell curve for measurements). Every idea starts with an everyday example you can click, and formulas are tucked into optional boxes.</p>
+  <div class="cards">
+    <a class="card bin" href="#binomial"><b>1. Binomial</b><span>How many of 10 coin flips land heads? How many of 25 parts are defective?</span></a>
+    <a class="card poi" href="#poisson"><b>2. Poisson</b><span>How many calls does a help desk get in an hour? How many typos are on a page?</span></a>
+    <a class="card nor" href="#normal"><b>3. Normal</b><span>How tall are adults? How are exam scores or machine-made parts spread out?</span></a>
+  </div>
+</header>
+
+<!-- ============ WARM-UP ============ -->
+<section class="sec all" id="warmup">
+  <h2 class="sech">Warm-up: what is a distribution?</h2>
+  <p class="kicker">Start with something you already know: rolling two dice.</p>
+  <div class="panel">
+    <p class="prose">Roll two dice and add them up. You can get anything from 2 to 12, but the totals are <em>not</em> equally likely. A total of 7 can be made six ways (1+6, 2+5, 3+4, 4+3, 5+2, 6+1), while a 2 can only be made one way (1+1). The list of all possible totals with how likely each one is <b>is</b> the distribution.</p>
+    <div class="btns" style="--c: var(--accent)">
+      <button class="btn solid" id="d-roll1">Roll once</button>
+      <button class="btn" id="d-roll100">Roll 100 times</button>
+      <button class="btn" id="d-roll1000">Roll 1,000 times</button>
+      <button class="btn" id="d-clear">Clear</button>
+    </div>
+    <svg class="chart" id="d-chart" role="img" aria-label="Distribution of the total of two dice"></svg>
+    <div class="legend"><span><span class="sw" style="background:#2F5BEA"></span>total you picked</span><span><span class="sw" style="background:#B7C8F7"></span>other totals (the exact chances)</span><span><span class="sw c" style="background:#18212F"></span>your rolls</span></div>
+    <div class="live" id="d-live" aria-live="polite" style="--c: var(--accent)"></div>
+    <p class="small">Click or drag on the chart to pick a total. Roll many times: your dots settle onto the bars. That is the whole idea behind a distribution.</p>
+  </div>
+  <div class="panel">
+    <h3>Four words you will see</h3>
+    <div class="words">
+      <div class="word"><b>Probability</b><span>How likely something is, from 0% (never) to 100% (always). A 1-in-4 chance is 25%.</span></div>
+      <div class="word"><b>Average (mean)</b><span>The balance point of the distribution. For two dice the average total is 7.</span></div>
+      <div class="word"><b>Spread (standard deviation)</b><span>How far results typically stray from the average. Wide spread means less predictable.</span></div>
+      <div class="word"><b>Independent</b><span>One result does not affect another. Your first coin flip tells you nothing about the second.</span></div>
+    </div>
+    <p class="prose" style="margin-top:10px"><b>Counting vs. measuring.</b> Dice totals and coin flips are <em>counts</em> (whole numbers), so each result has its own probability. A height or a weight is a <em>measurement</em>: it can be any value on a smooth scale, so we talk about the chance of falling in a <em>range</em> instead. Binomial and Poisson are for counts. Normal is for measurements.</p>
+  </div>
+</section>
+
+<!-- ============ BINOMIAL ============ -->
+<section class="sec bin" id="binomial">
+  <h2 class="sech">1. Binomial distribution</h2>
+  <p class="kicker">Use it when you repeat the same yes/no event a fixed number of times and count the yeses.</p>
+
+  <div class="panel">
+    <h3>The idea in one example</h3>
+    <p class="prose">You flip a coin 10 times and count the heads. Each flip is a <b>trial</b> with two outcomes: heads (a "success") or tails. The count of heads can be anything from 0 to 10, and the binomial distribution tells you how likely each count is. The same recipe works for free throws, emails opened, defective parts and guessed quiz answers.</p>
+    <p class="prose" style="margin-bottom:2px"><b>It fits when all four of these are true:</b> each trial is yes/no; the number of trials is fixed in advance; trials do not affect each other; and the chance of success is the same each time.</p>
+    <div class="fit">
+      <div class="yes"><b>Binomial fits</b><ul>
+        <li>Heads in 10 coin flips</li>
+        <li>Baskets made out of 10 free throws</li>
+        <li>People who open an email, out of 20 sent</li>
+        <li>Defective parts in a box of 25</li>
+        <li>Correct answers when guessing on a quiz</li>
+      </ul></div>
+      <div class="no"><b>Binomial does not fit</b><ul>
+        <li>Customers per day: nobody fixed the number of trials (that is Poisson)</li>
+        <li>Cards drawn from a small deck without putting them back: the chances change after each draw</li>
+        <li>Friends who all decide together to open an email: not independent</li>
+        <li>A person's height: a measurement, not a count of yes/no results</li>
+      </ul></div>
+    </div>
+  </div>
+
+  <div class="panel" style="--c: var(--bin); --cs: var(--bin-soft)">
+    <h3>Why some counts are more likely than others</h3>
+    <p class="prose">Flip a coin a few times and ask for exactly <i class="v">k</i> heads. Every different sequence that gives <i class="v">k</i> heads counts. There are more sequences with a mix of heads and tails than with all heads, and that is why middle results are more likely. Change the sliders to list every sequence.</p>
+    <div style="display:grid;gap:0 18px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">
+      <div class="ctl"><label for="a-n">Number of flips</label><div class="row"><input type="range" id="a-n" min="1" max="5" value="4"><output id="a-nOut"></output></div></div>
+      <div class="ctl"><label for="a-k">Heads wanted</label><div class="row"><input type="range" id="a-k" min="0" max="4" value="2"><output id="a-kOut"></output></div></div>
+      <div class="ctl"><label for="a-p">Chance of heads per flip</label><div class="row"><input type="range" id="a-p" min="0.1" max="0.9" step="0.1" value="0.5"><output id="a-pOut"></output></div></div>
+    </div>
+    <div class="arr" id="a-list" aria-label="All sequences with the chosen number of heads"></div>
+    <div class="live" id="a-live" aria-live="polite"></div>
+  </div>
+
+  <div class="panel">
+    <h3>Try it: pick an example</h3>
+    <p class="small" style="margin-bottom:4px">Each button loads a real-life situation into the explorer below.</p>
+    <div class="scenarios" id="b-scen" style="--c: var(--bin); --cs: var(--bin-soft)"></div>
+  </div>
+
+  <div class="lab" style="--c: var(--bin); --cs: var(--bin-soft)">
+    <div class="panel controls">
+      <h3>Adjust it</h3>
+      <div class="ctl"><label for="b-n" id="b-nL">Number of trials</label><div class="row"><input type="range" id="b-n" min="1" max="100" value="10"><output id="b-nOut"></output></div></div>
+      <div class="ctl"><label for="b-p" id="b-pL">Chance of success each time</label><div class="row"><input type="range" id="b-p" min="0.01" max="0.99" step="0.01" value="0.5"><output id="b-pOut"></output></div></div>
+      <div class="ctl"><div class="lbl" id="b-modeL">What do you want the chance of?</div>
+        <div class="seg" id="b-mode" role="group" aria-labelledby="b-modeL"><button data-v="eq" aria-pressed="true">Exactly</button><button data-v="le" aria-pressed="false">At most</button><button data-v="ge" aria-pressed="false">At least</button><button data-v="bt" aria-pressed="false">Between</button></div></div>
+      <div class="ctl"><label for="b-k1" id="b-k1L">How many?</label><div class="row"><input type="range" id="b-k1" min="0" max="10" value="5"><output id="b-k1Out"></output></div></div>
+      <div class="ctl" id="b-k2wrap" hidden><label for="b-k2">Up to</label><div class="row"><input type="range" id="b-k2" min="0" max="10" value="6"><output id="b-k2Out"></output></div></div>
+      <div class="ctl" style="margin-bottom:0"><div class="lbl" id="b-viewL">Chart shows</div>
+        <div class="seg" id="b-view" role="group" aria-labelledby="b-viewL"><button data-v="pmf" aria-pressed="true">Each result</button><button data-v="cdf" aria-pressed="false">Running total</button></div></div>
+    </div>
+    <div class="stack">
+      <div class="panel">
+        <div class="answer" aria-live="polite">
+          <div class="ctx" id="b-ctx"></div>
+          <div class="qq" id="b-q"></div>
+          <div class="bigp" id="b-big"></div>
+          <div id="b-sub"></div>
+          <div class="tip" id="b-tip"></div>
+        </div>
+        <div class="stats" id="b-stats"></div>
+        <svg class="chart" id="b-chart" role="img" aria-label="Binomial distribution chart"></svg>
+        <div class="legend" id="b-legend"></div>
+        <p class="small" style="margin:6px 0 0">Tip: click or drag on the chart to change the number.</p>
+      </div>
+      <div class="panel">
+        <h3>Run the experiment yourself</h3>
+        <p class="small prose">Do the whole experiment once (all the flips, shots, emails…) and see what happens. Then repeat it many times and compare with the exact chances above.</p>
+        <div class="btns">
+          <button class="btn solid" id="b-run1">Run once</button>
+          <button class="btn" id="b-run100">Run 100 times</button>
+          <button class="btn" id="b-run1000">Run 1,000 times</button>
+          <button class="btn" id="b-clear">Clear</button>
+        </div>
+        <div class="dots" id="b-dots" aria-live="polite"></div>
+        <div class="live" id="b-sim" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>What shape does it take?</h3>
+    <ul class="plain">
+      <li><b>Coin flips (50%)</b>: a symmetric hill centered on 5.</li>
+      <li><b>Defects (2%)</b>: the pile sits at 0 and trails off to the right, because successes are rare.</li>
+      <li><b>Free throws (70%)</b>: the pile leans toward the high end, because success is common.</li>
+      <li><b>More trials</b>: the hill gets smoother and more bell-shaped. Load the coin example and raise the number of flips to 100 to see it.</li>
+    </ul>
+    <p class="prose"><b>Average and spread.</b> The average number of successes is simply <i class="v">n</i> × <i class="v">p</i>. Flip 10 coins at 50%: you expect 5 heads. Send 20 emails at a 30% open rate: you expect 6 opens. The actual count will wander around that average by a few, which the "typical spread" card shows.</p>
+    <details class="peek">
+      <summary>Peek at the math (optional)</summary>
+      <p class="prose">The chance of exactly <i class="v">k</i> successes in <i class="v">n</i> trials is:</p>
+      <div class="math"><div class="ln">P(k) = (number of ways to choose which trials succeed) × p<sup>k</sup> × (1 − p)<sup>n − k</sup></div></div>
+      <p class="prose"><b>Worked example.</b> Exactly 2 heads in 4 fair flips. There are 6 sequences with 2 heads (see the demo above). Each has probability 0.5 × 0.5 × 0.5 × 0.5 = 0.0625. So P(2 heads) = 6 × 0.0625 = 0.375, or 37.5%.</p>
+      <p class="prose">The typical spread is √(n × p × (1 − p)). For 10 fair coin flips that is √(10 × 0.5 × 0.5) ≈ 1.6, so you usually land within 1 or 2 of 5.</p>
+    </details>
+    <div class="note"><b>Common mistakes.</b> Using it when trials affect each other (people copying each other's choices), when the chance changes from trial to trial (a mix of keen and casual customers), or when you did not fix the number of trials in advance.</div>
+  </div>
+</section>
+
+<!-- ============ POISSON ============ -->
+<section class="sec poi" id="poisson">
+  <h2 class="sech">2. Poisson distribution</h2>
+  <p class="kicker">Use it when you count how many times something happens over a stretch of time or space, and there is no fixed number of trials.</p>
+
+  <div class="panel">
+    <h3>The idea in one example</h3>
+    <p class="prose">A help desk gets about 4 calls an hour on average. In any particular hour it might get 2, or 7, or none. There is no "number of trials" this time: a call could come at any moment, and nothing stops it from going higher. The Poisson distribution gives the chance of each count, and it needs just one number: the <b>average</b> count per interval (called <i class="v">λ</i>, "lambda").</p>
+    <p class="prose" style="margin-bottom:2px"><b>It fits when</b> events happen one at a time, independently of each other, at a steady average rate.</p>
+    <div class="fit">
+      <div class="yes"><b>Poisson fits</b><ul>
+        <li>Calls arriving at a help desk per hour</li>
+        <li>Typos on a page</li>
+        <li>Shooting stars seen per hour on a clear night</li>
+        <li>Website errors per day</li>
+        <li>Potholes per kilometer of road</li>
+      </ul></div>
+      <div class="no"><b>Poisson does not fit well</b><ul>
+        <li>Traffic that is far heavier at rush hour: the rate is not steady</li>
+        <li>Aftershocks: one event makes more events likely</li>
+        <li>Calls that arrive in bunches (a whole office calling at once)</li>
+        <li>Counts with a hard upper limit, like seats on a bus</li>
+      </ul></div>
+    </div>
+  </div>
+
+  <div class="lab" style="--c: var(--poi); --cs: var(--poi-soft)">
+    <div class="panel controls">
+      <h3>Why does Poisson exist?</h3>
+      <p class="small">Cut the hour into equal slices. In each slice a call either arrives or it does not, which is a yes/no trial, so the count of calls is a binomial. Use smaller and smaller slices (here the average is always 4 calls per hour) and watch it turn into a Poisson.</p>
+      <div class="ctl" style="margin-bottom:0"><label for="s-n" id="s-nL">Slices</label><div class="row"><input type="range" id="s-n" min="0" max="5" step="1" value="0"><output id="s-nOut" style="min-width:5ch"></output></div></div>
+    </div>
+    <div class="stack">
+      <div class="panel">
+        <svg class="chart" id="s-strip" viewBox="0 0 680 64" role="img" aria-label="The hour cut into slices"></svg>
+        <p id="s-text" aria-live="polite" style="margin-top:6px"></p>
+        <svg class="chart" id="s-chart" role="img" aria-label="Binomial bars and Poisson dots"></svg>
+        <div class="legend"><span><span class="sw" style="background:#2F5BEA"></span>sliced-hour binomial</span><span><span class="sw c" style="background:#D9780F"></span>Poisson</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Try it: pick an example</h3>
+    <div class="scenarios" id="p-scen" style="--c: var(--poi); --cs: var(--poi-soft)"></div>
+  </div>
+
+  <div class="lab" style="--c: var(--poi); --cs: var(--poi-soft)">
+    <div class="panel controls">
+      <h3>Adjust it</h3>
+      <div class="ctl"><label for="p-lam" id="p-lamL">Average per interval (λ)</label><div class="row"><input type="range" id="p-lam" min="0.5" max="20" step="0.5" value="4"><output id="p-lamOut"></output></div></div>
+      <div class="ctl"><div class="lbl" id="p-modeL">What do you want the chance of?</div>
+        <div class="seg" id="p-mode" role="group" aria-labelledby="p-modeL"><button data-v="eq" aria-pressed="true">Exactly</button><button data-v="le" aria-pressed="false">At most</button><button data-v="ge" aria-pressed="false">At least</button><button data-v="bt" aria-pressed="false">Between</button></div></div>
+      <div class="ctl"><label for="p-k1" id="p-k1L">How many?</label><div class="row"><input type="range" id="p-k1" min="0" max="40" value="0"><output id="p-k1Out"></output></div></div>
+      <div class="ctl" id="p-k2wrap" hidden><label for="p-k2">Up to</label><div class="row"><input type="range" id="p-k2" min="0" max="40" value="6"><output id="p-k2Out"></output></div></div>
+      <div class="ctl" style="margin-bottom:0"><div class="lbl" id="p-viewL">Chart shows</div>
+        <div class="seg" id="p-view" role="group" aria-labelledby="p-viewL"><button data-v="pmf" aria-pressed="true">Each result</button><button data-v="cdf" aria-pressed="false">Running total</button></div></div>
+    </div>
+    <div class="stack">
+      <div class="panel">
+        <div class="answer" aria-live="polite">
+          <div class="ctx" id="p-ctx"></div>
+          <div class="qq" id="p-q"></div>
+          <div class="bigp" id="p-big"></div>
+          <div id="p-sub"></div>
+          <div class="tip" id="p-tip"></div>
+        </div>
+        <div class="stats" id="p-stats"></div>
+        <svg class="chart" id="p-chart" role="img" aria-label="Poisson distribution chart"></svg>
+        <div class="legend" id="p-legend"></div>
+        <p class="small" style="margin:6px 0 0">Tip: click or drag on the chart to change the number.</p>
+      </div>
+      <div class="panel">
+        <h3>Watch events arrive</h3>
+        <p class="small prose">Each simulation shows 24 intervals in a row (for example 24 hours). Every dot is one event, and the number on top is the count in that interval. Notice that the counts jump around even though the average stays the same.</p>
+        <div class="btns">
+          <button class="btn solid" id="p-run1">Show 24 intervals</button>
+          <button class="btn" id="p-run50">Simulate 1,200 intervals</button>
+          <button class="btn" id="p-clear">Clear</button>
+        </div>
+        <svg class="chart" id="p-tl" viewBox="0 0 680 150" role="img" aria-label="Timeline of simulated events"></svg>
+        <div class="live" id="p-sim" aria-live="polite"></div>
+      </div>
+      <div class="panel">
+        <h3>Rates scale with time</h3>
+        <p class="small prose">If you know the rate per hour, the average for any window is rate × time. Slide to find the average for the window you care about.</p>
+        <div style="display:grid;gap:0 18px;grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">
+          <div class="ctl"><label for="r-rate">Calls per hour</label><div class="row"><input type="range" id="r-rate" min="1" max="12" step="1" value="6"><output id="r-rateOut"></output></div></div>
+          <div class="ctl"><label for="r-min">Window (minutes)</label><div class="row"><input type="range" id="r-min" min="5" max="120" step="5" value="20"><output id="r-minOut" style="min-width:5ch"></output></div></div>
+        </div>
+        <div class="live" id="r-live" aria-live="polite"></div>
+        <button class="btn" id="r-use">Use this average in the explorer above</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Things worth knowing</h3>
+    <ul class="plain">
+      <li><b>The average and the spread are linked.</b> If the average is 4, the typical spread is about 2 (its square root). So a busier desk is more variable in absolute terms, but less variable compared with its size.</li>
+      <li><b>Quiet spells happen.</b> Even with an average of 4 per hour, an hour with zero calls happens now and then. Use "Exactly 0" to see how often.</li>
+      <li><b>At least one.</b> The chance of at least one event is 1 − (chance of none). It is often the number you really want.</li>
+      <li><b>Streams combine.</b> Two independent streams with averages 3 and 5 per hour combine into one stream averaging 8 per hour, still Poisson.</li>
+    </ul>
+    <details class="peek">
+      <summary>Peek at the math (optional)</summary>
+      <p class="prose">The chance of exactly <i class="v">k</i> events when the average is <i class="v">λ</i>:</p>
+      <div class="math"><div class="ln">P(k) = e<sup>−λ</sup> × λ<sup>k</sup> ÷ k!</div></div>
+      <p class="prose"><b>Worked example.</b> Average 4 calls an hour, chance of no calls: e<sup>−4</sup> × 4<sup>0</sup> ÷ 0! = e<sup>−4</sup> ≈ 0.018, about 1.8%. The number <i class="v">e</i> ≈ 2.718 is a constant that shows up whenever things grow or decay continuously.</p>
+      <p class="prose">Where it comes from: take a binomial with a huge number of slices <i class="v">n</i> and a tiny chance <i class="v">p</i> per slice, keeping n × p = λ. As n grows, the binomial formula simplifies to exactly the one above.</p>
+    </details>
+    <div class="note"><b>Common mistakes.</b> Assuming a constant rate when it really changes during the day, and ignoring bunching. A quick check: for real Poisson counts, the variance (spread squared) is about equal to the average. If it is much larger, events are clumping.</div>
+  </div>
+</section>
+
+<!-- ============ NORMAL ============ -->
+<section class="sec nor" id="normal">
+  <h2 class="sech">3. Normal distribution</h2>
+  <p class="kicker">The bell curve. Use it for measurements that cluster around an average, and for totals of many small effects.</p>
+
+  <div class="panel">
+    <h3>The idea in one example</h3>
+    <p class="prose">Think of adult heights. Most people are close to the average, a few are much shorter or taller, and the pattern is symmetric: just as many far below as far above. Plotted, that is a smooth bell. Two numbers describe it completely: the <b>average</b> (where the middle is) and the <b>spread</b> (how wide the bell is).</p>
+    <p class="prose">Because height can be any value, the chance of being exactly 170.000 cm is essentially zero. Instead we ask about <b>ranges</b>, like "between 160 and 180 cm", and the answer is the <b>area under the curve</b> over that range.</p>
+    <div class="fit">
+      <div class="yes"><b>Roughly normal</b><ul>
+        <li>Adult heights</li>
+        <li>Measurement errors</li>
+        <li>Parts made by a machine (bolt diameters, fill volumes)</li>
+        <li>The total of many dice rolls</li>
+      </ul></div>
+      <div class="no"><b>Usually not normal</b><ul>
+        <li>Incomes: a few huge values stretch the right side</li>
+        <li>Waiting times: bunched near zero with a long tail</li>
+        <li>Star ratings: stuck between 1 and 5</li>
+        <li>Counts of rare events (use Poisson or binomial)</li>
+      </ul></div>
+    </div>
+  </div>
+
+  <div class="lab" style="--c: var(--nor); --cs: var(--nor-soft)">
+    <div class="panel controls">
+      <h3>From histogram to curve</h3>
+      <p class="small">Simulated heights of adults (average 170 cm, spread 10 cm). Each bar counts the people in one height band. Make the bands narrower and add more people, and the bars trace out the smooth bell.</p>
+      <div class="ctl"><label for="h-w">Band width (cm)</label><div class="row"><input type="range" id="h-w" min="1" max="10" step="1" value="5"><output id="h-wOut"></output></div></div>
+      <div class="ctl"><label for="h-N">People measured</label><div class="row"><input type="range" id="h-N" min="50" max="5000" step="50" value="300"><output id="h-NOut" style="min-width:5ch"></output></div></div>
+      <label class="check"><input type="checkbox" id="h-curve"><span>Show the bell curve</span></label>
+      <button class="btn solid" id="h-new">Measure new people</button>
+    </div>
+    <div class="stack">
+      <div class="panel">
+        <svg class="chart" id="h-chart" role="img" aria-label="Histogram of heights with bell curve"></svg>
+        <p class="small" id="h-live" style="margin-top:6px" aria-live="polite"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Try it: pick an example</h3>
+    <div class="scenarios" id="n-scen" style="--c: var(--nor); --cs: var(--nor-soft)"></div>
+  </div>
+
+  <div class="lab" style="--c: var(--nor); --cs: var(--nor-soft)">
+    <div class="panel controls">
+      <h3>Adjust it</h3>
+      <div class="ctl"><label for="n-mu">Average</label><div class="row"><input type="range" id="n-mu" min="0" max="1" step="1" value="0"><output id="n-muOut" style="min-width:5ch"></output></div></div>
+      <div class="ctl"><label for="n-sd">Spread (standard deviation)</label><div class="row"><input type="range" id="n-sd" min="0" max="1" step="1" value="0"><output id="n-sdOut" style="min-width:5ch"></output></div></div>
+      <div class="ctl"><label for="n-from">Range starts at</label><div class="row"><input type="range" id="n-from" min="0" max="1" step="1" value="0"><output id="n-fromOut" style="min-width:5ch"></output></div></div>
+      <div class="ctl"><label for="n-to">Range ends at</label><div class="row"><input type="range" id="n-to" min="0" max="1" step="1" value="0"><output id="n-toOut" style="min-width:5ch"></output></div></div>
+      <div class="ctl"><label for="n-x">Where does one value stand?</label><div class="row"><input type="range" id="n-x" min="0" max="1" step="1" value="0"><output id="n-xOut" style="min-width:5ch"></output></div></div>
+      <label class="check" style="margin-bottom:0"><input type="checkbox" id="n-bands"><span>Mark 1, 2 and 3 spreads from the average</span></label>
+    </div>
+    <div class="stack">
+      <div class="panel">
+        <div class="answer" aria-live="polite">
+          <div class="ctx" id="n-ctx"></div>
+          <div class="qq" id="n-q"></div>
+          <div class="bigp" id="n-big"></div>
+          <div id="n-sub"></div>
+          <div class="tip" id="n-tip"></div>
+        </div>
+        <svg class="chart" id="n-chart" role="img" aria-label="Normal curve with a shaded range"></svg>
+        <div class="legend"><span><span class="sw" style="background:#BFE3D8"></span>inside your range</span><span><span class="sw" style="background:#EDB1C1"></span>outside it</span><span><span class="sw" style="background:#18212F"></span>the single value you picked</span></div>
+        <div class="live" id="n-stand" aria-live="polite"></div>
+        <div class="live" id="n-rule" aria-live="polite" style="background:#F6F8FB"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>The 68–95–99.7 rule of thumb</h3>
+    <p class="prose">For any bell curve, about <b>68%</b> of values land within <b>1 spread</b> of the average, about <b>95%</b> within <b>2 spreads</b>, and about <b>99.7%</b> within <b>3 spreads</b>. With heights (average 170, spread 10): about 68% of adults are between 160 and 180 cm, about 95% between 150 and 190, and nearly everyone between 140 and 200. Tick the box in the explorer to see the bands for each example.</p>
+    <p class="prose"><b>How many spreads away is a value?</b> That count is called a <em>z-score</em>. A height of 190 is 2 spreads above average, so z = +2. It tells you how unusual a value is in a way that works for any example: heights, test scores or bolts. The explorer's "Where does one value stand?" slider turns it into "higher than X% of values".</p>
+  </div>
+
+  <div class="lab" style="--c: var(--nor); --cs: var(--nor-soft)">
+    <div class="panel controls">
+      <h3>Why does the bell curve show up everywhere?</h3>
+      <p class="small">When you <b>add up many small random pieces</b>, the total tends to form a bell, almost no matter what a single piece looks like. This is called the central limit theorem. Pick a single draw, then add more and more of them.</p>
+      <div class="ctl"><div class="lbl" id="c-srcL">One draw is a…</div>
+        <div class="chips" id="c-src" role="group" aria-labelledby="c-srcL">
+          <button class="chip" data-v="coin" aria-pressed="true">Coin (0 or 1)</button>
+          <button class="chip" data-v="die" aria-pressed="false">Die roll (1 to 6)</button>
+          <button class="chip" data-v="expo" aria-pressed="false">Waiting time (skewed)</button>
+        </div></div>
+      <div class="ctl"><label for="c-n">How many draws added up?</label><div class="row"><input type="range" id="c-n" min="1" max="50" value="1"><output id="c-nOut"></output></div>
+        <div class="chips" id="c-npre" role="group" aria-label="Quick values"><button class="chip" data-n="1">1</button><button class="chip" data-n="2">2</button><button class="chip" data-n="5">5</button><button class="chip" data-n="10">10</button><button class="chip" data-n="30">30</button></div></div>
+      <label class="check"><input type="checkbox" id="c-curve"><span>Show the bell curve</span></label>
+      <button class="btn solid" id="c-new">Do it again</button>
+    </div>
+    <div class="stack">
+      <div class="panel">
+        <svg class="chart" id="c-chart" role="img" aria-label="Histogram of totals"></svg>
+        <div class="live" id="c-live" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Things worth knowing</h3>
+    <ul class="plain">
+      <li><b>Symmetric and centered.</b> The average, the middle value and the most common value are all the same point.</li>
+      <li><b>Spread sets the width.</b> A machine with a small spread makes parts that are all nearly identical. Try shrinking the spread on the bolts example and watch the share inside the limits climb.</li>
+      <li><b>The center matters too.</b> Even a low-spread machine fails if its average drifts away from the target. Slide the average on the bolts example.</li>
+      <li><b>Spreads combine in a surprising way.</b> Stack three bolts, each with spread 0.05 mm. The stack's spread is about 0.087 mm, not 0.15: random errors partly cancel.</li>
+    </ul>
+    <details class="peek">
+      <summary>Peek at the math (optional)</summary>
+      <p class="prose">A z-score is just how many spreads a value is from the average:</p>
+      <div class="math"><div class="ln">z = (value − average) ÷ spread</div></div>
+      <p class="prose"><b>Worked example.</b> Heights average 170 cm with spread 10 cm. A person 185 cm tall has z = (185 − 170) ÷ 10 = 1.5, so they are 1.5 spreads above average. A table (or any spreadsheet function) says about 93% of people are shorter.</p>
+      <p class="prose">The curve itself is given by f(x) = 1 ÷ (spread × √(2π)) × e<sup>−(x − average)² ÷ (2 × spread²)</sup>. You never need to compute it by hand: the explorer does it for you.</p>
+    </details>
+    <div class="note"><b>Common mistakes.</b> Assuming everything is normal (incomes and waiting times are not). Forgetting that the bell curve's tails are thin, so extreme values are very rare if the data really is normal, but much more common if it is not. And remembering that a normal model happily allows impossible values, like a negative height, with a tiny probability.</div>
+  </div>
+</section>
+
+<!-- ============ TOGETHER ============ -->
+<section class="sec all" id="together">
+  <h2 class="sech">Putting it together</h2>
+  <p class="kicker">The three are relatives, not strangers.</p>
+
+  <div class="panel">
+    <svg class="chart" viewBox="0 0 700 300" role="img" aria-label="Diagram: one yes/no trial leads to binomial; binomial leads to Poisson and normal; Poisson leads to normal">
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#566175"/></marker></defs>
+      <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="15">
+        <rect x="40" y="16" width="170" height="46" rx="10" fill="#fff" stroke="#D3DAE6"/><text x="125" y="44" text-anchor="middle" fill="#18212F" font-weight="700">One yes/no trial</text>
+        <rect x="40" y="120" width="170" height="46" rx="10" fill="#E6ECFD" stroke="#2F5BEA" stroke-width="2"/><text x="125" y="148" text-anchor="middle" fill="#18212F" font-weight="700">Binomial</text>
+        <rect x="470" y="120" width="170" height="46" rx="10" fill="#FBE9D1" stroke="#D9780F" stroke-width="2"/><text x="555" y="148" text-anchor="middle" fill="#18212F" font-weight="700">Poisson</text>
+        <rect x="255" y="226" width="190" height="46" rx="10" fill="#FADCE4" stroke="#C8365C" stroke-width="2"/><text x="350" y="254" text-anchor="middle" fill="#18212F" font-weight="700">Normal</text>
+        <line x1="125" y1="62" x2="125" y2="118" stroke="#566175" stroke-width="2" marker-end="url(#ah)"/>
+        <text x="137" y="95" fill="#566175">repeat it n times, count the yeses</text>
+        <line x1="210" y1="143" x2="468" y2="143" stroke="#566175" stroke-width="2" marker-end="url(#ah)"/>
+        <text x="339" y="132" text-anchor="middle" fill="#566175">many tiny chances</text>
+        <line x1="150" y1="168" x2="262" y2="224" stroke="#566175" stroke-width="2" marker-end="url(#ah)"/>
+        <text x="14" y="236" fill="#566175">lots of trials, success not rare</text>
+        <line x1="530" y1="168" x2="438" y2="224" stroke="#566175" stroke-width="2" marker-end="url(#ah)"/>
+        <text x="520" y="214" fill="#566175">high average</text>
+      </g>
+    </svg>
+    <ul class="plain">
+      <li><b>Binomial → Poisson.</b> Chop an hour into many tiny slices with a small chance of an event in each. That is a binomial, and it behaves like a Poisson.</li>
+      <li><b>Binomial → normal.</b> With lots of trials and a success rate that is not extreme, the binomial's bars form a bell. A count of heads in 100 flips looks like a bell curve.</li>
+      <li><b>Poisson → normal.</b> When the average count is large (say 20+), the Poisson bars also form a bell.</li>
+    </ul>
+    <p class="prose">This is useful: when a binomial is awkward to work out, a Poisson or normal curve can stand in for it. The lab below shows when that works.</p>
+  </div>
+
+  <div class="lab" style="--c: var(--accent); --cs: var(--tint)">
+    <div class="panel controls">
+      <h3>Stand-in lab</h3>
+      <p class="small">Pick a binomial and see how well a Poisson and a normal curve imitate it.</p>
+      <div class="ctl"><label for="m-n">Number of trials</label><div class="row"><input type="range" id="m-n" min="1" max="500" value="100"><output id="m-nOut"></output></div></div>
+      <div class="ctl"><label for="m-p">Chance of success each time</label><div class="row"><input type="range" id="m-p" min="0.01" max="0.99" step="0.01" value="0.5"><output id="m-pOut"></output></div></div>
+      <div class="chips" id="m-presets" role="group" aria-label="Examples">
+        <button class="chip" data-n="100" data-p="0.5">100 coin flips</button>
+        <button class="chip" data-n="500" data-p="0.01">500 parts, 1% defective</button>
+        <button class="chip" data-n="12" data-p="0.3">12 trials at 30%</button>
+      </div>
+      <label class="check" style="margin-top:10px"><input type="checkbox" id="m-showP" checked><span>Show Poisson dots</span></label>
+      <label class="check"><input type="checkbox" id="m-showN" checked><span>Show normal curve</span></label>
+    </div>
+    <div class="stack">
+      <div class="panel">
+        <svg class="chart" id="m-chart" role="img" aria-label="Binomial bars with Poisson dots and normal curve"></svg>
+        <div class="legend"><span><span class="sw" style="background:#2F5BEA"></span>exact binomial</span><span><span class="sw c" style="background:#D9780F"></span>Poisson stand-in</span><span><span class="sw" style="background:#C8365C"></span>normal stand-in</span></div>
+        <div id="m-rules" style="margin-top:10px" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Side by side</h3>
+    <div class="tblwrap">
+      <table class="tbl">
+        <thead><tr><th></th><th>Binomial</th><th>Poisson</th><th>Normal</th></tr></thead>
+        <tbody>
+          <tr><th>What it describes</th><td>Number of successes in a fixed number of trials</td><td>Number of events in an interval</td><td>A measurement, or a sum of many small effects</td></tr>
+          <tr><th>Possible values</th><td>0 up to n</td><td>0, 1, 2, … with no cap</td><td>Any number on a scale</td></tr>
+          <tr><th>You need to know</th><td>n and p</td><td>The average λ</td><td>The average and the spread</td></tr>
+          <tr><th>Average</th><td>n × p</td><td>λ</td><td>The center</td></tr>
+          <tr><th>Examples</th><td>Heads in 10 flips; defects in a box of 25</td><td>Calls per hour; typos per page</td><td>Heights; bolt diameters; fill volumes</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel" style="--c: var(--accent); --cs: var(--tint)">
+    <h3>Which one do I use?</h3>
+    <p class="small">Pick the description that matches what you are looking at.</p>
+    <div class="chips" id="dec" role="group" aria-label="What are you looking at?">
+      <button class="chip" data-v="a" aria-pressed="false">Yes/no results, repeated a set number of times</button>
+      <button class="chip" data-v="b" aria-pressed="false">Events happening over time or space</button>
+      <button class="chip" data-v="c" aria-pressed="false">A measurement, or a total of many small things</button>
+    </div>
+    <div class="live" id="decOut" aria-live="polite">Choose one of the options above.</div>
+  </div>
+</section>
+
+<!-- ============ PRACTICE ============ -->
+<section class="sec all" id="practice">
+  <h2 class="sech">Practice: which distribution fits?</h2>
+  <p class="kicker">Eight real-life situations and three quick questions.</p>
+  <div class="panel">
+    <div id="quizBox"></div>
+    <p class="small" id="score"></p>
+  </div>
+</section>
+
+<!-- ============ NOTES ============ -->
+<section class="sec all" id="notes">
+  <h2 class="sech">Notes and sources</h2>
+  <div class="panel">
+    <p class="prose">The definitions and relationships here are standard results. Good general references:</p>
+    <ul class="plain">
+      <li>J. K. Blitzstein and J. Hwang, <em>Introduction to Probability</em> (CRC Press), a friendly, example-driven textbook.</li>
+      <li>NIST/SEMATECH <em>e-Handbook of Statistical Methods</em>, section on probability distributions: <a href="https://www.itl.nist.gov/div898/handbook/" target="_blank" rel="noopener">itl.nist.gov/div898/handbook</a>.</li>
+      <li>G. Casella and R. L. Berger, <em>Statistical Inference</em> (Cengage), for the more mathematical treatment.</li>
+    </ul>
+    <p class="prose"><b>What is a guideline.</b> The "stand-in" checks in the lab (normal works when you expect at least about 10 successes and 10 failures; Poisson works when there are many trials and successes are rare) are common rules of thumb. Textbooks vary on the exact cutoffs, so treat them as rough guides.</p>
+    <p class="prose"><b>About the examples.</b> All numbers (open rates, defect rates, call rates, heights, scores, bolt sizes) are made up for illustration and are not measured data. Simulations use your browser's pseudo-random generator, so results change each time. I have not verified specific page numbers in the references; check the editions you have.</p>
+  </div>
+</section>
+
+</div>
+
+<script>
+(function () {
+"use strict";
+const $ = (s) => document.querySelector(s);
+const NS = "http://www.w3.org/2000/svg";
+
+/* ================= math ================= */
+const LF = new Float64Array(4001);
+for (let i = 1; i < LF.length; i++) LF[i] = LF[i - 1] + Math.log(i);
+const lnC = (n, k) => LF[n] - LF[k] - LF[n - k];
+function binP(n, k, p) {
+  if (k < 0 || k > n) return 0;
+  if (p <= 0) return k === 0 ? 1 : 0;
+  if (p >= 1) return k === n ? 1 : 0;
+  return Math.exp(lnC(n, k) + k * Math.log(p) + (n - k) * Math.log(1 - p));
+}
+function poiP(l, k) {
+  if (k < 0) return 0;
+  if (l <= 0) return k === 0 ? 1 : 0;
+  return Math.exp(-l + k * Math.log(l) - LF[Math.min(k, 4000)]);
+}
+const binArr = (n, p) => Array.from({ length: n + 1 }, (_, k) => binP(n, k, p));
+const poiArr = (l, K) => Array.from({ length: K + 1 }, (_, k) => poiP(l, k));
+const cum = (a) => { let s = 0; return a.map((v) => (s += v)); };
+const SQ2 = Math.SQRT2, SQ2PI = Math.sqrt(2 * Math.PI);
+const nPdf = (x, m, s) => Math.exp(-0.5 * ((x - m) / s) ** 2) / (s * SQ2PI);
+function erfcPos(x) {
+  if (x < 2.5) {
+    let sum = x, term = x;
+    for (let n = 1; n < 80; n++) { term *= -x * x / n; const add = term / (2 * n + 1); sum += add; if (Math.abs(add) < 1e-17) break; }
+    return 1 - 2 / Math.sqrt(Math.PI) * sum;
+  }
+  let t = x;
+  for (let k = 60; k >= 1; k--) t = x + (k / 2) / t;
+  return Math.exp(-x * x) / Math.sqrt(Math.PI) / t;
+}
+const erfc = (x) => (x >= 0 ? erfcPos(x) : 2 - erfcPos(-x));
+const Phi = (z) => 0.5 * erfc(-z / SQ2);
+const Qf = (z) => 0.5 * erfc(z / SQ2);
+function rnorm() { let u = 0; while (!u) u = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * Math.random()); }
+
+/* ================= plain-language formatting ================= */
+const fi = (n) => Math.round(n).toLocaleString("en-US");
+const fN = (x, d = 2) => String(Number(x.toFixed(d)));
+const pc = (x) => {
+  const v = x * 100;
+  if (v === 0) return "0%";
+  if (v >= 99.95) return "100%";
+  if (v >= 10) return v.toFixed(1) + "%";
+  if (v >= 0.1) return v.toFixed(2) + "%";
+  if (v >= 0.001) return v.toFixed(3) + "%";
+  return "less than 0.001%";
+};
+function oneIn(p) {
+  if (!(p > 0)) return "practically never";
+  if (p >= 0.995) return "practically certain";
+  if (p < 0.5) { const r = 1 / p; return "about 1 in " + (r < 100 ? String(Math.round(r)) : fi(Number(r.toPrecision(2)))); }
+  return "about " + Math.round(p * 100) + " out of every 100";
+}
+function phrase(mode, k1, k2) {
+  const a = Math.min(k1, k2), b = Math.max(k1, k2);
+  return { eq: k1 === 0 ? "no" : "exactly " + k1, le: "at most " + k1, ge: "at least " + k1, bt: "between " + a + " and " + b }[mode];
+}
+const eventSet = (mode, k1, k2) => { const a = Math.min(k1, k2), b = Math.max(k1, k2); return { eq: (k) => k === k1, le: (k) => k <= k1, ge: (k) => k >= k1, bt: (k) => k >= a && k <= b }[mode]; };
+function eventProb(pm, mode, k1, k2) { const f = eventSet(mode, k1, k2); let s = 0; for (let k = 0; k < pm.length; k++) if (f(k)) s += pm[k]; return Math.min(s, 1); }
+const nounFor = (sc, mode, k1) => ((mode === "bt" || k1 !== 1) ? sc.nouns : sc.noun);
+const statCards = (arr) => arr.map((a) => '<div class="stat"><b>' + a[0] + "</b><span>" + a[1] + "</span></div>").join("");
+const dot = (c) => '<span class="sw" style="background:' + c + '"></span>';
+
+/* ================= chart toolkit ================= */
+function ticks(lo, hi, target, int) {
+  const span = hi - lo; if (!(span > 0)) return [lo];
+  const raw = span / target, mag = Math.pow(10, Math.floor(Math.log10(raw))), nrm = raw / mag;
+  let step = (nrm < 1.5 ? 1 : nrm < 3 ? 2 : nrm < 7 ? 5 : 10) * mag;
+  if (int) step = Math.max(1, Math.round(step));
+  const out = [];
+  for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + 1e-9; v += step) out.push(+v.toPrecision(12));
+  return out;
+}
+const fmtTick = (v) => String(+v.toFixed(4));
+function plot(el, o) {
+  const W = o.w || 680, H = o.h || 320, m = { l: o.hideY ? 30 : 56, r: 14, t: 14, b: 46 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const X = (x) => m.l + (x - o.xmin) / (o.xmax - o.xmin) * iw;
+  const Y = (y) => m.t + ih - (y / o.ymax) * ih;
+  el.setAttribute("viewBox", "0 0 " + W + " " + H);
+  let g = "";
+  if (!o.hideY) for (const v of ticks(0, o.ymax, 4)) g += `<line class="grid" x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}"/><text class="tick" x="${m.l - 8}" y="${Y(v) + 4}" text-anchor="end">${(o.fy || fmtTick)(v)}</text>`;
+  for (const v of (o.xticks || ticks(o.xmin, o.xmax, 8, o.int))) g += `<line class="axis" x1="${X(v)}" x2="${X(v)}" y1="${m.t + ih}" y2="${m.t + ih + 5}"/><text class="tick" x="${X(v)}" y="${m.t + ih + 19}" text-anchor="middle">${(o.fx || fmtTick)(v)}</text>`;
+  g += `<line class="axis" x1="${m.l}" x2="${W - m.r}" y1="${m.t + ih}" y2="${m.t + ih}"/>`;
+  g += `<text class="axlab" x="${m.l + iw / 2}" y="${H - 6}" text-anchor="middle">${o.xl || ""}</text>`;
+  g += `<text class="axlab" transform="rotate(-90 13 ${m.t + ih / 2})" x="13" y="${m.t + ih / 2}" text-anchor="middle">${o.yl || ""}</text>`;
+  const P = { X, Y, W, H, m, iw, ih, xmin: o.xmin, xmax: o.xmax, ymax: o.ymax, body: "", add(s) { this.body += s; }, done() { el.innerHTML = g + this.body; } };
+  el._P = P;
+  return P;
+}
+function pickable(svg, cb) {
+  svg.style.touchAction = "pan-y"; svg.style.cursor = "pointer";
+  let down = false;
+  const f = (e) => { const P = svg._P; if (!P) return; const r = svg.getBoundingClientRect(); const vx = (e.clientX - r.left) / r.width * P.W; cb(Math.round(P.xmin + (vx - P.m.l) / P.iw * (P.xmax - P.xmin))); };
+  svg.addEventListener("pointerdown", (e) => { down = true; try { svg.setPointerCapture(e.pointerId); } catch (_) {} f(e); });
+  svg.addEventListener("pointermove", (e) => { if (down) f(e); });
+  svg.addEventListener("pointerup", () => { down = false; });
+  svg.addEventListener("pointercancel", () => { down = false; });
+}
+function area(P, f, a, b, fill, steps) {
+  if (!(b > a)) return "";
+  steps = steps || 140;
+  let d = "M" + P.X(a) + " " + P.Y(0);
+  for (let i = 0; i <= steps; i++) { const x = a + (b - a) * i / steps; d += " L" + P.X(x) + " " + P.Y(Math.min(f(x), P.ymax)); }
+  return '<path d="' + d + " L" + P.X(b) + " " + P.Y(0) + 'Z" fill="' + fill + '"/>';
+}
+function curve(P, f, a, b, stroke, w, steps) {
+  steps = steps || 200; let d = "";
+  for (let i = 0; i <= steps; i++) { const x = a + (b - a) * i / steps; d += (i ? "L" : "M") + P.X(x).toFixed(1) + " " + P.Y(Math.min(f(x), P.ymax)).toFixed(1); }
+  return '<path d="' + d + '" fill="none" stroke="' + stroke + '" stroke-width="' + (w || 2.5) + '" stroke-linejoin="round"/>';
+}
+const vline = (P, x, stroke, dash, w) => `<line x1="${P.X(x)}" x2="${P.X(x)}" y1="${P.m.t}" y2="${P.m.t + P.ih}" stroke="${stroke}" stroke-width="${w || 1.5}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>`;
+function drawDiscrete(svg, o) {
+  const cdf = cum(o.pm), vals = o.view === "cdf" ? cdf : o.pm;
+  let ymax = 0; for (let k = o.lo; k <= o.hi; k++) ymax = Math.max(ymax, vals[k] || 0);
+  ymax = o.view === "cdf" ? 1.04 : (ymax * 1.18 || 1);
+  const P = plot(svg, { xmin: o.lo - 0.5, xmax: o.hi + 0.5, ymax, int: true, xl: o.xl, yl: o.view === "cdf" ? "Chance of this many or fewer" : "Chance of exactly this many" });
+  const inE = eventSet(o.mode, o.k1, o.k2), bw = 0.8;
+  for (let k = o.lo; k <= o.hi; k++) {
+    const v = vals[k] || 0, x0 = P.X(k - bw / 2), x1 = P.X(k + bw / 2), y = P.Y(v);
+    P.add(`<rect x="${x0}" y="${y}" width="${x1 - x0}" height="${Math.max(P.Y(0) - y, 0)}" rx="1.5" fill="${inE(k) ? o.col : o.soft}"/>`);
+  }
+  if (o.emp && o.runs > 0) {
+    const full = Array.from({ length: o.hi + 1 }, (_, k) => o.emp[k] || 0), ec = cum(full), r = o.hi - o.lo > 60 ? 2.5 : 4;
+    for (let k = o.lo; k <= o.hi; k++) P.add(`<circle class="emp" cx="${P.X(k)}" cy="${P.Y((o.view === "cdf" ? ec[k] : full[k]) / o.runs)}" r="${r}"/>`);
+  }
+  P.done();
+  return P;
+}
+function seg(id, cb) {
+  const el = $(id);
+  el.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    el.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    cb(b.dataset.v);
+  });
+}
+function setSeg(id, v) { $(id).querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === v))); }
+const on = (id, fn) => $(id).addEventListener("input", fn);
+function buildScenarios(containerId, list, current, onPick) {
+  const el = $(containerId);
+  el.innerHTML = list.map((s) => `<button class="scen" data-id="${s.id}" aria-pressed="false"><b>${s.title}</b><span>${s.blurb}</span></button>`).join("");
+  el.addEventListener("click", (e) => { const b = e.target.closest(".scen"); if (!b) return; onPick(list.find((s) => s.id === b.dataset.id)); });
+}
+function markScenario(containerId, id) { $(containerId).querySelectorAll(".scen").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.id === id))); }
+
+/* ================= WARM-UP: two dice ================= */
+const D = { counts: new Array(13).fill(0), runs: 0, sum: 0, last: null, pick: 7 };
+const dicePm = Array.from({ length: 13 }, (_, s) => (s >= 2 ? (6 - Math.abs(s - 7)) / 36 : 0));
+function renderD() {
+  drawDiscrete($("#d-chart"), { pm: dicePm, lo: 2, hi: 12, view: "pmf", mode: "eq", k1: D.pick, k2: D.pick, col: "#2F5BEA", soft: "#B7C8F7", emp: D.counts, runs: D.runs, xl: "Total of the two dice" });
+  const ways = 6 - Math.abs(D.pick - 7);
+  let h = `<span class="tag">Your pick: a total of ${D.pick}</span>`;
+  h += `<div>There are ${ways} way${ways === 1 ? "" : "s"} to make ${D.pick} out of 36 equally likely combinations, so the chance is ${ways}/36 = <b>${pc(ways / 36)}</b> (${oneIn(ways / 36)}).</div>`;
+  if (D.last) h += `<div style="margin-top:4px">Last roll: ${D.last[0]} + ${D.last[1]} = <b>${D.last[0] + D.last[1]}</b></div>`;
+  if (D.runs) h += `<div style="margin-top:4px">After ${fi(D.runs)} roll${D.runs === 1 ? "" : "s"}: the average total is ${fN(D.sum / D.runs)} (theory says 7), and a ${D.pick} came up ${fi(D.counts[D.pick])} times = ${pc(D.counts[D.pick] / D.runs)}.</div>`;
+  $("#d-live").innerHTML = h;
+}
+function rollD(n) {
+  for (let i = 0; i < n; i++) { const a = 1 + Math.floor(Math.random() * 6), b = 1 + Math.floor(Math.random() * 6); D.counts[a + b]++; D.runs++; D.sum += a + b; D.last = [a, b]; }
+  if (n > 1) D.last = null;
+  renderD();
+}
+$("#d-roll1").addEventListener("click", () => rollD(1));
+$("#d-roll100").addEventListener("click", () => rollD(100));
+$("#d-roll1000").addEventListener("click", () => rollD(1000));
+$("#d-clear").addEventListener("click", () => { D.counts.fill(0); D.runs = 0; D.sum = 0; D.last = null; renderD(); });
+pickable($("#d-chart"), (x) => { D.pick = Math.max(2, Math.min(12, x)); renderD(); });
+
+/* ================= BINOMIAL ================= */
+const A = { n: 4, k: 2, p: 0.5 };
+function renderA() {
+  A.k = Math.min(A.k, A.n);
+  $("#a-k").max = A.n; $("#a-k").value = A.k;
+  $("#a-nOut").textContent = A.n; $("#a-kOut").textContent = A.k; $("#a-pOut").textContent = Math.round(A.p * 100) + "%";
+  const rows = [];
+  for (let m = 0; m < (1 << A.n); m++) {
+    let c = 0; for (let i = 0; i < A.n; i++) if (m >> i & 1) c++;
+    if (c === A.k) { let h = ""; for (let i = 0; i < A.n; i++) h += `<span class="hb${(m >> i & 1) ? " h" : ""}">${(m >> i & 1) ? "H" : "T"}</span>`; rows.push(`<div class="a">${h}</div>`); }
+  }
+  $("#a-list").innerHTML = rows.join("");
+  const q = 1 - A.p, each = Math.pow(A.p, A.k) * Math.pow(q, A.n - A.k), cnt = rows.length;
+  $("#a-live").innerHTML =
+    `<span class="tag">Reading it</span>` +
+    `<div>Exactly ${A.k} head${A.k === 1 ? "" : "s"} in ${A.n} flip${A.n === 1 ? "" : "s"}: <b>${cnt}</b> different sequence${cnt === 1 ? "" : "s"} (listed above).</div>` +
+    `<div>Each one has the same chance: ${A.k} head${A.k === 1 ? "" : "s"} at ${Math.round(A.p * 100)}% each and ${A.n - A.k} tail${A.n - A.k === 1 ? "" : "s"} at ${Math.round(q * 100)}% each, which multiplies out to ${fN(each, 5)}.</div>` +
+    `<div>Total chance: ${cnt} × ${fN(each, 5)} = <b>${fN(cnt * each, 4)}</b> (${pc(cnt * each)}).</div>`;
+}
+on("#a-n", (e) => { A.n = +e.target.value; renderA(); });
+on("#a-k", (e) => { A.k = +e.target.value; renderA(); });
+on("#a-p", (e) => { A.p = +e.target.value; renderA(); });
+
+const SC_B = [
+  { id: "coin", title: "Coin flips", blurb: "10 flips of a fair coin", n: 10, p: 0.5, mode: "eq", k1: 5, k2: 6, trials: "flips", noun: "head", nouns: "heads", chance: "heads", nLabel: "Number of flips", pLabel: "Chance of heads on each flip", tip: "Even with a fair coin, “exactly 5 heads” is far from certain. Results near 5 are likely, not guaranteed." },
+  { id: "shots", title: "Free throws", blurb: "A 70% shooter takes 10 shots", n: 10, p: 0.7, mode: "ge", k1: 8, k2: 9, trials: "shots", noun: "basket", nouns: "baskets", chance: "making the shot", nLabel: "Number of shots", pLabel: "Chance of making each shot", tip: "A good shooter will not always hit their average. Hot and cold nights are just ordinary randomness." },
+  { id: "email", title: "Email opens", blurb: "20 emails, 30% get opened", n: 20, p: 0.3, mode: "le", k1: 3, k2: 6, trials: "emails", noun: "open", nouns: "opens", chance: "being opened", nLabel: "Emails sent", pLabel: "Chance each email is opened", tip: "You expect about 6 opens, but plenty of other counts are quite possible." },
+  { id: "parts", title: "Factory defects", blurb: "A box of 25 parts, 2% defective", n: 25, p: 0.02, mode: "ge", k1: 1, k2: 2, trials: "parts", noun: "defective part", nouns: "defective parts", chance: "being defective", nLabel: "Parts in the box", pLabel: "Chance each part is defective", tip: "A tiny chance per part still adds up over many parts: the chance of at least one defect is much bigger than 2%." },
+  { id: "guess", title: "Guessing on a quiz", blurb: "10 questions, 4 choices each", n: 10, p: 0.25, mode: "ge", k1: 6, k2: 7, trials: "questions", noun: "correct answer", nouns: "correct answers", chance: "a guess being right", nLabel: "Number of questions", pLabel: "Chance a guess is right", tip: "Guessing your way to a pass is very unlikely, but not impossible." },
+];
+const B = { sc: SC_B[0], n: 10, p: 0.5, view: "pmf", mode: "eq", k1: 5, k2: 6, runs: 0, counts: [], sum: 0, last: null };
+function resetB() { B.runs = 0; B.counts = new Array(B.n + 1).fill(0); B.sum = 0; B.last = null; }
+function loadB(sc) {
+  B.sc = sc; B.n = sc.n; B.p = sc.p; B.mode = sc.mode; B.k1 = sc.k1; B.k2 = sc.k2;
+  $("#b-n").value = B.n; $("#b-p").value = B.p; setSeg("#b-mode", B.mode);
+  markScenario("#b-scen", sc.id); resetB(); renderB();
+}
+function renderB() {
+  const sc = B.sc, n = B.n, p = B.p, q = 1 - p;
+  B.k1 = Math.min(B.k1, n); B.k2 = Math.min(B.k2, n);
+  $("#b-k1").max = n; $("#b-k2").max = n; $("#b-k1").value = B.k1; $("#b-k2").value = B.k2;
+  $("#b-nL").textContent = sc.nLabel; $("#b-pL").textContent = sc.pLabel;
+  $("#b-nOut").textContent = n; $("#b-pOut").textContent = Math.round(p * 100) + "%";
+  $("#b-k1Out").textContent = B.k1; $("#b-k2Out").textContent = B.k2;
+  $("#b-k2wrap").hidden = B.mode !== "bt";
+  $("#b-k1L").textContent = { eq: "Exactly how many?", le: "At most how many?", ge: "At least how many?", bt: "From (lowest)" }[B.mode];
+  const pm = binArr(n, p), cdf = cum(pm), mean = n * p, sd = Math.sqrt(n * p * q);
+  const prob = eventProb(pm, B.mode, B.k1, B.k2), noun = nounFor(sc, B.mode, B.k1);
+  $("#b-ctx").textContent = `${n} ${sc.trials}, each with a ${Math.round(p * 100)}% chance of ${sc.chance}.`;
+  $("#b-q").textContent = `Chance of ${phrase(B.mode, B.k1, B.k2)} ${noun} out of ${n} ${sc.trials}:`;
+  $("#b-big").textContent = pc(prob);
+  $("#b-sub").textContent = `That is ${oneIn(prob)}.`;
+  $("#b-tip").textContent = sc.tip;
+  const m1 = Math.min(n, Math.floor((n + 1) * p));
+  $("#b-stats").innerHTML = statCards([[fN(mean, 1), "average result (n × p)"], [m1, "most likely result"], ["± " + fN(sd, 1), "typical spread around the average"]]);
+  let lo = 0, hi = n;
+  if (n > 40) { lo = Math.max(0, Math.floor(mean - 5 * sd)); hi = Math.min(n, Math.ceil(mean + 5 * sd)); }
+  drawDiscrete($("#b-chart"), { pm, lo, hi, view: B.view, mode: B.mode, k1: B.k1, k2: B.k2, col: "#2F5BEA", soft: "#B7C8F7", emp: B.counts, runs: B.runs, xl: `Number of ${sc.nouns} out of ${n}` });
+  $("#b-legend").innerHTML = `<span>${dot("#2F5BEA")}the result(s) you asked about</span><span>${dot("#B7C8F7")}other results</span>` + (B.runs ? `<span><span class="sw c" style="background:#18212F"></span>your ${fi(B.runs)} run${B.runs === 1 ? "" : "s"}</span>` : "");
+  // sim readout
+  const f = eventSet(B.mode, B.k1, B.k2);
+  if (B.runs > 1 || (B.runs === 1 && !B.last)) {
+    let hit = 0; for (let k = 0; k <= n; k++) if (f(k)) hit += B.counts[k];
+    $("#b-sim").innerHTML = `<span class="tag">Your runs versus the math</span>` +
+      `<div>You repeated the experiment ${fi(B.runs)} times. The average was ${fN(B.sum / B.runs)} ${sc.nouns} (the math says ${fN(mean)}).</div>` +
+      `<div>“${phrase(B.mode, B.k1, B.k2)} ${noun}” happened ${fi(hit)} times = <b>${pc(hit / B.runs)}</b>. The exact chance is ${pc(prob)}.</div>`;
+  } else $("#b-sim").innerHTML = `<span class="tag">Your runs versus the math</span><div>${B.runs ? "One run is only a single sample. Try 100 or 1,000 runs and compare." : "No runs yet."}</div>`;
+  renderDots();
+}
+function renderDots() {
+  const el = $("#b-dots"), sc = B.sc;
+  if (!B.last) { el.innerHTML = `<span class="small">Press “Run once” to try it. Blue dots are successes.</span>`; return; }
+  el.innerHTML = B.last.t.map((s) => `<i class="dot${s ? " on" : ""}"></i>`).join("") + `<b style="margin-left:8px">${B.last.k} ${B.last.k === 1 ? sc.noun : sc.nouns} out of ${B.n}</b>`;
+}
+function runB(times) {
+  const n = B.n, p = B.p;
+  for (let r = 0; r < times; r++) {
+    let k = 0; const t = times === 1 ? new Array(n) : null;
+    for (let i = 0; i < n; i++) { const s = Math.random() < p; if (s) k++; if (t) t[i] = s; }
+    B.counts[k]++; B.runs++; B.sum += k;
+    B.last = t ? { k, t } : null;
+  }
+  renderB();
+}
+on("#b-n", (e) => { B.n = +e.target.value; resetB(); renderB(); });
+on("#b-p", (e) => { B.p = +e.target.value; resetB(); renderB(); });
+on("#b-k1", (e) => { B.k1 = +e.target.value; renderB(); });
+on("#b-k2", (e) => { B.k2 = +e.target.value; renderB(); });
+seg("#b-view", (v) => { B.view = v; renderB(); });
+seg("#b-mode", (v) => { B.mode = v; renderB(); });
+$("#b-run1").addEventListener("click", () => runB(1));
+$("#b-run100").addEventListener("click", () => runB(100));
+$("#b-run1000").addEventListener("click", () => runB(1000));
+$("#b-clear").addEventListener("click", () => { resetB(); renderB(); });
+pickable($("#b-chart"), (x) => {
+  x = Math.max(0, Math.min(B.n, x));
+  if (B.mode === "bt") { if (Math.abs(x - B.k1) <= Math.abs(x - B.k2)) B.k1 = x; else B.k2 = x; } else B.k1 = x;
+  renderB();
+});
+buildScenarios("#b-scen", SC_B, B.sc, loadB);
+
+/* ================= POISSON ================= */
+/* slices */
+const SL = [8, 12, 24, 60, 240, 3600], SLN = ["8 slices", "12 slices", "24 slices", "60 slices", "240 slices", "3,600 slices"];
+const SLT = ["every 7.5 minutes", "every 5 minutes", "every 2.5 minutes", "every minute", "every 15 seconds", "every second"];
+const S = { i: 0 };
+function renderS() {
+  const n = SL[S.i], lam = 4, p = lam / n;
+  $("#s-nOut").textContent = SLN[S.i];
+  const cells = Math.min(n, 60), cw = 640 / cells; let g = "";
+  for (let i = 0; i < cells; i++) g += `<rect x="${20 + i * cw}" y="10" width="${Math.max(cw - (cells > 40 ? 1 : 3), 0.8)}" height="26" rx="2" fill="#F4D3A8"/>`;
+  g += `<text class="tick" x="20" y="56">start of hour</text><text class="tick" x="660" y="56" text-anchor="end">end of hour</text>` + (n > 60 ? `<text class="tick" x="340" y="56" text-anchor="middle">(only 60 of the ${fi(n)} slices drawn)</text>` : "");
+  $("#s-strip").innerHTML = g;
+  const K = 30; let mg = 0;
+  for (let k = 0; k <= K; k++) mg = Math.max(mg, Math.abs(binP(n, k, p) - poiP(lam, k)));
+  const verdict = mg < 0.001 ? "The bars and dots are practically identical." : mg < 0.01 ? "Very close now." : mg < 0.05 ? "Getting closer." : "Still quite different, because each slice is so long that it can hold only one call.";
+  $("#s-text").innerHTML = `Check for a call ${SLT[S.i]}. Each slice has a <b>${fN(p * 100, p < 0.01 ? 2 : 1)}%</b> chance of a call (4 calls ÷ ${fi(n)} slices). The biggest gap between a bar and its dot is ${fN(mg * 100, 2)} percentage points. ${verdict}`;
+  const hi = 14; let ymax = 0; for (let k = 0; k <= hi; k++) ymax = Math.max(ymax, binP(n, k, p), poiP(lam, k));
+  const P = plot($("#s-chart"), { xmin: -0.5, xmax: hi + 0.5, ymax: ymax * 1.18, int: true, xl: "Calls in the hour", yl: "Chance" });
+  for (let k = 0; k <= hi; k++) { const v = binP(n, k, p), x0 = P.X(k - .4), x1 = P.X(k + .4), y = P.Y(v); P.add(`<rect x="${x0}" y="${y}" width="${x1 - x0}" height="${Math.max(P.Y(0) - y, 0)}" rx="1.5" fill="#2F5BEA" opacity=".85"/>`); }
+  for (let k = 0; k <= hi; k++) P.add(`<circle cx="${P.X(k)}" cy="${P.Y(poiP(lam, k))}" r="4.5" fill="#D9780F" stroke="#fff" stroke-width="1.5"/>`);
+  P.done();
+}
+on("#s-n", (e) => { S.i = +e.target.value; renderS(); });
+
+/* explorer */
+const SC_P = [
+  { id: "calls", title: "Help-desk calls", blurb: "4 calls per hour on average", lam: 4, mode: "eq", k1: 0, k2: 6, interval: "hour", noun: "call", nouns: "calls", lamLabel: "Average calls per hour", tip: "Even a busy desk has the occasional quiet hour." },
+  { id: "typos", title: "Typos on a page", blurb: "2 typos per page on average", lam: 2, mode: "le", k1: 1, k2: 4, interval: "page", noun: "typo", nouns: "typos", lamLabel: "Average typos per page", tip: "A page with only a typo or two is typical, and a clean page is not rare." },
+  { id: "meteors", title: "Shooting stars", blurb: "6 per hour on a clear night", lam: 6, mode: "ge", k1: 10, k2: 12, interval: "hour", noun: "meteor", nouns: "meteors", lamLabel: "Average meteors per hour", tip: "Seeing far more than the average is possible but uncommon." },
+  { id: "errors", title: "Website errors", blurb: "1.5 errors per day on average", lam: 1.5, mode: "ge", k1: 3, k2: 5, interval: "day", noun: "error", nouns: "errors", lamLabel: "Average errors per day", tip: "Bad days (3 or more errors) happen even when the average looks low." },
+];
+const Pz = { sc: SC_P[0], lam: 4, view: "pmf", mode: "eq", k1: 0, k2: 6, W: 0, hist: [], sum: 0, last: null };
+function resetP() { Pz.W = 0; Pz.hist = []; Pz.sum = 0; Pz.last = null; }
+function loadP(sc) {
+  Pz.sc = sc; Pz.lam = sc.lam; Pz.mode = sc.mode; Pz.k1 = sc.k1; Pz.k2 = sc.k2;
+  $("#p-lam").value = Pz.lam; setSeg("#p-mode", Pz.mode);
+  markScenario("#p-scen", sc.id); resetP(); renderP();
+}
+function renderP() {
+  const sc = Pz.sc, lam = Pz.lam, sd = Math.sqrt(lam);
+  $("#p-lamL").textContent = sc.lamLabel + " (λ)";
+  $("#p-lamOut").textContent = lam; $("#p-k1Out").textContent = Pz.k1; $("#p-k2Out").textContent = Pz.k2;
+  $("#p-k2wrap").hidden = Pz.mode !== "bt";
+  $("#p-k1L").textContent = { eq: "Exactly how many?", le: "At most how many?", ge: "At least how many?", bt: "From (lowest)" }[Pz.mode];
+  const K = Math.min(300, Math.ceil(lam + 10 * sd + 20)), pm = poiArr(lam, K), cdf = cum(pm);
+  const prob = eventProb(pm, Pz.mode, Pz.k1, Pz.k2), noun = nounFor(sc, Pz.mode, Pz.k1);
+  $("#p-ctx").textContent = `On average there are ${lam} ${sc.nouns} per ${sc.interval}.`;
+  $("#p-q").textContent = `Chance of ${phrase(Pz.mode, Pz.k1, Pz.k2)} ${noun} in one ${sc.interval}:`;
+  $("#p-big").textContent = pc(prob);
+  $("#p-sub").textContent = `That is ${oneIn(prob)}.`;
+  $("#p-tip").textContent = sc.tip;
+  const fl = Math.floor(lam), modes = Number.isInteger(lam) ? lam + " and " + (lam - 1) : String(fl);
+  $("#p-stats").innerHTML = statCards([[fN(lam, 1), "average (λ)"], [modes, "most likely result"], ["± " + fN(sd, 1), "typical spread around the average"], [pc(pm[0]), `chance of no ${sc.nouns}`]]);
+  const hi = Math.min(Math.max(10, Math.ceil(lam + 5 * sd + 3)), 50);
+  drawDiscrete($("#p-chart"), { pm, lo: 0, hi, view: Pz.view, mode: Pz.mode, k1: Pz.k1, k2: Pz.k2, col: "#D9780F", soft: "#F4D3A8", emp: Pz.hist, runs: Pz.W, xl: `Number of ${sc.nouns} in one ${sc.interval}` });
+  $("#p-legend").innerHTML = `<span>${dot("#D9780F")}the result(s) you asked about</span><span>${dot("#F4D3A8")}other results</span>` + (Pz.W ? `<span><span class="sw c" style="background:#18212F"></span>simulated (${fi(Pz.W)} intervals)</span>` : "");
+  const f = eventSet(Pz.mode, Pz.k1, Pz.k2);
+  if (Pz.W) {
+    let hit = 0; for (let k = 0; k < Pz.hist.length; k++) if (f(k)) hit += Pz.hist[k] || 0;
+    $("#p-sim").innerHTML = `<span class="tag">Simulation versus the math</span>` +
+      `<div>Across ${fi(Pz.W)} intervals the average was ${fN(Pz.sum / Pz.W)} ${sc.nouns} (the math says ${fN(lam)}).</div>` +
+      `<div>“${phrase(Pz.mode, Pz.k1, Pz.k2)} ${noun}” happened in ${fi(hit)} intervals = <b>${pc(hit / Pz.W)}</b>. The exact chance is ${pc(prob)}.</div>`;
+  } else $("#p-sim").innerHTML = `<span class="tag">Simulation versus the math</span><div>Nothing simulated yet.</div>`;
+  drawTimeline();
+}
+function simBatch() {
+  const lam = Pz.lam, T = 24, ev = [];
+  let time = 0;
+  while (true) { time += -Math.log(1 - Math.random()) / lam; if (time >= T) break; ev.push(time); }
+  const counts = new Array(24).fill(0);
+  ev.forEach((t) => { counts[Math.min(23, Math.floor(t))]++; });
+  counts.forEach((c) => { Pz.hist[c] = (Pz.hist[c] || 0) + 1; Pz.sum += c; Pz.W++; });
+  Pz.last = { ev, counts };
+}
+function drawTimeline() {
+  const el = $("#p-tl");
+  if (!Pz.last) { el.innerHTML = `<text class="tick" x="340" y="80" text-anchor="middle">Press “Show 24 intervals” to see events arrive.</text>`; return; }
+  const { ev, counts } = Pz.last, X0 = 14, X1 = 666, sx = (t) => X0 + (t / 24) * (X1 - X0);
+  let g = "";
+  for (let i = 0; i <= 24; i++) g += `<line x1="${sx(i)}" x2="${sx(i)}" y1="34" y2="128" stroke="#D3DAE6" stroke-width="1"/>`;
+  g += `<line x1="${X0}" x2="${X1}" y1="118" y2="118" stroke="#566175" stroke-width="1.2"/>`;
+  counts.forEach((c, i) => { g += `<text x="${sx(i + 0.5)}" y="26" text-anchor="middle" font-family="ui-sans-serif,system-ui,sans-serif" font-size="14" font-weight="700" fill="#18212F">${c}</text>`; });
+  const stack = {};
+  ev.forEach((t) => { const key = Math.floor(sx(t) / 6); const s = stack[key] = (stack[key] || 0) + 1; g += `<circle cx="${sx(t)}" cy="${110 - (s - 1) * 10}" r="4.2" fill="#D9780F" stroke="#fff" stroke-width="1.2"/>`; });
+  g += `<text class="tick" x="${X0}" y="145">start</text><text class="tick" x="${X1}" y="145" text-anchor="end">24 intervals (each ${Pz.sc.interval})</text>`;
+  el.innerHTML = g;
+}
+on("#p-lam", (e) => { Pz.lam = +e.target.value; resetP(); renderP(); });
+on("#p-k1", (e) => { Pz.k1 = +e.target.value; renderP(); });
+on("#p-k2", (e) => { Pz.k2 = +e.target.value; renderP(); });
+seg("#p-view", (v) => { Pz.view = v; renderP(); });
+seg("#p-mode", (v) => { Pz.mode = v; renderP(); });
+$("#p-run1").addEventListener("click", () => { simBatch(); renderP(); });
+$("#p-run50").addEventListener("click", () => { for (let i = 0; i < 50; i++) simBatch(); renderP(); });
+$("#p-clear").addEventListener("click", () => { resetP(); renderP(); });
+pickable($("#p-chart"), (x) => {
+  x = Math.max(0, Math.min(40, x));
+  if (Pz.mode === "bt") { if (Math.abs(x - Pz.k1) <= Math.abs(x - Pz.k2)) Pz.k1 = x; else Pz.k2 = x; } else Pz.k1 = x;
+  renderP();
+});
+buildScenarios("#p-scen", SC_P, Pz.sc, loadP);
+
+/* rate scaling */
+const R = { rate: 6, min: 20 };
+function renderR() {
+  $("#r-rateOut").textContent = R.rate; $("#r-minOut").textContent = R.min + " min";
+  const lam = R.rate * R.min / 60;
+  $("#r-live").innerHTML = `<span class="tag">The arithmetic</span><div>${R.rate} calls per hour × ${R.min}/60 of an hour = <b>${fN(lam, 2)} calls</b> on average in ${R.min} minutes.</div>`;
+}
+on("#r-rate", (e) => { R.rate = +e.target.value; renderR(); });
+on("#r-min", (e) => { R.min = +e.target.value; renderR(); });
+$("#r-use").addEventListener("click", () => {
+  const lam = Math.max(0.5, Math.min(20, Math.round(R.rate * R.min / 60 * 2) / 2));
+  Pz.lam = lam; $("#p-lam").value = lam; Pz.sc = { id: "custom", title: "Your window", noun: "call", nouns: "calls", interval: "window", lamLabel: "Average calls per window", tip: "Your own window length gives its own average." };
+  markScenario("#p-scen", "custom"); resetP(); renderP();
+  $("#p-lam").scrollIntoView({ behavior: "smooth", block: "center" });
+});
+
+/* ================= NORMAL ================= */
+/* histogram to curve (heights) */
+const H = { w: 5, N: 300, curve: false, z: null };
+function newBatch() { H.z = new Float64Array(5000); for (let i = 0; i < 5000; i++) H.z[i] = rnorm(); }
+function renderH() {
+  $("#h-wOut").textContent = H.w + " cm"; $("#h-NOut").textContent = fi(H.N);
+  const N = H.N, w = H.w, bins = new Map();
+  for (let i = 0; i < N; i++) { const x = 170 + 10 * H.z[i], j = Math.floor((x - 170) / w + 0.5); bins.set(j, (bins.get(j) || 0) + 1); }
+  let mx = 0; bins.forEach((c) => { mx = Math.max(mx, c / (N * w)); });
+  const ymax = Math.max(mx, nPdf(170, 170, 10)) * 1.12;
+  const P = plot($("#h-chart"), { xmin: 130, xmax: 210, ymax, hideY: true, xl: "Height (cm)", yl: "More people ↑" });
+  bins.forEach((c, j) => {
+    let x0 = 170 + (j - 0.5) * w, x1 = x0 + w; if (x1 < 130 || x0 > 210) return;
+    x0 = Math.max(x0, 130); x1 = Math.min(x1, 210);
+    const y = P.Y(c / (N * w));
+    P.add(`<rect x="${P.X(x0)}" y="${y}" width="${Math.max(P.X(x1) - P.X(x0) - 1, 0.5)}" height="${P.Y(0) - y}" fill="#EDB1C1"/>`);
+  });
+  if (H.curve) P.add(curve(P, (x) => nPdf(x, 170, 10), 130, 210, "#C8365C", 3));
+  P.done();
+  $("#h-live").textContent = `${fi(N)} people in bands ${w} cm wide. ` + (N < 400 || w > 5 ? "Try more people and narrower bands: the bars follow the curve more and more closely." : "The bars now hug the bell shape.");
+}
+on("#h-w", (e) => { H.w = +e.target.value; renderH(); });
+on("#h-N", (e) => { H.N = +e.target.value; renderH(); });
+$("#h-curve").addEventListener("change", (e) => { H.curve = e.target.checked; renderH(); });
+$("#h-new").addEventListener("click", () => { newBatch(); renderH(); });
+
+/* explorer scenarios */
+const SC_N = [
+  { id: "height", title: "Adult heights", blurb: "Average 170 cm, spread 10 cm", mu: 170, sd: 10, from: 160, to: 180, x: 185, mStep: 1, sStep: 0.5, vStep: 1, dec: 0, unit: "cm", what: "adults", ctxWord: "adult height", valWord: "height", tip: "About 2 in 3 adults fall within one spread of the average, as the 68% rule says." },
+  { id: "score", title: "Exam scores", blurb: "Average 70, spread 10", mu: 70, sd: 10, from: 85, to: 100, x: 85, mStep: 1, sStep: 0.5, vStep: 1, dec: 0, unit: "points", what: "students", ctxWord: "exam score", valWord: "score", tip: "Only a small share of students score 85 or more. (Real exams cap at 100, so this is a simplified model.)" },
+  { id: "bolts", title: "Bolt diameters", blurb: "Target 10.00 mm, spread 0.05 mm", mu: 10, sd: 0.05, from: 9.9, to: 10.1, x: 10.06, mStep: 0.005, sStep: 0.0025, vStep: 0.005, dec: 3, unit: "mm", what: "bolts", ctxWord: "bolt diameter", valWord: "diameter", tip: "Bolts pass inspection if they fall inside the limits. Try shrinking the spread, or sliding the average off target." },
+  { id: "fill", title: "Coffee cup fills", blurb: "Machine pours 250 ml, spread 4 ml", mu: 250, sd: 4, from: 245, to: 255, x: 242, mStep: 0.5, sStep: 0.25, vStep: 0.5, dec: 1, unit: "ml", what: "cups", ctxWord: "fill volume", valWord: "fill", tip: "A cup is “fine” if it lands near the target. A machine with a larger spread overfills and underfills more often." },
+];
+const Nm = { sc: SC_N[0], mu: 170, sd: 10, from: 160, to: 180, x: 185, bands: false };
+function loadN(sc) {
+  Nm.sc = sc; Nm.mu = sc.mu; Nm.sd = sc.sd; Nm.from = sc.from; Nm.to = sc.to; Nm.x = sc.x;
+  const set = (id, min, max, step, val) => { const e = $(id); e.min = min; e.max = max; e.step = step; e.value = val; };
+  set("#n-mu", sc.mu - 2 * sc.sd, sc.mu + 2 * sc.sd, sc.mStep, sc.mu);
+  set("#n-sd", sc.sd * 0.4, sc.sd * 2, sc.sStep, sc.sd);
+  set("#n-from", sc.mu - 4 * sc.sd, sc.mu + 4 * sc.sd, sc.vStep, sc.from);
+  set("#n-to", sc.mu - 4 * sc.sd, sc.mu + 4 * sc.sd, sc.vStep, sc.to);
+  set("#n-x", sc.mu - 4 * sc.sd, sc.mu + 4 * sc.sd, sc.vStep, sc.x);
+  markScenario("#n-scen", sc.id); renderN();
+}
+function renderN() {
+  const sc = Nm.sc, d = sc.dec, mu = Nm.mu, sd = Nm.sd, F = (v) => v.toFixed(d);
+  const a = Math.min(Nm.from, Nm.to), b = Math.max(Nm.from, Nm.to), x = Nm.x;
+  $("#n-muOut").textContent = F(mu); $("#n-sdOut").textContent = fN(sd, 4); $("#n-fromOut").textContent = F(Nm.from); $("#n-toOut").textContent = F(Nm.to); $("#n-xOut").textContent = F(x);
+  const za = (a - mu) / sd, zb = (b - mu) / sd, zx = (x - mu) / sd;
+  const lowP = Phi(za), highP = Qf(zb), inside = 1 - lowP - highP;
+  $("#n-ctx").textContent = `${sc.ctxWord[0].toUpperCase() + sc.ctxWord.slice(1)}s: average ${F(mu)} ${sc.unit}, spread ${fN(sd, 3)} ${sc.unit}.`;
+  $("#n-q").textContent = `Share of ${sc.what} between ${F(a)} and ${F(b)} ${sc.unit}:`;
+  $("#n-big").textContent = pc(inside);
+  $("#n-sub").textContent = `That is ${oneIn(inside)}. Below ${F(a)}: ${pc(lowP)}. Above ${F(b)}: ${pc(highP)}.`;
+  $("#n-tip").textContent = sc.tip;
+  const ex0 = sc.mu - 6 * sc.sd, ex1 = sc.mu + 6 * sc.sd, peak = nPdf(mu, mu, sd);
+  const f = (t) => nPdf(t, mu, sd);
+  const P = plot($("#n-chart"), { xmin: ex0, xmax: ex1, ymax: peak * 1.2, hideY: true, xl: `${sc.valWord[0].toUpperCase() + sc.valWord.slice(1)} (${sc.unit})`, yl: "More likely ↑", fx: (v) => v.toFixed(d) });
+  P.add(area(P, f, ex0, Math.max(ex0, Math.min(a, ex1)), "#EDB1C1")); P.add(area(P, f, a, b, "#BFE3D8")); P.add(area(P, f, Math.min(b, ex1), ex1, "#EDB1C1"));
+  P.add(curve(P, f, ex0, ex1, "#18212F", 2.2, 240));
+  if (Nm.bands) for (let k = 1; k <= 3; k++) for (const s of [-1, 1]) { const xv = mu + s * k * sd; if (xv > ex0 && xv < ex1) P.add(vline(P, xv, "#566175", "3 4", 1) + `<text class="tick" x="${P.X(xv)}" y="${P.m.t + P.ih - 6}" text-anchor="middle">${s < 0 ? "−" : "+"}${k}</text>`); }
+  P.add(vline(P, mu, "#18212F", "6 4", 1.5));
+  P.add(vline(P, x, "#18212F", null, 2.5));
+  P.add(`<text class="lblb" x="${P.X(mu)}" y="${P.m.t + 12}" text-anchor="middle">average</text>`);
+  P.done();
+  const pct = Phi(zx), zr = Math.abs(zx);
+  $("#n-stand").innerHTML = `<span class="tag">Where does one value stand?</span>` +
+    `<div>A ${sc.valWord} of <b>${F(x)} ${sc.unit}</b> is ${fN(zr, 1)} spread${Math.abs(zr - 1) < 0.05 ? "" : "s"} ${zx >= 0 ? "above" : "below"} the average (z = ${zx >= 0 ? "+" : "−"}${fN(zr, 1)}).</div>` +
+    `<div>That is higher than <b>${pc(pct)}</b> of all ${sc.what}${pct > 0.5 ? "" : ", and lower than " + pc(1 - pct) + " of them"}.</div>`;
+  const r = [1, 2, 3].map((k) => 1 - 2 * Qf(k));
+  $("#n-rule").innerHTML = `<span class="tag">The 68–95–99.7 rule for this example</span>` +
+    [1, 2, 3].map((k, i) => `<div>Within ${k} spread${k > 1 ? "s" : ""} (${F(mu - k * sd)} to ${F(mu + k * sd)} ${sc.unit}): about <b>${["68%", "95%", "99.7%"][i]}</b> (exact: ${fN(r[i] * 100, 2)}%)</div>`).join("");
+}
+[["#n-mu", "mu"], ["#n-sd", "sd"], ["#n-from", "from"], ["#n-to", "to"], ["#n-x", "x"]].forEach(([id, key]) => on(id, (e) => { Nm[key] = +e.target.value; renderN(); }));
+$("#n-bands").addEventListener("change", (e) => { Nm.bands = e.target.checked; renderN(); });
+buildScenarios("#n-scen", SC_N, Nm.sc, loadN);
+
+/* central limit lab */
+const SRC = {
+  coin: { mu: 0.5, v: 0.25, disc: true, name: "coin flips", draw: () => (Math.random() < 0.5 ? 1 : 0) },
+  die: { mu: 3.5, v: 35 / 12, disc: true, name: "dice rolls", draw: () => 1 + Math.floor(Math.random() * 6) },
+  expo: { mu: 1, v: 1, disc: false, name: "waiting times", draw: () => -Math.log(1 - Math.random()) },
+};
+const Cl = { src: "coin", n: 1, curve: false, data: null };
+function genC() {
+  const s = SRC[Cl.src], N = 3000, d = new Float64Array(N);
+  for (let i = 0; i < N; i++) { let t = 0; for (let j = 0; j < Cl.n; j++) t += s.draw(); d[i] = t; }
+  Cl.data = d;
+}
+function renderC() {
+  const s = SRC[Cl.src], n = Cl.n, m = n * s.mu, sd = Math.sqrt(n * s.v), d = Cl.data, N = d.length;
+  $("#c-nOut").textContent = n;
+  document.querySelectorAll("#c-src .chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.v === Cl.src)));
+  document.querySelectorAll("#c-npre .chip").forEach((c) => c.setAttribute("aria-pressed", String(+c.dataset.n === n)));
+  let lo = m - 4.5 * sd, hi = m + 4.5 * sd, bw;
+  if (s.disc) { lo = Math.floor(lo) - 0.5; hi = Math.ceil(hi) + 0.5; bw = Math.max(1, Math.ceil((hi - lo) / 60)); } else bw = (hi - lo) / 40;
+  const nb = Math.ceil((hi - lo) / bw), cnt = new Array(nb).fill(0);
+  for (let i = 0; i < N; i++) { const j = Math.floor((d[i] - lo) / bw); if (j >= 0 && j < nb) cnt[j]++; }
+  let mx = 0; cnt.forEach((c) => { mx = Math.max(mx, c / (N * bw)); });
+  const P = plot($("#c-chart"), { xmin: lo, xmax: hi, ymax: Math.max(mx, nPdf(m, m, sd)) * 1.15, hideY: true, xl: `Total of ${n} ${n === 1 ? "draw" : "draws"} (${s.name})`, yl: "More often ↑", int: s.disc && bw === 1 });
+  cnt.forEach((c, j) => { const y = P.Y(c / (N * bw)), a = P.X(lo + j * bw), b = P.X(lo + (j + 1) * bw); P.add(`<rect x="${a}" y="${y}" width="${Math.max(b - a - 1, 0.5)}" height="${P.Y(0) - y}" fill="#EDB1C1"/>`); });
+  if (Cl.curve) P.add(curve(P, (x) => nPdf(x, m, sd), lo, hi, "#C8365C", 3));
+  P.done();
+  let cap;
+  if (n === 1) cap = Cl.src === "coin" ? "One flip: only two possible totals, 0 and 1. Nothing bell-like yet." : Cl.src === "die" ? "One roll: all six outcomes equally likely, so the bars are flat." : "One waiting time: lots of short waits and a long tail. Very lopsided.";
+  else if (n < 6) cap = "Just a few draws added: a hump is starting to form, but it is still rough" + (Cl.src === "expo" ? " and lopsided." : ".");
+  else if (n < 20) cap = "A clear bell is emerging" + (Cl.src === "expo" ? ", though it still leans a little to the right." : ".");
+  else cap = "Now it looks like a bell curve, even though a single draw did not.";
+  $("#c-live").innerHTML = `<span class="tag">What you are seeing</span><div>${cap}</div>` + (Cl.src === "coin" && n > 1 ? `<div style="margin-top:4px">With coins, the total is the number of heads in ${n} flips, so this is the binomial distribution turning into a bell.</div>` : "");
+}
+document.querySelectorAll("#c-src .chip").forEach((c) => c.addEventListener("click", () => { Cl.src = c.dataset.v; genC(); renderC(); }));
+document.querySelectorAll("#c-npre .chip").forEach((c) => c.addEventListener("click", () => { Cl.n = +c.dataset.n; $("#c-n").value = Cl.n; genC(); renderC(); }));
+on("#c-n", (e) => { Cl.n = +e.target.value; genC(); renderC(); });
+$("#c-curve").addEventListener("change", (e) => { Cl.curve = e.target.checked; renderC(); });
+$("#c-new").addEventListener("click", () => { genC(); renderC(); });
+
+/* ================= STAND-IN LAB ================= */
+const M = { n: 100, p: 0.5, showP: true, showN: true };
+function renderM() {
+  const { n, p } = M, q = 1 - p, mu = n * p, sd = Math.sqrt(n * p * q);
+  $("#m-nOut").textContent = n; $("#m-pOut").textContent = Math.round(p * 100) + "%";
+  document.querySelectorAll("#m-presets .chip").forEach((c) => c.setAttribute("aria-pressed", String(+c.dataset.n === n && Math.abs(+c.dataset.p - p) < 1e-9)));
+  const pm = binArr(n, p), cdf = cum(pm);
+  let lo = 0, hi = n;
+  if (n > 30) { lo = Math.max(0, Math.floor(mu - 5 * sd)); hi = Math.min(n, Math.ceil(mu + 5 * sd)); }
+  const poi = (k) => poiP(mu, k), pcdf = cum(poiArr(mu, n + 60)), nc = (k) => Phi((k + 0.5 - mu) / sd);
+  let ymax = 0; for (let k = lo; k <= hi; k++) ymax = Math.max(ymax, pm[k], poi(k)); ymax = Math.max(ymax, nPdf(mu, mu, sd)) * 1.15;
+  const P = plot($("#m-chart"), { xmin: lo - 0.5, xmax: hi + 0.5, ymax, int: true, xl: "Number of successes", yl: "Chance" });
+  for (let k = lo; k <= hi; k++) { const x0 = P.X(k - 0.4), x1 = P.X(k + 0.4), y = P.Y(pm[k]); P.add(`<rect x="${x0}" y="${y}" width="${x1 - x0}" height="${Math.max(P.Y(0) - y, 0)}" rx="1.5" fill="#2F5BEA" opacity=".85"/>`); }
+  if (M.showN) P.add(curve(P, (x) => nPdf(x, mu, sd), lo - 0.5, hi + 0.5, "#C8365C", 3, 240));
+  if (M.showP) for (let k = lo; k <= hi; k++) P.add(`<circle cx="${P.X(k)}" cy="${P.Y(poi(k))}" r="${hi - lo > 50 ? 2.6 : 4.2}" fill="#D9780F" stroke="#fff" stroke-width="1.2"/>`);
+  P.done();
+  let dP = 0, dN = 0;
+  for (let k = 0; k <= n; k++) { dP = Math.max(dP, Math.abs(cdf[k] - pcdf[k])); dN = Math.max(dN, Math.abs(cdf[k] - nc(k))); }
+  const b = (ok, t) => `<span class="badge ${ok ? "ok" : "no"}">${ok ? "✓" : "✗"} ${t}</span>`;
+  const best = Math.abs(dP - dN) < 0.002 ? "Both stand-ins are about equally close here." : dP < dN ? "The Poisson stand-in is closer here." : "The normal stand-in is closer here.";
+  const gap = (v) => (v < 0.001 ? "under 0.1" : fN(v * 100, 1));
+  const goodN = mu >= 10 && n * q >= 10, goodP = n >= 20 && p <= 0.05;
+  $("#m-rules").innerHTML = `<div style="margin-bottom:4px"><b>Quick checks</b> (rules of thumb)</div>` +
+    b(goodN, `Normal: expect ${fN(mu, 1)} successes and ${fN(n * q, 1)} failures (want both about 10 or more)`) + b(goodP, `Poisson: many trials (${n}) and rare successes (${Math.round(p * 100)}%)`) +
+    `<div style="margin-top:6px">${best} The biggest gap in the running totals is ${gap(Math.min(dP, dN))} percentage points for the closer one, versus ${gap(Math.max(dP, dN))} for the other.</div>`;
+}
+on("#m-n", (e) => { M.n = +e.target.value; renderM(); });
+on("#m-p", (e) => { M.p = +e.target.value; renderM(); });
+$("#m-showP").addEventListener("change", (e) => { M.showP = e.target.checked; renderM(); });
+$("#m-showN").addEventListener("change", (e) => { M.showN = e.target.checked; renderM(); });
+document.querySelectorAll("#m-presets .chip").forEach((c) => c.addEventListener("click", () => { M.n = +c.dataset.n; M.p = +c.dataset.p; $("#m-n").value = M.n; $("#m-p").value = M.p; renderM(); }));
+
+/* decision helper */
+const DEC = {
+  a: "<b>Binomial.</b> Examples: heads in 10 flips, defects in a box of 25, correct guesses on a quiz. Check that the number of trials is fixed, each trial is yes/no, trials are independent, and the chance is the same each time. <a href=\"#binomial\">Go to binomial</a>.",
+  b: "<b>Poisson.</b> Examples: calls per hour, typos per page, errors per day. Check that events happen one at a time, independently, at a steady average rate. <a href=\"#poisson\">Go to Poisson</a>.",
+  c: "<b>Normal.</b> Examples: heights, machine-made parts, the total of many dice. Check that a histogram looks like a symmetric bell. Be careful with skewed data such as incomes or waiting times. <a href=\"#normal\">Go to normal</a>.",
+};
+document.querySelectorAll("#dec .chip").forEach((c) => c.addEventListener("click", () => {
+  document.querySelectorAll("#dec .chip").forEach((x) => x.setAttribute("aria-pressed", String(x === c)));
+  $("#decOut").innerHTML = DEC[c.dataset.v];
+}));
+
+/* ================= PRACTICE ================= */
+const D3 = ["Binomial", "Poisson", "Normal"];
+const QUIZ = [
+  { q: "The number of heads in 20 coin flips.", o: D3, a: 0, why: "A fixed number of yes/no trials (20 flips) with the same chance each time: binomial." },
+  { q: "The number of customers who walk into a shop between 2 pm and 3 pm.", o: D3, a: 1, why: "Events over a stretch of time with no fixed number of trials and no upper limit: Poisson." },
+  { q: "The weights of newborn babies at a hospital.", o: D3, a: 2, why: "A measurement that clusters around an average: roughly normal." },
+  { q: "The number of defective bulbs in a box of 12, if each bulb is independently 3% likely to be defective.", o: D3, a: 0, why: "12 independent yes/no trials with the same chance: binomial." },
+  { q: "The number of emails you receive in an hour.", o: D3, a: 1, why: "Events arriving over time: Poisson (as long as the rate is roughly steady)." },
+  { q: "The total of rolling 30 dice.", o: D3, a: 2, why: "A sum of many small independent pieces looks like a bell curve, thanks to the central limit theorem." },
+  { q: "The number of earthquakes in a region in a year.", o: D3, a: 1, why: "Rare events spread over time with no fixed number of trials: Poisson." },
+  { q: "In a group of 50 people, the number who were born in July (assume each person has about a 1-in-12 chance).", o: D3, a: 0, why: "50 independent yes/no trials with the same chance: binomial." },
+  { q: "A fair coin is flipped 10 times. Which number of heads is the most likely single result?", o: ["4", "5", "6", "All results are equally likely"], a: 1, why: "The average is 10 × 0.5 = 5, and 5 heads can happen in the most ways." },
+  { q: "A help desk averages 4 calls per hour. About how many calls should you expect in a half-hour?", o: ["1", "2", "4", "8"], a: 1, why: "Rates scale with time: 4 per hour × ½ hour = 2." },
+  { q: "Exam scores are roughly normal with average 70 and spread 10. About what share of students score between 60 and 80?", o: ["About 50%", "About 68%", "About 95%", "About 99.7%"], a: 1, why: "60 to 80 is within 1 spread of the average, which covers about 68%." },
+];
+(function buildQuiz() {
+  const box = $("#quizBox"), score = $("#score");
+  let done = 0, right = 0;
+  QUIZ.forEach((it, qi) => {
+    const f = document.createElement("fieldset"); f.className = "qz";
+    const lg = document.createElement("legend"); lg.textContent = (qi < 8 ? "Which distribution fits? " : "") + it.q; f.appendChild(lg);
+    const opts = document.createElement("div"); opts.className = "qopts";
+    const why = document.createElement("div"); why.className = "qwhy"; why.hidden = true; why.setAttribute("aria-live", "polite");
+    it.o.forEach((t, oi) => {
+      const b = document.createElement("button"); b.type = "button"; b.className = "qopt"; b.textContent = t;
+      b.addEventListener("click", () => {
+        if (f.dataset.done) return;
+        f.dataset.done = "1"; done++;
+        const ok = oi === it.a; if (ok) right++;
+        b.classList.add(ok ? "ok" : "bad");
+        if (!ok) b.textContent = "✗ " + t;
+        const good = opts.children[it.a]; good.classList.add("ok"); good.textContent = "✓ " + it.o[it.a];
+        why.hidden = false; why.textContent = (ok ? "Correct. " : "Not quite. ") + it.why;
+        score.textContent = `Score so far: ${right} of ${done} answered, out of ${QUIZ.length} questions.`;
+      });
+      opts.appendChild(b);
+    });
+    f.appendChild(opts); f.appendChild(why); box.appendChild(f);
+  });
+})();
+
+/* ================= init ================= */
+newBatch(); genC(); resetB(); resetP();
+renderD(); renderA(); loadB(SC_B[0]); renderS(); loadP(SC_P[0]); renderR(); renderH(); loadN(SC_N[0]); renderC(); renderM();
+})();
+</script>
+</body>
+</html>

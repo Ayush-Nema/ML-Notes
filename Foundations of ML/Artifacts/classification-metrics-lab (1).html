@@ -1,0 +1,1361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Classification Metrics Lab</title>
+<style>
+/* Layout concept: a lab bench. A sticky confusion matrix drives a scrolling wall of metric cards.
+   Four hues are reserved for the four matrix cells (TP, FP, FN, TN) and reused wherever a cell is referenced. */
+:root{
+  --bg:#F3F5F9; --surface:#FFFFFF; --surface2:#EBEEF5; --line:#DAE0EA; --line2:#C3CBDA;
+  --fg:#131A2B; --fg2:#445068; --fg3:#66718A;
+  --accent:#2D4CCB; --accent-soft:#E2E8FB; --on-accent:#FFFFFF;
+  --tp:#12806A; --tp-soft:#D8F0E9;
+  --tn:#2E6BB3; --tn-soft:#DBE8F6;
+  --fp:#B86D06; --fp-soft:#F9E8CC;
+  --fn:#BC3256; --fn-soft:#F7DBE3;
+  --font:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D111A; --surface:#151B28; --surface2:#1D2535; --line:#283248; --line2:#37425C;
+    --fg:#E7EBF4; --fg2:#AEB7CB; --fg3:#8490A9;
+    --accent:#8AA2FF; --accent-soft:#222C54; --on-accent:#0D111A;
+    --tp:#52CBAE; --tp-soft:#153A33;
+    --tn:#6FA9F2; --tn-soft:#172F4B;
+    --fp:#E8A64C; --fp-soft:#3E2F18;
+    --fn:#F0809B; --fn-soft:#44202B;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D111A; --surface:#151B28; --surface2:#1D2535; --line:#283248; --line2:#37425C;
+  --fg:#E7EBF4; --fg2:#AEB7CB; --fg3:#8490A9;
+  --accent:#8AA2FF; --accent-soft:#222C54; --on-accent:#0D111A;
+  --tp:#52CBAE; --tp-soft:#153A33;
+  --tn:#6FA9F2; --tn-soft:#172F4B;
+  --fp:#E8A64C; --fp-soft:#3E2F18;
+  --fn:#F0809B; --fn-soft:#44202B;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.55 var(--font);-webkit-text-size-adjust:100%}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3,h4{line-height:1.2;margin:0;text-wrap:balance}
+p{margin:0}
+.mono{font-family:var(--mono)}
+.muted{color:var(--fg3)}
+.wrap{max-width:1280px;margin:0 auto;padding-inline:16px}
+@media (min-width:700px){.wrap{padding-inline:28px}}
+
+/* top bar */
+.topbar{position:sticky;top:0;z-index:30;background:var(--bg);border-bottom:1px solid var(--line)}
+.bar{display:flex;align-items:center;gap:16px;min-height:52px;flex-wrap:wrap;padding-block:6px}
+.brand{font-weight:700;letter-spacing:-.01em;color:var(--fg);text-decoration:none;margin-right:auto}
+.topbar nav{display:flex;gap:4px;flex-wrap:wrap}
+.topbar nav a{font-size:13px;color:var(--fg2);text-decoration:none;padding:5px 10px;border-radius:7px}
+.topbar nav a:hover{background:var(--surface2);color:var(--fg)}
+
+/* intro */
+.intro{padding-block:34px 8px}
+.intro h1{font-size:clamp(26px,4.2vw,40px);letter-spacing:-.025em;font-weight:750;max-width:20ch}
+.lead{margin-top:12px;max-width:68ch;color:var(--fg2);font-size:16px}
+.defs{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:0;margin-top:22px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.defs div{padding:12px 14px 12px 0;font-size:13.5px;color:var(--fg2)}
+.defs b{display:block;font-size:14px;margin-bottom:2px}
+.defs .d-tp b{color:var(--tp)} .defs .d-fp b{color:var(--fp)} .defs .d-fn b{color:var(--fn)} .defs .d-tn b{color:var(--tn)}
+.mnemonic{margin-top:12px;font-size:13.5px;color:var(--fg3);max-width:80ch}
+
+/* sections */
+.sec{padding-block:40px 8px}
+.sec-head{margin-bottom:20px;max-width:78ch}
+.sec-head h2{font-size:clamp(22px,3vw,28px);letter-spacing:-.02em}
+.sec-head p{margin-top:8px;color:var(--fg2)}
+.split{display:grid;grid-template-columns:minmax(320px,400px) minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:960px){.split{grid-template-columns:minmax(0,1fr)}}
+.stick{position:sticky;top:64px;max-height:calc(100vh - 80px);overflow:auto}
+@media (max-width:960px){.stick{position:static;max-height:none}}
+.results{display:flex;flex-direction:column;gap:20px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;min-width:0}
+.panel>h3,.ph{font-size:15px;margin-bottom:10px}
+.hint{font-size:12.5px;color:var(--fg3);margin-top:8px}
+
+/* controls */
+.btn{font:inherit;font-size:13px;padding:6px 11px;border-radius:8px;border:1px solid var(--line2);background:var(--surface);color:var(--fg);cursor:pointer}
+.btn:hover{background:var(--surface2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{filter:brightness(1.08)}
+.chip{font:inherit;font-size:12.5px;padding:4px 10px;border-radius:999px;border:1px solid var(--line2);background:var(--surface);color:var(--fg2);cursor:pointer}
+.chip:hover{background:var(--surface2)}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--fg)}
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{font:inherit;font-size:12.5px;padding:5px 10px;border:0;background:var(--surface);color:var(--fg2);cursor:pointer}
+.seg button+button{border-left:1px solid var(--line2)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent)}
+.ctrls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:12px}
+.sel{font-size:12.5px;color:var(--fg2);display:flex;gap:6px;align-items:center}
+select,input[type=number]{font:inherit;font-size:13px;color:var(--fg);background:var(--surface);border:1px solid var(--line2);border-radius:7px;padding:4px 6px}
+input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
+.field{display:flex;flex-direction:column;gap:2px;margin-top:12px}
+.field label{display:flex;justify-content:space-between;gap:8px;font-size:13px;font-weight:600}
+.field output{font-family:var(--mono);font-weight:500;color:var(--accent);font-size:12.5px;text-align:right}
+.field small{color:var(--fg3);font-size:12px;line-height:1.35}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.field input[type=number]{width:100%;min-width:0}
+@media (max-width:700px){.topbar{position:static}}
+
+/* confusion matrix */
+.cm{display:grid;grid-template-columns:20px 58px minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto 1fr 1fr;gap:6px}
+.axis-top,.axis-left{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg3);font-weight:600;text-align:center}
+.axis-left{writing-mode:vertical-rl;transform:rotate(180deg);align-self:center;justify-self:center}
+.ch,.rh{font-size:12.5px;color:var(--fg2);font-weight:600;display:flex;align-items:center;justify-content:center;text-align:center}
+.cell{position:relative;border-radius:9px;padding:10px 10px 14px;display:flex;flex-direction:column;gap:1px;min-height:116px;cursor:text;overflow:hidden;border:2px solid transparent;transition:opacity .15s,border-color .15s}
+.cell .abbr{font-weight:750;font-size:14px}
+.cell .tg{font-size:11.5px;color:var(--fg2)}
+.cell input{font:600 25px/1.2 var(--mono);width:100%;border:0;border-bottom:1px dashed transparent;background:transparent;color:var(--fg);padding:2px 0;margin-top:4px;font-variant-numeric:tabular-nums;border-radius:0}
+.cell input:hover{border-bottom-color:var(--line2)}
+.cell input:focus{outline:none;border-bottom-color:var(--accent)}
+.cell .pc{font-size:11px;color:var(--fg2);line-height:1.3;margin-top:2px}
+.cell .fillbar{position:absolute;left:0;bottom:0;height:4px;background:currentColor;opacity:.6;transition:width .2s}
+.c-tp{background:var(--tp-soft);color:var(--tp)} .c-fp{background:var(--fp-soft);color:var(--fp)}
+.c-fn{background:var(--fn-soft);color:var(--fn)} .c-tn{background:var(--tn-soft);color:var(--tn)}
+.cell input{color:var(--fg)}
+.cm.dim .cell{opacity:.38}
+.cm.dim .cell.hl-num,.cm.dim .cell.hl-den{opacity:1}
+.cell.hl-num{border-color:var(--accent)}
+.cell.hl-den{border-color:var(--accent);border-style:dashed}
+.totals{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 10px;margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line)}
+.totals dt{font-size:11.5px;color:var(--fg3)}
+.totals dd{margin:0;font:600 15px var(--mono);font-variant-numeric:tabular-nums}
+
+/* metric cards */
+.rhead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.rhead h3{font-size:20px;letter-spacing:-.01em}
+.group{margin-top:6px}
+.group h3{font-size:16px;margin-top:10px}
+.gdesc{font-size:13.5px;color:var(--fg2);margin:4px 0 12px;max-width:72ch}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:12px}
+.metric{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.metric:hover,.metric:focus-visible{border-color:var(--accent)}
+.metric[hidden]{display:none}
+.mh{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.mh h4{font-size:15px}
+.tag{font-size:10.5px;letter-spacing:.02em;padding:2px 7px;border-radius:999px;white-space:nowrap;background:var(--surface2);color:var(--fg2)}
+.tag.ind{background:var(--tp-soft);color:var(--tp)}
+.tag.dep{background:var(--fp-soft);color:var(--fp)}
+.aka{font-size:12px;color:var(--fg3);margin-top:-4px}
+.mval{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.mval .v{font:650 26px/1.1 var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.mval .pc{font:13px var(--mono);color:var(--fg3)}
+.mval .dirm{margin-left:auto;font-size:11px;color:var(--fg3)}
+.metric.undef .v{font-size:18px;color:var(--fg3)}
+.gauge{position:relative;height:6px;border-radius:3px;background:var(--surface2)}
+.gauge i{position:absolute;top:0;bottom:0;border-radius:3px;background:var(--accent);transition:width .2s,left .2s}
+.gauge.pm::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--fg3)}
+.eq{overflow-x:auto;padding:4px 0;font-size:1.12em;color:var(--fg)}
+.eq math{font-size:1.05em}
+.eq2{font-size:1em;color:var(--fg2)}
+.sub{font:12px/1.4 var(--mono);color:var(--fg2);overflow-wrap:anywhere}
+.ci{font-size:11.5px;color:var(--fg3)}
+.note{font-size:11.5px;color:var(--fn)}
+.say{font-size:13.5px;color:var(--fg2)}
+details{font-size:13px;color:var(--fg2)}
+summary{cursor:pointer;color:var(--accent);font-size:12.5px}
+details p{margin-top:6px}
+.betactl{display:flex;flex-direction:column;gap:4px;font-size:12.5px}
+.betactl .btns{display:flex;gap:6px;flex-wrap:wrap}
+.betactl label{display:flex;justify-content:space-between}
+.betactl output{font-family:var(--mono);color:var(--accent)}
+
+/* charts */
+.plot{width:100%}
+.plot svg{display:block;width:100%;height:auto}
+svg .grid{stroke:var(--line);stroke-width:1}
+svg .frame{fill:none;stroke:var(--line2);stroke-width:1}
+svg .ax{fill:var(--fg3);font:11px var(--font)}
+svg .axl{fill:var(--fg2);font:12px var(--font)}
+svg .ttl{fill:var(--fg2);font:600 12px var(--font)}
+svg .ann{font:700 12.5px var(--mono)}
+svg .curve{fill:none;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+svg .area{stroke:none;opacity:.12}
+svg .dash{stroke-dasharray:5 4;fill:none;stroke:var(--fg3);stroke-width:1.2}
+svg .thr{stroke:var(--fg);stroke-width:1.6;stroke-dasharray:4 3}
+svg .b-tp{fill:var(--tp)} svg .b-fp{fill:var(--fp)} svg .b-fn{fill:var(--fn)} svg .b-tn{fill:var(--tn)}
+svg .t-tp{fill:var(--tp)} svg .t-fp{fill:var(--fp)} svg .t-fn{fill:var(--fn)} svg .t-tn{fill:var(--tn)}
+svg .pt{stroke:var(--surface);stroke-width:2}
+.s-prec{--c:var(--accent)} .s-rec{--c:var(--tp)} .s-f1{--c:var(--fg)} .s-acc{--c:var(--fg3)} .s-npv{--c:var(--tn)}
+svg .s-prec,svg .s-rec,svg .s-f1,svg .s-acc,svg .s-npv{stroke:var(--c)}
+svg .pt.s-prec,svg .pt.s-rec,svg .pt.s-f1,svg .pt.s-acc,svg .pt.s-npv{fill:var(--c)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--fg2);margin-bottom:6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;background:var(--c,var(--fg))}
+.legend i.sq{height:10px;width:10px;border-radius:2px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px 12px;margin-top:10px;font-size:13px}
+.readout div b{display:block;font:650 17px var(--mono);font-variant-numeric:tabular-nums}
+.readout div span{font-size:11.5px;color:var(--fg3)}
+
+/* tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}
+.tile{background:var(--surface2);border-radius:9px;padding:9px 10px}
+.tile span{font-size:11.5px;color:var(--fg2);display:block}
+.tile b{font:650 19px/1.25 var(--mono);font-variant-numeric:tabular-nums}
+.tile small{display:block;font-size:11px;color:var(--fg3);line-height:1.3}
+.atthr{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:560px){.atthr{grid-template-columns:minmax(0,1fr)}}
+.mini{display:grid;grid-template-columns:repeat(2,78px);gap:5px}
+.mini div{border-radius:8px;padding:7px 8px;text-align:center}
+.mini b{display:block;font:650 17px var(--mono);color:var(--fg);font-variant-numeric:tabular-nums}
+.mini span{font-size:11px;font-weight:700}
+.sub-h{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg3);font-weight:600;margin:14px 0 8px}
+
+/* tables */
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--fg3);font-weight:600;white-space:nowrap}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+tfoot td{font-weight:600;background:var(--surface2)}
+tbody tr.hov:hover{background:var(--surface2)}
+.mc td,.mc th{padding:4px;text-align:center;border:0}
+.mc input{width:50px;text-align:center;font:600 14px var(--mono);padding:6px 2px;border:1px solid var(--line2);border-radius:6px;background:transparent;color:var(--fg)}
+.mc .rn{text-align:right;font-size:12.5px;color:var(--fg2);font-weight:600;padding-right:8px;white-space:nowrap}
+.mc .tot{font:12px var(--mono);color:var(--fg3)}
+.mc .dg input{border-color:var(--accent);background:color-mix(in srgb,var(--accent) calc(var(--i,0)*60%),transparent)}
+.mc .of input{background:color-mix(in srgb,var(--fn) calc(var(--i,0)*70%),transparent)}
+.mc td.hlrow input,.mc td.hlcol input{box-shadow:0 0 0 2px var(--accent)}
+.ident{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px 20px}
+.ident li{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ident .m{overflow-x:auto;font-size:1.1em}
+.ident .c{font-size:12.5px;color:var(--fg2)}
+.traps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;color:var(--fg2)}
+.traps b{color:var(--fg)}
+pre{margin:0;padding:14px;background:var(--surface2);border-radius:10px;overflow:auto;font:12.5px/1.55 var(--mono);color:var(--fg)}
+.codewrap{position:relative}
+.codewrap .btn{position:absolute;top:8px;right:8px}
+.refs{font-size:12.5px;color:var(--fg2);display:flex;flex-direction:column;gap:5px;padding-left:18px;margin:0}
+footer{padding-block:36px 56px;color:var(--fg3);font-size:12.5px;max-width:80ch}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="wrap bar">
+  <a class="brand" href="#top">Classification Metrics Lab</a>
+  <nav aria-label="Sections">
+    <a href="#matrix">Binary matrix</a><a href="#threshold">Threshold explorer</a><a href="#multiclass">Multi-class</a><a href="#guide">Choosing a metric</a><a href="#sklearn">scikit-learn</a>
+  </nav>
+  <button class="btn" id="themeBtn" type="button" aria-label="Switch between light and dark theme">Theme</button>
+</div></div>
+
+<header class="wrap intro" id="top">
+  <h1>Every classifier score starts from four counts</h1>
+  <p class="lead">Edit the confusion matrix and watch <b><span id="metricCount">28</span> metrics</b> recompute, each with its equation and the arithmetic behind it. Hover a metric to see which cells it uses. Then drag a decision threshold on a simulated model, and try the multi-class case.</p>
+  <div class="defs">
+    <div class="d-tp"><b>TP · true positive</b>Model said positive, and it was. A hit.</div>
+    <div class="d-fp"><b>FP · false positive</b>Model said positive, but it was negative. A false alarm (Type I).</div>
+    <div class="d-fn"><b>FN · false negative</b>Model said negative, but it was positive. A miss (Type II).</div>
+    <div class="d-tn"><b>TN · true negative</b>Model said negative, and it was. A correct rejection.</div>
+  </div>
+  <p class="mnemonic">Read each name right to left: the last word is what the model predicted, the first word says whether that prediction was right.</p>
+</header>
+
+<main class="wrap">
+
+<!-- ===================== BINARY ===================== -->
+<section class="sec" id="matrix">
+  <div class="sec-head">
+    <h2>Binary confusion matrix</h2>
+    <p>Type your own counts or load a scenario. Rows can show the actual or the predicted class, depending on which convention you are used to. Both are the same table.</p>
+  </div>
+  <div class="split">
+    <aside class="panel stick" aria-label="Confusion matrix editor">
+      <h3 class="ph">Counts</h3>
+      <div class="presets" id="presets"></div>
+      <div id="cm" class="cm" data-orient="actual"></div>
+      <dl class="totals" id="totals"></dl>
+      <div class="ctrls">
+        <div class="seg" id="orientSeg" role="group" aria-label="Matrix orientation">
+          <button type="button" data-v="actual" aria-pressed="true">Rows = actual</button>
+          <button type="button" data-v="pred" aria-pressed="false">Rows = predicted</button>
+        </div>
+      </div>
+      <div class="ctrls">
+        <label class="sel" for="showSel">Cell note
+          <select id="showSel">
+            <option value="all">% of all samples</option>
+            <option value="actual">% of actual class</option>
+            <option value="pred">% of predicted class</option>
+            <option value="none">none</option>
+          </select>
+        </label>
+      </div>
+      <div class="ctrls">
+        <button class="btn" id="swapBtn" type="button">Swap positive class</button>
+        <button class="btn" id="resetBtn" type="button">Reset</button>
+      </div>
+      <p class="hint" id="swapNote">Swapping which class counts as "positive" changes precision, recall and F1 but not accuracy, MCC or balanced accuracy.</p>
+    </aside>
+
+    <div class="results">
+      <div class="rhead">
+        <h3>Metrics</h3>
+        <div class="seg" id="depSeg" role="group" aria-label="Filter metrics by prevalence dependence">
+          <button type="button" data-v="all" aria-pressed="true">All</button>
+          <button type="button" data-v="ind" aria-pressed="false">Prevalence-independent</button>
+          <button type="button" data-v="dep" aria-pressed="false">Prevalence-dependent</button>
+        </div>
+      </div>
+      <p class="gdesc" style="margin:-8px 0 0">"Prevalence-independent" means the value stays the same if you run the same classifier on a population with a different share of positives. Those are the ones to compare across sites or datasets.</p>
+      <div id="groups"></div>
+
+      <div class="panel" id="bayes">
+        <h3>Same classifier, different population</h3>
+        <p class="say">Recall and specificity describe the model. Precision, NPV, accuracy and F1 also depend on how common positives are. Holding the current recall and specificity fixed, drag the prevalence.</p>
+        <div class="legend" style="margin-top:10px">
+          <span class="s-prec"><i></i>Precision</span><span class="s-npv"><i></i>NPV</span><span class="s-f1"><i></i>F1</span><span class="s-acc"><i></i>Accuracy</span>
+        </div>
+        <div id="bayesPlot" class="plot"></div>
+        <div class="field">
+          <label for="bayesP">What-if prevalence <output id="bayesPo"></output></label>
+          <input id="bayesP" type="range" min="0" max="1000" value="500">
+        </div>
+        <div class="readout" id="bayesOut"></div>
+        <div class="ctrls">
+          <button class="btn" id="bayesReset" type="button">Match the matrix</button>
+          <button class="btn" id="bayesLoad" type="button">Load this scenario into the matrix (per 10,000)</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Identities worth remembering</h3>
+        <ul class="ident" id="identList"></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== THRESHOLD ===================== -->
+<section class="sec" id="threshold">
+  <div class="sec-head">
+    <h2>Threshold explorer</h2>
+    <p>A probabilistic classifier outputs a score, and a confusion matrix only exists after you pick a threshold. This simulates a model on a labeled test set so you can see how one choice reshapes every metric, and which metrics ignore the choice altogether.</p>
+  </div>
+  <div class="split">
+    <aside class="panel stick" id="ctl" aria-label="Simulation controls">
+      <h3 class="ph">Simulated model</h3>
+      <div class="field">
+        <label for="x-d">Class separation d′ <output id="o-d"></output></label>
+        <input id="x-d" type="range" min="0" max="4" step="0.05" value="1.8">
+        <small>Distance between the two score distributions in standard deviations. 0 is random guessing.</small>
+      </div>
+      <div class="field">
+        <label for="x-prev">Prevalence of positives <output id="o-prev"></output></label>
+        <input id="x-prev" type="range" min="0.005" max="0.5" step="0.005" value="0.1">
+      </div>
+      <div class="field">
+        <label for="x-n">Test-set size</label>
+        <select id="x-n"><option value="500">500</option><option value="2000" selected>2,000</option><option value="10000">10,000</option></select>
+      </div>
+      <div class="field">
+        <label for="x-t">Model confidence <output id="o-t"></output></label>
+        <input id="x-t" type="range" min="0.3" max="4" step="0.05" value="1">
+        <small>1 is calibrated. Above 1 the model is overconfident, below 1 underconfident. Ranking, ROC and AUC do not change; log loss, Brier and calibration do.</small>
+      </div>
+      <div class="field">
+        <label for="x-thr">Decision threshold <output id="o-thr"></output></label>
+        <input id="x-thr" type="range" min="0" max="100" step="1" value="50">
+        <small>Predict positive when score ≥ threshold.</small>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="x-cfp">Cost of an FP</label><input id="x-cfp" type="number" min="0" step="any" value="1"></div>
+        <div class="field"><label for="x-cfn">Cost of an FN</label><input id="x-cfn" type="number" min="0" step="any" value="5"></div>
+      </div>
+      <div class="sub-h">Jump to a threshold</div>
+      <div class="ctrls" style="margin-top:0">
+        <button class="btn" id="btnF1" type="button">Max F1</button>
+        <button class="btn" id="btnJ" type="button">Max Youden J</button>
+        <button class="btn" id="btnCost" type="button">Min cost</button>
+      </div>
+      <p class="hint" id="optInfo"></p>
+      <div class="ctrls">
+        <button class="btn" id="btnReseed" type="button">New random sample</button>
+        <button class="btn primary" id="btnSend" type="button">Send counts to the calculator</button>
+      </div>
+    </aside>
+
+    <div class="results">
+      <div class="panel">
+        <h3>At this threshold</h3>
+        <div class="atthr">
+          <div class="mini" id="miniCm"></div>
+          <div>
+            <div class="tiles" id="thrTiles"></div>
+          </div>
+        </div>
+        <div class="sub-h">Independent of the threshold</div>
+        <div class="tiles" id="freeTiles"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Where the scores fall</h3>
+        <p class="say">Each bar is a slice of predicted probability. The dashed line is the threshold. Colors are the matrix cells: moving the line trades FP for FN.</p>
+        <div id="distPlot" class="plot"></div>
+      </div>
+
+      <div class="grid2">
+        <div class="panel"><h3>ROC curve</h3><div id="rocPlot" class="plot"></div><p class="hint">Recall against false-positive rate across all thresholds. The dot is the current threshold.</p></div>
+        <div class="panel"><h3>Precision-recall curve</h3><div id="prPlot" class="plot"></div><p class="hint">Dashed line is the no-skill baseline, equal to prevalence.</p></div>
+        <div class="panel">
+          <h3>Metrics versus threshold</h3>
+          <div class="legend"><span class="s-prec"><i></i>Precision</span><span class="s-rec"><i></i>Recall</span><span class="s-f1"><i></i>F1</span><span class="s-acc"><i></i>Accuracy</span></div>
+          <div id="sweepPlot" class="plot"></div>
+        </div>
+        <div class="panel"><h3>Reliability diagram</h3><div id="relPlot" class="plot"></div><p class="hint">Mean predicted probability against observed positive rate, in ten bins. Dot size shows how many samples fall in the bin.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== MULTI-CLASS ===================== -->
+<section class="sec" id="multiclass">
+  <div class="sec-head">
+    <h2>Multi-class</h2>
+    <p>With more than two classes there is no single "positive". Each class gets its own one-vs-rest 2×2, and the per-class scores are averaged in different ways. Rows are the actual class, columns the predicted class.</p>
+  </div>
+  <div class="split">
+    <aside class="panel" aria-label="Multi-class confusion matrix editor">
+      <h3 class="ph">Counts</h3>
+      <div class="seg" id="mcSize" role="group" aria-label="Number of classes">
+        <button type="button" data-v="3" aria-pressed="true">3 classes</button>
+        <button type="button" data-v="4" aria-pressed="false">4</button>
+        <button type="button" data-v="5" aria-pressed="false">5</button>
+      </div>
+      <div class="tw" style="margin-top:12px"><table class="mc" id="mcTable"></table></div>
+      <p class="hint">Diagonal cells are correct predictions. Off-diagonal shading shows where each actual class gets confused.</p>
+    </aside>
+    <div class="results">
+      <div class="panel">
+        <h3>Overall</h3>
+        <div class="tiles" id="mcTiles"></div>
+      </div>
+      <div class="panel">
+        <h3>Per class and averages</h3>
+        <div class="tw"><table id="mcPer"></table></div>
+        <details style="margin-top:10px">
+          <summary>How the averages differ</summary>
+          <p><b>Macro</b>: plain mean over classes, so a rare class counts as much as a common one. Use it when every class matters. <b>Weighted</b>: mean weighted by class support, so it tracks the common classes. <b>Micro</b>: pool all TP, FP and FN first, then compute. For single-label problems micro precision, recall and F1 all equal accuracy. Undefined per-class values (zero denominator) count as 0 in the averages, which matches scikit-learn's default.</p>
+        </details>
+      </div>
+      <div class="panel">
+        <h3>One-vs-rest view</h3>
+        <div class="ctrls" style="margin-top:0">
+          <label class="sel" for="ovrSel">Class <select id="ovrSel"></select></label>
+          <button class="btn" id="ovrSend" type="button">Open in the binary calculator</button>
+        </div>
+        <div class="atthr" style="margin-top:12px">
+          <div class="mini" id="ovrCm"></div>
+          <p class="say" id="ovrText"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== GUIDE ===================== -->
+<section class="sec" id="guide">
+  <div class="sec-head">
+    <h2>Choosing a metric</h2>
+    <p>No metric is best in general. Pick the one that matches what a mistake costs you, then report a few that cover each other's blind spots.</p>
+  </div>
+  <div class="panel">
+    <div class="tw">
+      <table>
+        <thead><tr><th>Situation</th><th>Reach for</th><th>Be careful with</th></tr></thead>
+        <tbody>
+          <tr><td>Balanced classes, similar error costs</td><td>Accuracy, macro-F1, MCC</td><td>Hiding per-class weaknesses; still report per-class recall</td></tr>
+          <tr><td>Positives are rare and you must find them</td><td>Recall, precision, F-β, PR-AUC (average precision)</td><td>Accuracy and ROC-AUC on their own: both can look excellent</td></tr>
+          <tr><td>False alarms are expensive (auto-blocking, limited review capacity)</td><td>Precision, specificity, recall at a fixed FPR</td><td>Recall alone</td></tr>
+          <tr><td>Misses are expensive (screening, safety)</td><td>Recall (sensitivity), NPV, F2</td><td>Precision alone</td></tr>
+          <tr><td>Ranking quality, threshold not chosen yet</td><td>ROC-AUC (balanced data), PR-AUC (imbalanced data)</td><td>Reading AUC as accuracy; comparing PR-AUC across datasets with different prevalence</td></tr>
+          <tr><td>You need trustworthy probabilities</td><td>Log loss, Brier score, reliability diagram, ECE</td><td>AUC, which ignores calibration completely</td></tr>
+          <tr><td>One number for a 2×2 under imbalance</td><td>MCC, balanced accuracy, Cohen's κ</td><td>F1: ignores TN and depends on which class is "positive"</td></tr>
+          <tr><td>Comparing sites or datasets with different prevalence</td><td>Recall, specificity, LR+, LR−, Youden's J</td><td>Precision, accuracy, F1: they move with prevalence</td></tr>
+          <tr><td>Multi-class with rare classes</td><td>Macro-F1, per-class recall, the confusion matrix itself</td><td>Micro-F1 or accuracy alone: dominated by large classes</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:20px">
+    <h3>Traps worth knowing</h3>
+    <ol class="traps">
+      <li><b>Accuracy paradox.</b> With 5% positives, a model that never predicts positive scores 95% accuracy. Load "Always predicts negative" above to see it.</li>
+      <li><b>Base-rate fallacy.</b> A test with 90% recall and 95% specificity sounds strong, yet at 1% prevalence most of its positive calls are false. Use the prevalence slider to check.</li>
+      <li><b>0.5 is a default, not a property of the model.</b> The best threshold depends on costs and prevalence. Choose it on validation data, never on the test set.</li>
+      <li><b>F1 is not symmetric.</b> It ignores TN, so swapping the positive class changes it. Choose the positive class deliberately.</li>
+      <li><b>ROC can flatter imbalanced problems.</b> FPR divides by a huge negative count, so thousands of false alarms can still give a tiny FPR. Check the precision-recall curve too.</li>
+      <li><b>Small samples are noisy.</b> With 20 positives, an observed recall of 0.90 has a 95% Wilson interval of roughly 0.70 to 0.97. The cards above show these intervals for simple proportions.</li>
+      <li><b>Metrics describe the test distribution only.</b> Leakage, duplicates and dataset shift make any number optimistic for deployment.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="sec" id="sklearn">
+  <div class="sec-head">
+    <h2>scikit-learn equivalents</h2>
+    <p>Every metric on this page in a few lines of Python. Confirm against your installed version's documentation, as signatures occasionally change.</p>
+  </div>
+  <div class="codewrap">
+    <button class="btn" id="copyCode" type="button">Copy</button>
+<pre id="codeBlock"><code>from sklearn.metrics import (
+    confusion_matrix, accuracy_score, precision_score, recall_score, f1_score,
+    fbeta_score, balanced_accuracy_score, matthews_corrcoef, cohen_kappa_score,
+    jaccard_score, roc_auc_score, average_precision_score, log_loss,
+    brier_score_loss, class_likelihood_ratios, classification_report,
+    roc_curve, precision_recall_curve,
+)
+from sklearn.calibration import calibration_curve
+
+# y_true: 0/1 labels, y_pred: 0/1 predictions, y_prob: predicted P(y=1)
+tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()   # rows = actual, cols = predicted
+
+accuracy     = accuracy_score(y_true, y_pred)
+precision    = precision_score(y_true, y_pred)                 # PPV
+recall       = recall_score(y_true, y_pred)                    # sensitivity, TPR
+specificity  = recall_score(y_true, y_pred, pos_label=0)       # TNR
+npv          = precision_score(y_true, y_pred, pos_label=0)
+f1           = f1_score(y_true, y_pred)
+f2           = fbeta_score(y_true, y_pred, beta=2)
+bal_acc      = balanced_accuracy_score(y_true, y_pred)
+mcc          = matthews_corrcoef(y_true, y_pred)
+kappa        = cohen_kappa_score(y_true, y_pred)
+jaccard      = jaccard_score(y_true, y_pred)
+lr_pos, lr_neg = class_likelihood_ratios(y_true, y_pred)       # scikit-learn >= 1.2
+
+# threshold-free, use scores or probabilities
+roc_auc      = roc_auc_score(y_true, y_prob)
+pr_auc       = average_precision_score(y_true, y_prob)
+ll           = log_loss(y_true, y_prob)
+brier        = brier_score_loss(y_true, y_prob)
+frac_pos, mean_pred = calibration_curve(y_true, y_prob, n_bins=10)
+
+# multi-class: choose the average explicitly
+f1_macro     = f1_score(y_true, y_pred, average="macro")
+f1_weighted  = f1_score(y_true, y_pred, average="weighted")
+f1_micro     = f1_score(y_true, y_pred, average="micro")        # equals accuracy
+print(classification_report(y_true, y_pred, digits=3))</code></pre>
+  </div>
+</section>
+
+<footer>
+  <p><b>References</b> (cited from memory, not re-verified here; check the originals before quoting).</p>
+  <ol class="refs">
+    <li>Powers, D. M. W. (2011). Evaluation: from precision, recall and F-measure to ROC, informedness, markedness and correlation. <i>Journal of Machine Learning Technologies</i>, 2(1).</li>
+    <li>Fawcett, T. (2006). An introduction to ROC analysis. <i>Pattern Recognition Letters</i>, 27(8).</li>
+    <li>Davis, J. &amp; Goadrich, M. (2006). The relationship between precision-recall and ROC curves. <i>ICML</i>.</li>
+    <li>Saito, T. &amp; Rehmsmeier, M. (2015). The precision-recall plot is more informative than the ROC plot when evaluating binary classifiers on imbalanced datasets. <i>PLoS ONE</i>, 10(3).</li>
+    <li>Chicco, D. &amp; Jurman, G. (2020). The advantages of the Matthews correlation coefficient (MCC) over F1 score and accuracy in binary classification evaluation. <i>BMC Genomics</i>, 21.</li>
+    <li>Cohen, J. (1960). A coefficient of agreement for nominal scales. <i>Educational and Psychological Measurement</i>, 20(1).</li>
+    <li>Youden, W. J. (1950). Index for rating diagnostic tests. <i>Cancer</i>, 3(1).</li>
+    <li>Brier, G. W. (1950). Verification of forecasts expressed in terms of probability. <i>Monthly Weather Review</i>, 78(1).</li>
+    <li>Wilson, E. B. (1927). Probable inference, the law of succession, and statistical inference. <i>JASA</i>, 22(158).</li>
+    <li>Balayla, J. (2020). Prevalence threshold (ϕe) and the geometry of screening curves. <i>PLoS ONE</i>, 15(10).</li>
+    <li>Guo, C. et al. (2017). On calibration of modern neural networks. <i>ICML</i>.</li>
+    <li>scikit-learn user guide, "Metrics and scoring": https://scikit-learn.org/stable/modules/model_evaluation.html</li>
+  </ol>
+  <p style="margin-top:14px">Everything on this page runs in your browser. Nothing is uploaded. The threshold explorer uses simulated data: two equal-variance Gaussian score distributions, with probabilities from the exact Bayes posterior, optionally sharpened or flattened by the confidence control. Prevalence thresholds follow a heuristic definition and are shown for orientation, not as a decision rule.</p>
+</footer>
+</main>
+
+<noscript><div class="wrap"><p>This page needs JavaScript to compute the metrics.</p></div></noscript>
+
+<script>
+'use strict';
+/* ================= pure logic (no DOM) ================= */
+const div=(a,b)=>b===0?NaN:a/b;
+const sigmoid=x=>1/(1+Math.exp(-x));
+const logit=p=>Math.log(p/(1-p));
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+
+/* MathML helpers */
+const mo=s=>`<mo>${s}</mo>`,mi=s=>`<mi>${s}</mi>`,mn=s=>`<mn>${s}</mn>`,tx=s=>`<mtext>${s}</mtext>`;
+const frac=(n,d)=>`<mfrac>${n}${d}</mfrac>`,sqrt=x=>`<msqrt>${x}</msqrt>`;
+const sup=(b,e)=>`<msup>${b}${e}</msup>`,sb=(b,s)=>`<msub>${mi(b)}${mi(s)}</msub>`;
+const t=s=>`<mrow>${s.trim().split(/\s+/).map(k=>{
+  if(k==='-')k='−'; if(k==='*')k='×';
+  if(/^[+−×=(),·]$/.test(k))return mo(k);
+  if(/^[0-9.]+$/.test(k))return mn(k);
+  return mi(k);}).join('')}</mrow>`;
+const eqn=(...p)=>`<math>${p.join(mo('='))}</math>`;
+const B2=sup(mi('β'),mn('2'));
+
+/* confusion counts */
+function counts(s){const {TP,FP,FN,TN}=s;return {TP,FP,FN,TN,N:TP+FP+FN+TN,P:TP+FN,Q:FP+TN,PP:TP+FP,PN:FN+TN};}
+function derive(c){return {tpr:div(c.TP,c.P),tnr:div(c.TN,c.Q),fpr:div(c.FP,c.Q),fnr:div(c.FN,c.P),ppv:div(c.TP,c.PP),npv:div(c.TN,c.PN)};}
+function wilson(k,n,z=1.96){
+  if(n===0)return null;
+  const p=k/n,z2=z*z,den=1+z2/n,ctr=(p+z2/(2*n))/den,half=z*Math.sqrt(p*(1-p)/n+z2/(4*n*n))/den;
+  return [Math.max(0,ctr-half),Math.min(1,ctr+half)];
+}
+const r4=x=>Number.isFinite(x)?x.toFixed(4):'undef';
+const ALL=['TP','FP','FN','TN'];
+
+const GROUPS=[
+ {id:'rates',title:'Rates from rows and columns',desc:'Each is one cell divided by a row or column total. The choice of row or column is the question being asked: "of all real positives…" (recall) versus "of all predicted positives…" (precision).'},
+ {id:'summary',title:'Single-number summaries',desc:'Ways to collapse two rates into one score. They differ in what they ignore.'},
+ {id:'agree',title:'Chance-corrected and correlation',desc:'These use all four cells and discount what a lazy classifier would score anyway.'},
+ {id:'odds',title:'Likelihood ratios and odds',desc:'Prevalence-free ways to say how far a prediction should move your belief. Standard in diagnostic testing.'},
+ {id:'ctx',title:'Context and baselines',desc:'Not quality scores. They describe the dataset and the bar a classifier has to clear.'}
+];
+const TAGTEXT={ind:'prevalence-independent',dep:'prevalence-dependent',ctx:'context'};
+const DIRTXT={up:'↑ higher is better',down:'↓ lower is better',mid:''};
+
+const METRICS=[
+/* ---------- rates ---------- */
+{id:'acc',g:'rates',name:'Accuracy',aka:'ACC',dir:'up',rng:'01',dep:'dep',
+ f:c=>div(c.TP+c.TN,c.N),
+ eq:()=>eqn(tx('Accuracy'),frac(t('TP + TN'),t('TP + TN + FP + FN'))),
+ sub:c=>`(${c.TP} + ${c.TN}) / ${c.N}`,num:['TP','TN'],den:ALL,ci:c=>[c.TP+c.TN,c.N],
+ say:'Share of all predictions that were correct.',
+ use:'Classes are roughly balanced and both error types cost about the same.',
+ watch:'It rewards predicting the majority class. A model that never finds a positive can still score 95%.'},
+{id:'err',g:'rates',name:'Error rate',aka:'Misclassification rate, 1 − accuracy',dir:'down',rng:'01',dep:'dep',
+ f:c=>div(c.FP+c.FN,c.N),
+ eq:()=>eqn(tx('Error rate'),frac(t('FP + FN'),t('TP + TN + FP + FN'))),
+ sub:c=>`(${c.FP} + ${c.FN}) / ${c.N}`,num:['FP','FN'],den:ALL,ci:c=>[c.FP+c.FN,c.N],
+ say:'Share of all predictions that were wrong.',
+ use:'Same situations as accuracy, when you prefer to track the failures.',
+ watch:'Shares accuracy\'s blindness to class imbalance and to which error is worse.'},
+{id:'ppv',g:'rates',name:'Precision',aka:'Positive predictive value (PPV)',dir:'up',rng:'01',dep:'dep',
+ f:c=>div(c.TP,c.PP),
+ eq:()=>eqn(tx('Precision'),frac(t('TP'),t('TP + FP'))),
+ sub:c=>`${c.TP} / (${c.TP} + ${c.FP})`,num:['TP'],den:['TP','FP'],ci:c=>[c.TP,c.PP],
+ say:'Of everything flagged positive, how much really was.',
+ use:'False alarms are costly: automatic actions, limited review queues, trust in alerts.',
+ watch:'Depends strongly on prevalence, and says nothing about the positives you missed.'},
+{id:'tpr',g:'rates',name:'Recall',aka:'Sensitivity, true positive rate (TPR), hit rate',dir:'up',rng:'01',dep:'ind',
+ f:c=>div(c.TP,c.P),
+ eq:()=>eqn(tx('Recall'),frac(t('TP'),t('TP + FN'))),
+ sub:c=>`${c.TP} / (${c.TP} + ${c.FN})`,num:['TP'],den:['TP','FN'],ci:c=>[c.TP,c.P],
+ say:'Of all real positives, how many the model found.',
+ use:'Misses are costly: screening, safety, fraud, anything where an undetected positive hurts.',
+ watch:'Trivially 1.0 if you predict everything positive. Read it together with precision or specificity.'},
+{id:'tnr',g:'rates',name:'Specificity',aka:'True negative rate (TNR), selectivity',dir:'up',rng:'01',dep:'ind',
+ f:c=>div(c.TN,c.Q),
+ eq:()=>eqn(tx('Specificity'),frac(t('TN'),t('TN + FP'))),
+ sub:c=>`${c.TN} / (${c.TN} + ${c.FP})`,num:['TN'],den:['TN','FP'],ci:c=>[c.TN,c.Q],
+ say:'Of all real negatives, how many were correctly cleared.',
+ use:'You need to avoid false alarms among a large negative class.',
+ watch:'Looks excellent when negatives dominate, even if positives are poorly found.'},
+{id:'npv',g:'rates',name:'Negative predictive value',aka:'NPV',dir:'up',rng:'01',dep:'dep',
+ f:c=>div(c.TN,c.PN),
+ eq:()=>eqn(tx('NPV'),frac(t('TN'),t('TN + FN'))),
+ sub:c=>`${c.TN} / (${c.TN} + ${c.FN})`,num:['TN'],den:['TN','FN'],ci:c=>[c.TN,c.PN],
+ say:'Of everything flagged negative, how much really was.',
+ use:'A negative result triggers inaction, as in rule-out tests.',
+ watch:'Easy to push close to 1 when positives are rare.'},
+{id:'fpr',g:'rates',name:'False positive rate',aka:'Fall-out, Type I error rate (α), 1 − specificity',dir:'down',rng:'01',dep:'ind',
+ f:c=>div(c.FP,c.Q),
+ eq:()=>eqn(tx('FPR'),frac(t('FP'),t('FP + TN')),t('1 − Specificity')),
+ sub:c=>`${c.FP} / (${c.FP} + ${c.TN})`,num:['FP'],den:['FP','TN'],ci:c=>[c.FP,c.Q],
+ say:'Share of real negatives that were wrongly flagged. The x-axis of the ROC curve.',
+ use:'Setting an alarm budget, such as "at most 1 false alarm per 100 negatives".',
+ watch:'A small rate can still mean many false alarms in absolute terms when negatives are numerous.'},
+{id:'fnr',g:'rates',name:'False negative rate',aka:'Miss rate, Type II error rate (β), 1 − recall',dir:'down',rng:'01',dep:'ind',
+ f:c=>div(c.FN,c.P),
+ eq:()=>eqn(tx('FNR'),frac(t('FN'),t('FN + TP')),t('1 − Recall')),
+ sub:c=>`${c.FN} / (${c.FN} + ${c.TP})`,num:['FN'],den:['FN','TP'],ci:c=>[c.FN,c.P],
+ say:'Share of real positives that were missed.',
+ use:'Safety-critical cases where every miss is reported.',
+ watch:'Mirror image of recall. Report one, not both, to avoid double-counting evidence.'},
+{id:'fdr',g:'rates',name:'False discovery rate',aka:'FDR, 1 − precision',dir:'down',rng:'01',dep:'dep',
+ f:c=>div(c.FP,c.PP),
+ eq:()=>eqn(tx('FDR'),frac(t('FP'),t('FP + TP')),t('1 − Precision')),
+ sub:c=>`${c.FP} / (${c.FP} + ${c.TP})`,num:['FP'],den:['FP','TP'],ci:c=>[c.FP,c.PP],
+ say:'Share of flagged items that turned out to be wrong.',
+ use:'Pipelines where follow-up capacity is limited and wasted effort matters.',
+ watch:'Moves with prevalence. Not the same as the p-value-based false discovery rate in multiple testing.'},
+{id:'for',g:'rates',name:'False omission rate',aka:'FOR, 1 − NPV',dir:'down',rng:'01',dep:'dep',
+ f:c=>div(c.FN,c.PN),
+ eq:()=>eqn(tx('FOR'),frac(t('FN'),t('FN + TN')),t('1 − NPV')),
+ sub:c=>`${c.FN} / (${c.FN} + ${c.TN})`,num:['FN'],den:['FN','TN'],ci:c=>[c.FN,c.PN],
+ say:'Share of cleared items that were actually positive.',
+ use:'Judging the risk left in the "all clear" pile.',
+ watch:'Very low when positives are rare, which can hide a poor recall.'},
+/* ---------- summaries ---------- */
+{id:'f1',g:'summary',name:'F1 score',aka:'Dice coefficient, harmonic mean of precision and recall',dir:'up',rng:'01',dep:'dep',
+ f:c=>div(2*c.TP,2*c.TP+c.FP+c.FN),
+ eq:()=>eqn(tx('F1'),frac(t('2 × Precision × Recall'),t('Precision + Recall')),frac(t('2 TP'),t('2 TP + FP + FN'))),
+ sub:c=>`2 × ${c.TP} / (2 × ${c.TP} + ${c.FP} + ${c.FN})`,num:['TP'],den:['TP','FP','FN'],
+ say:'Harmonic mean of precision and recall. Low if either is low.',
+ use:'Imbalanced problems where finding positives and not crying wolf both matter.',
+ watch:'Ignores TN. Treats precision and recall as equally important. Changes if you swap the positive class.'},
+{id:'fbeta',g:'summary',name:'F-beta score',aka:'Fβ. β > 1 favors recall, β < 1 favors precision',dir:'up',rng:'01',dep:'dep',
+ f:(c,d,s)=>{const b2=s.beta*s.beta;return div((1+b2)*c.TP,(1+b2)*c.TP+b2*c.FN+c.FP);},
+ eq:()=>eqn(tx('Fβ'),frac(`<mrow><mo>(</mo><mn>1</mn><mo>+</mo>${B2}<mo>)</mo><mi>TP</mi></mrow>`,
+   `<mrow><mo>(</mo><mn>1</mn><mo>+</mo>${B2}<mo>)</mo><mi>TP</mi><mo>+</mo>${B2}<mi>FN</mi><mo>+</mo><mi>FP</mi></mrow>`)),
+ sub:(c,d,s)=>{const b2=(s.beta*s.beta).toFixed(2);return `(1 + ${b2}) × ${c.TP} / ((1 + ${b2}) × ${c.TP} + ${b2} × ${c.FN} + ${c.FP})`;},
+ num:['TP'],den:['TP','FP','FN'],
+ say:'Like F1, but recall counts β times as much as precision.',
+ use:'β = 2 when a miss costs more than a false alarm, β = 0.5 when the reverse is true.',
+ watch:'Choose β from the application before you look at results.'},
+{id:'bacc',g:'summary',name:'Balanced accuracy',aka:'Mean of recall and specificity',dir:'up',rng:'01',dep:'ind',
+ f:(c,d)=>(d.tpr+d.tnr)/2,
+ eq:()=>eqn(tx('Balanced accuracy'),frac(t('Recall + Specificity'),t('2'))),
+ sub:(c,d)=>`(${r4(d.tpr)} + ${r4(d.tnr)}) / 2`,num:['TP','TN'],den:ALL,
+ say:'Average of the recall on each class. Equals accuracy when classes are 50/50.',
+ use:'Imbalanced data where both classes deserve equal weight.',
+ watch:'Ignores precision. Classifiers with very different false-alarm counts can tie.'},
+{id:'gmean',g:'summary',name:'G-mean',aka:'Geometric mean of recall and specificity',dir:'up',rng:'01',dep:'ind',
+ f:(c,d)=>Math.sqrt(d.tpr*d.tnr),
+ eq:()=>eqn(tx('G-mean'),sqrt(t('Recall × Specificity'))),
+ sub:(c,d)=>`√(${r4(d.tpr)} × ${r4(d.tnr)})`,num:['TP','TN'],den:ALL,
+ say:'Drops to zero if either class is completely missed.',
+ use:'Imbalanced-learning benchmarks where neglecting one class must be punished hard.',
+ watch:'Ignores precision, like balanced accuracy.'},
+{id:'fm',g:'summary',name:'Fowlkes–Mallows index',aka:'FM, geometric mean of precision and recall',dir:'up',rng:'01',dep:'dep',
+ f:(c,d)=>Math.sqrt(d.ppv*d.tpr),
+ eq:()=>eqn(tx('FM'),sqrt(t('Precision × Recall'))),
+ sub:(c,d)=>`√(${r4(d.ppv)} × ${r4(d.tpr)})`,num:['TP'],den:['TP','FP','FN'],
+ say:'The geometric (not harmonic) mean of precision and recall.',
+ use:'Comparing clusterings, or when you prefer a less punishing mean than F1.',
+ watch:'Ignores TN.'},
+{id:'jac',g:'summary',name:'Jaccard index',aka:'IoU, threat score, critical success index',dir:'up',rng:'01',dep:'dep',
+ f:c=>div(c.TP,c.TP+c.FP+c.FN),
+ eq:()=>eqn(tx('Jaccard'),frac(t('TP'),t('TP + FP + FN'))),
+ sub:c=>`${c.TP} / (${c.TP} + ${c.FP} + ${c.FN})`,num:['TP'],den:['TP','FP','FN'],
+ say:'Overlap between predicted and actual positives divided by their union.',
+ use:'Segmentation and detection (IoU), or any set-overlap comparison.',
+ watch:'Ignores TN. Always ≤ F1, and F1 = 2J / (1 + J).'},
+{id:'youden',g:'summary',name:'Youden\'s J',aka:'Informedness, bookmaker informedness',dir:'up',rng:'pm1',dep:'ind',
+ f:(c,d)=>d.tpr+d.tnr-1,
+ eq:()=>eqn(tx('J'),t('Recall + Specificity − 1')),
+ sub:(c,d)=>`${r4(d.tpr)} + ${r4(d.tnr)} − 1`,num:['TP','TN'],den:ALL,
+ say:'How far the classifier is above chance. 0 is chance, 1 is perfect, negative is worse than chance.',
+ use:'Choosing a ROC threshold: the point that maximizes J is farthest above the diagonal.',
+ watch:'Weights both error types equally, and says nothing about precision.'},
+{id:'mark',g:'summary',name:'Markedness',aka:'ΔP',dir:'up',rng:'pm1',dep:'dep',
+ f:(c,d)=>d.ppv+d.npv-1,
+ eq:()=>eqn(tx('Markedness'),t('Precision + NPV − 1')),
+ sub:(c,d)=>`${r4(d.ppv)} + ${r4(d.npv)} − 1`,num:['TP','TN'],den:ALL,
+ say:'How trustworthy a prediction is, for either label. The prediction-side partner of informedness.',
+ use:'Alongside Youden\'s J, to separate "how good is the test" from "how good is each answer".',
+ watch:'Depends on prevalence.'},
+/* ---------- agreement ---------- */
+{id:'mcc',g:'agree',name:'Matthews correlation coefficient',aka:'MCC, phi coefficient',dir:'up',rng:'pm1',dep:'dep',
+ f:c=>{const den=Math.sqrt(c.PP*c.P*c.Q*c.PN);if(c.N===0)return NaN;return den===0?0:(c.TP*c.TN-c.FP*c.FN)/den;},
+ eq:()=>eqn(tx('MCC'),frac(t('TP × TN − FP × FN'),sqrt(t('( TP + FP ) ( TP + FN ) ( TN + FP ) ( TN + FN )')))),
+ eq2:()=>eqn(sup(tx('MCC'),mn('2')),t('J × Markedness')),
+ sub:c=>`(${c.TP}×${c.TN} − ${c.FP}×${c.FN}) / √(${c.PP}×${c.P}×${c.Q}×${c.PN})`,num:ALL,den:[],
+ say:'Correlation between predicted and actual labels. +1 perfect, 0 chance, −1 fully inverted.',
+ use:'A single score for imbalanced binary problems. It is high only when all four cells look good.',
+ watch:'If a row or column total is zero the denominator vanishes and the value is set to 0 by convention.'},
+{id:'kappa',g:'agree',name:'Cohen\'s kappa',aka:'κ',dir:'up',rng:'pm1',dep:'dep',
+ f:c=>{if(c.N===0)return NaN;const po=(c.TP+c.TN)/c.N,pe=(c.PP*c.P+c.PN*c.Q)/(c.N*c.N);return pe===1?NaN:(po-pe)/(1-pe);},
+ eq:()=>eqn(tx('κ'),frac(`<mrow>${sb('p','o')}${mo('−')}${sb('p','e')}</mrow>`,`<mrow>${mn('1')}${mo('−')}${sb('p','e')}</mrow>`)),
+ eq2:()=>eqn(sb('p','e'),frac(t('( TP + FP ) ( TP + FN ) + ( FN + TN ) ( FP + TN )'),sup(mi('N'),mn('2')))),
+ sub:c=>{const po=(c.TP+c.TN)/c.N,pe=(c.PP*c.P+c.PN*c.Q)/(c.N*c.N);return `(${r4(po)} − ${r4(pe)}) / (1 − ${r4(pe)})`;},num:['TP','TN'],den:ALL,
+ say:'Agreement beyond what you would expect if predictions were independent of the truth. p_o is accuracy.',
+ use:'Comparing against human raters, imbalanced data, multi-class problems.',
+ watch:'Sensitive to class frequencies, so values are hard to compare across datasets.'},
+/* ---------- odds ---------- */
+{id:'lrp',g:'odds',name:'Positive likelihood ratio',aka:'LR+',dir:'up',rng:'inf',dep:'ind',
+ f:(c,d)=>d.fpr===0?(d.tpr>0?Infinity:NaN):d.tpr/d.fpr,
+ eq:()=>eqn(tx('LR+'),frac(t('Recall'),t('FPR'))),
+ sub:(c,d)=>`${r4(d.tpr)} / ${r4(d.fpr)}`,num:ALL,den:[],
+ say:'How many times more likely a positive call is for a real positive than for a real negative. Multiplies the prior odds.',
+ use:'Diagnostic reasoning: posterior odds = prior odds × LR+. Rough guide: above 10 is strong evidence.',
+ watch:'Infinite when FPR is 0, and unstable for small counts.'},
+{id:'lrn',g:'odds',name:'Negative likelihood ratio',aka:'LR−',dir:'down',rng:'inf',dep:'ind',
+ f:(c,d)=>d.tnr===0?(d.fnr>0?Infinity:NaN):d.fnr/d.tnr,
+ eq:()=>eqn(tx('LR−'),frac(t('FNR'),t('Specificity'))),
+ sub:(c,d)=>`${r4(d.fnr)} / ${r4(d.tnr)}`,num:ALL,den:[],
+ say:'How much a negative call shrinks the odds of being positive. Smaller is better, below 0.1 is strong.',
+ use:'Rule-out decisions.',
+ watch:'Unstable for small counts.'},
+{id:'dor',g:'odds',name:'Diagnostic odds ratio',aka:'DOR',dir:'up',rng:'inf',dep:'ind',
+ f:c=>{const den=c.FP*c.FN,num=c.TP*c.TN;return den===0?(num>0?Infinity:NaN):num/den;},
+ eq:()=>eqn(tx('DOR'),frac(tx('LR+'),tx('LR−')),frac(t('TP × TN'),t('FP × FN'))),
+ sub:c=>`(${c.TP}×${c.TN}) / (${c.FP}×${c.FN})`,num:ALL,den:[],
+ say:'Odds of a positive call among positives divided by the same odds among negatives. 1 means no discrimination.',
+ use:'Summarizing discrimination in diagnostic-accuracy studies.',
+ watch:'Undefined or infinite when any error cell is 0, and blind to the balance between error types.'},
+{id:'pt',g:'odds',name:'Prevalence threshold',aka:'ϕe (Balayla)',dir:'mid',rng:'01',dep:'ind',
+ f:(c,d)=>{const dd=d.tpr-d.fpr;return (Number.isFinite(dd)&&dd>0)?(Math.sqrt(d.tpr*d.fpr)-d.fpr)/dd:NaN;},
+ eq:()=>eqn(tx('PT'),frac(`<mrow>${sqrt(t('Recall × FPR'))}${mo('−')}${mi('FPR')}</mrow>`,t('Recall − FPR'))),
+ sub:(c,d)=>`(√(${r4(d.tpr)}×${r4(d.fpr)}) − ${r4(d.fpr)}) / (${r4(d.tpr)} − ${r4(d.fpr)})`,num:ALL,den:[],
+ say:'Roughly where the precision-versus-prevalence curve bends. Below it, a positive result carries little information.',
+ use:'Judging whether a screening test is worth running in a low-prevalence population.',
+ watch:'A heuristic. Requires recall greater than FPR, otherwise it is undefined.'},
+/* ---------- context ---------- */
+{id:'prev',g:'ctx',name:'Prevalence',aka:'Base rate, positive share',dir:'mid',rng:'01',dep:'ctx',
+ f:c=>div(c.P,c.N),
+ eq:()=>eqn(tx('Prevalence'),frac(t('TP + FN'),mi('N'))),
+ sub:c=>`(${c.TP} + ${c.FN}) / ${c.N}`,num:['TP','FN'],den:ALL,ci:c=>[c.P,c.N],
+ say:'Share of cases that really are positive. It is the baseline for precision.',
+ use:'Always report it next to precision, F1 and PR-AUC.',
+ watch:'Differs between your test set and the real deployment population.'},
+{id:'dr',g:'ctx',name:'Detection rate',aka:'TP / N',dir:'mid',rng:'01',dep:'ctx',
+ f:c=>div(c.TP,c.N),
+ eq:()=>eqn(tx('Detection rate'),frac(t('TP'),mi('N'))),
+ sub:c=>`${c.TP} / ${c.N}`,num:['TP'],den:ALL,
+ say:'Share of all samples that are correctly found positives.',
+ use:'Capacity planning: how many true hits to expect per batch.',
+ watch:'Capped by prevalence.'},
+{id:'dp',g:'ctx',name:'Detection prevalence',aka:'Predicted positive rate',dir:'mid',rng:'01',dep:'ctx',
+ f:c=>div(c.PP,c.N),
+ eq:()=>eqn(tx('Detection prevalence'),frac(t('TP + FP'),mi('N'))),
+ sub:c=>`(${c.TP} + ${c.FP}) / ${c.N}`,num:['TP','FP'],den:ALL,ci:c=>[c.PP,c.N],
+ say:'Share of all samples the model flags positive. This is the workload it creates.',
+ use:'Estimating review queue size.',
+ watch:'Compare with prevalence: a big gap means many FP (or heavy under-calling).'},
+{id:'nullacc',g:'ctx',name:'Null accuracy',aka:'Majority-class baseline',dir:'mid',rng:'01',dep:'ctx',
+ f:c=>div(Math.max(c.P,c.Q),c.N),
+ eq:()=>eqn(tx('Null accuracy'),frac(t('max ( TP + FN , TN + FP )'),mi('N'))),
+ sub:c=>`max(${c.P}, ${c.Q}) / ${c.N}`,num:[],den:ALL,
+ say:'Accuracy of always predicting the larger class.',
+ use:'Any useful classifier should beat this on a metric that is not accuracy too.',
+ watch:'If your accuracy is close to this, accuracy is telling you very little.'}
+];
+const BYID=Object.fromEntries(METRICS.map(m=>[m.id,m]));
+
+/* multi-class */
+function mcStats(m,n){
+  const row=Array(n).fill(0),col=Array(n).fill(0);let N=0,tr=0;
+  for(let i=0;i<n;i++)for(let j=0;j<n;j++){const v=m[i][j];row[i]+=v;col[j]+=v;N+=v;if(i===j)tr+=v;}
+  const per=[];
+  for(let k=0;k<n;k++){
+    const tp=m[k][k],fn=row[k]-tp,fp=col[k]-tp,tn=N-tp-fp-fn;
+    per.push({tp,fp,fn,tn,support:row[k],P:div(tp,tp+fp),R:div(tp,tp+fn),F:div(2*tp,2*tp+fp+fn),S:div(tn,tn+fp),J:div(tp,tp+fp+fn)});
+  }
+  const z=x=>Number.isNaN(x)?0:x;
+  const mean=f=>per.reduce((a,p)=>a+z(f(p)),0)/n;
+  const wmean=f=>N===0?NaN:per.reduce((a,p)=>a+z(f(p))*p.support,0)/N;
+  const acc=div(tr,N);
+  const sumRC=row.reduce((a,v,i)=>a+v*col[i],0),sumR2=row.reduce((a,v)=>a+v*v,0),sumC2=col.reduce((a,v)=>a+v*v,0);
+  const den=Math.sqrt((N*N-sumC2)*(N*N-sumR2));
+  const mcc=N===0?NaN:(den===0?0:(tr*N-sumRC)/den);
+  const pe=N===0?NaN:sumRC/(N*N);
+  const kappa=(N===0||pe===1)?NaN:(acc-pe)/(1-pe);
+  const present=per.filter(p=>p.support>0);
+  const bacc=present.length?present.reduce((s,p)=>s+z(p.R),0)/present.length:NaN;
+  return {n,N,tr,row,col,per,acc,bacc,mcc,kappa,
+    macro:{P:mean(p=>p.P),R:mean(p=>p.R),F:mean(p=>p.F)},
+    weighted:{P:wmean(p=>p.P),R:wmean(p=>p.R),F:wmean(p=>p.F)},
+    micro:{P:acc,R:acc,F:acc}};
+}
+
+/* simulation */
+const MAXN=10000;
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let x=Math.imul(a^a>>>15,1|a);x=x+Math.imul(x^x>>>7,61|x)^x;return((x^x>>>14)>>>0)/4294967296;};}
+function makeNormals(seed){
+  const r=mulberry32(seed),zp=new Float64Array(MAXN),zn=new Float64Array(MAXN);
+  const gen=arr=>{for(let i=0;i<MAXN;i+=2){const u=Math.max(r(),1e-12),v=r(),R=Math.sqrt(-2*Math.log(u));arr[i]=R*Math.cos(2*Math.PI*v);if(i+1<MAXN)arr[i+1]=R*Math.sin(2*Math.PI*v);}};
+  gen(zp);gen(zn);return {zp,zn};
+}
+function rocPr(sp,sn){
+  let i=sp.length-1,j=sn.length-1,tp=0,fp=0;const nP=sp.length,nN=sn.length;
+  const roc=[[0,0]],pr=[];let auc=0,ap=0,pf=0,pt=0,pr0=0;
+  while(i>=0||j>=0){
+    const v=Math.max(i>=0?sp[i]:-Infinity,j>=0?sn[j]:-Infinity);
+    while(i>=0&&sp[i]===v){tp++;i--;}
+    while(j>=0&&sn[j]===v){fp++;j--;}
+    const tpr=tp/nP,fpr=fp/nN,prec=tp/(tp+fp);
+    auc+=(fpr-pf)*(tpr+pt)/2;ap+=(tpr-pr0)*prec;
+    roc.push([fpr,tpr]);pr.push([tpr,prec]);
+    pf=fpr;pt=tpr;pr0=tpr;
+  }
+  return {roc,pr,auc,ap};
+}
+function buildSim(Z,d,prev,N){
+  const nPos=clamp(Math.round(N*prev),1,N-1),nNeg=N-nPos;
+  const sp=new Float64Array(nPos),sn=new Float64Array(nNeg);
+  for(let i=0;i<nPos;i++)sp[i]=Z.zp[i]+d;
+  for(let i=0;i<nNeg;i++)sn[i]=Z.zn[i];
+  sp.sort();sn.sort();
+  return Object.assign({d,N,nPos,nNeg,sp,sn,prior:Math.log(nPos/nNeg)},rocPr(sp,sn));
+}
+function lowerBound(a,x){let lo=0,hi=a.length;while(lo<hi){const mid=(lo+hi)>>1;if(a[mid]<x)lo=mid+1;else hi=mid;}return lo;}
+function countsAt(sim,T,thr){
+  const {nPos,nNeg}=sim;let TP,FP;
+  if(sim.d===0){const all=sigmoid(T*sim.prior)>=thr;TP=all?nPos:0;FP=all?nNeg:0;}
+  else{
+    const s=thr<=0?-Infinity:thr>=1?Infinity:(logit(thr)/T-sim.prior)/sim.d+sim.d/2;
+    TP=nPos-lowerBound(sim.sp,s);FP=nNeg-lowerBound(sim.sn,s);
+  }
+  return {TP,FP,FN:nPos-TP,TN:nNeg-FP};
+}
+function evalP(sim,T){
+  const {d,prior}=sim;const pos=new Float64Array(100),neg=new Float64Array(100);
+  const rel=Array.from({length:10},()=>({n:0,sp:0,sy:0}));let ll=0,br=0;
+  const run=(arr,y,H)=>{for(let i=0;i<arr.length;i++){
+    let p=sigmoid(T*(d*(arr[i]-d/2)+prior));p=clamp(p,1e-12,1-1e-12);
+    H[Math.min(99,Math.floor(p*100))]++;
+    ll-=y?Math.log(p):Math.log(1-p);br+=(p-y)*(p-y);
+    const b=rel[Math.min(9,Math.floor(p*10))];b.n++;b.sp+=p;b.sy+=y;}};
+  run(sim.sp,1,pos);run(sim.sn,0,neg);
+  let ece=0;for(const b of rel)if(b.n)ece+=b.n/sim.N*Math.abs(b.sy/b.n-b.sp/b.n);
+  return {pos,neg,rel,logloss:ll/sim.N,brier:br/sim.N,ece};
+}
+function sweep(sim,T,cFP,cFN){
+  const out=[];
+  for(let j=0;j<=100;j++){
+    const k=counts(countsAt(sim,T,j/100)),d=derive(k);
+    out.push({j,t:j/100,prec:d.ppv,rec:d.tpr,f1:div(2*k.TP,2*k.TP+k.FP+k.FN),acc:div(k.TP+k.TN,k.N),J:d.tpr+d.tnr-1,cost:cFP*k.FP+cFN*k.FN});
+  }
+  return out;
+}
+/*==== DOM below ====*/
+
+const $=(s,r=document)=>r.querySelector(s);
+const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+const el=(tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;};
+const fixed=(v,n=3)=>Number.isNaN(v)?'undefined':!Number.isFinite(v)?(v>0?'∞':'−∞'):v.toFixed(n);
+const pctStr=(a,b)=>b===0?'—':(100*a/b).toFixed(1)+'%';
+function fnum(v,m){
+  if(Number.isNaN(v))return 'undefined';
+  if(!Number.isFinite(v))return v>0?'∞':'−∞';
+  if(m.rng==='inf')return v<100?v.toFixed(3):v.toFixed(1);
+  return v.toFixed(4);
+}
+
+/* ---------- theme ---------- */
+(function(){
+  const root=document.documentElement;
+  try{const s=localStorage.getItem('cml-theme');if(s==='light'||s==='dark')root.setAttribute('data-theme',s);}catch(e){}
+  $('#themeBtn').addEventListener('click',()=>{
+    const cur=root.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+    const next=cur==='dark'?'light':'dark';root.setAttribute('data-theme',next);
+    try{localStorage.setItem('cml-theme',next);}catch(e){}
+  });
+})();
+$('#metricCount').textContent=METRICS.length;
+
+/* ================= BINARY SECTION ================= */
+const PRESETS=[
+  {label:'Medical screening (10%)',TP:90,FN:10,FP:45,TN:855},
+  {label:'Balanced classes',TP:400,FN:100,FP:100,TN:400},
+  {label:'Rare fraud (0.5%)',TP:35,FN:15,FP:120,TN:9830},
+  {label:'Always predicts negative',TP:0,FN:50,FP:0,TN:950},
+  {label:'Aggressive filter',TP:95,FN:5,FP:200,TN:700},
+  {label:'Conservative filter',TP:30,FN:70,FP:2,TN:898}
+];
+const state={TP:90,FP:45,FN:10,TN:855,orient:'actual',show:'all',beta:1};
+let bayesFollow=true;
+const CELLS={TP:{cls:'tp',nm:'True positive',tag:'hit'},FP:{cls:'fp',nm:'False positive',tag:'false alarm'},
+             FN:{cls:'fn',nm:'False negative',tag:'miss'},TN:{cls:'tn',nm:'True negative',tag:'correct rejection'}};
+
+function renderPresets(){
+  const h=$('#presets');
+  h.innerHTML=PRESETS.map((p,i)=>`<button type="button" class="chip" data-i="${i}" aria-pressed="false">${p.label}</button>`).join('');
+  h.addEventListener('click',e=>{
+    const b=e.target.closest('button');if(!b)return;
+    const p=PRESETS[+b.dataset.i];Object.assign(state,{TP:p.TP,FP:p.FP,FN:p.FN,TN:p.TN});
+    bayesFollow=true;$('#swapNote').dataset.msg='';syncInputs();refresh();
+  });
+}
+function renderMatrix(){
+  const A=state.orient==='actual';
+  const grid=A?[['TP','FN'],['FP','TN']]:[['TP','FP'],['FN','TN']];
+  let h=`<div class="axis-top" style="grid-area:1/3/2/5">${A?'Predicted':'Actual'} class</div>`;
+  h+=`<div class="axis-left" style="grid-area:3/1/5/2">${A?'Actual':'Predicted'} class</div>`;
+  ['Positive','Negative'].forEach((n,i)=>{
+    h+=`<div class="ch" style="grid-area:2/${3+i}">${n}</div><div class="rh" style="grid-area:${3+i}/2">${n}</div>`;
+  });
+  grid.forEach((row,r)=>row.forEach((k,c)=>{
+    const m=CELLS[k];
+    h+=`<label class="cell c-${m.cls}" data-cell="${k}" style="grid-area:${3+r}/${3+c}">
+      <span class="abbr">${k}</span><span class="tg">${m.nm.toLowerCase()} · ${m.tag}</span>
+      <input type="number" min="0" step="1" inputmode="numeric" data-k="${k}" value="${state[k]}" aria-label="${m.nm} count">
+      <span class="pc"></span><span class="fillbar"></span></label>`;
+  }));
+  $('#cm').innerHTML=h;$('#cm').dataset.orient=state.orient;
+}
+function syncInputs(){$$('#cm input').forEach(i=>{if(document.activeElement!==i)i.value=state[i.dataset.k];});}
+function updateCellInfo(){
+  const c=counts(state);
+  const dn={TP:c.P,FN:c.P,FP:c.Q,TN:c.Q},dp={TP:c.PP,FP:c.PP,FN:c.PN,TN:c.PN};
+  const lab={
+    actual:{TP:'of actual positives · recall',FN:'of actual positives · miss rate',FP:'of actual negatives · FPR',TN:'of actual negatives · specificity'},
+    pred:{TP:'of predicted positives · precision',FP:'of predicted positives · FDR',FN:'of predicted negatives · FOR',TN:'of predicted negatives · NPV'}};
+  for(const k of ALL){
+    const cell=$(`.cell[data-cell="${k}"]`);if(!cell)continue;
+    let txt='';
+    if(state.show==='all')txt=pctStr(state[k],c.N)+' of all samples';
+    else if(state.show==='actual')txt=pctStr(state[k],dn[k])+' '+lab.actual[k];
+    else if(state.show==='pred')txt=pctStr(state[k],dp[k])+' '+lab.pred[k];
+    $('.pc',cell).textContent=txt;
+    $('.fillbar',cell).style.width=(c.N?state[k]/c.N*100:0)+'%';
+  }
+}
+function updateTotals(){
+  const c=counts(state);
+  $('#totals').innerHTML=[['Actual positive',c.P],['Actual negative',c.Q],['Predicted positive',c.PP],['Predicted negative',c.PN],['Total N',c.N],
+    ['Prevalence',c.N?(100*c.P/c.N).toFixed(2)+'%':'—']]
+    .map(([a,b])=>`<div><dt>${a}</dt><dd>${typeof b==='number'?b.toLocaleString():b}</dd></div>`).join('');
+}
+function markPreset(){
+  $$('#presets .chip').forEach((b,i)=>{const p=PRESETS[i];
+    b.setAttribute('aria-pressed',String(p.TP===state.TP&&p.FP===state.FP&&p.FN===state.FN&&p.TN===state.TN));});
+}
+function highlight(m){
+  const cm=$('#cm');$$('.cell',cm).forEach(c=>c.classList.remove('hl-num','hl-den'));cm.classList.remove('dim');
+  if(!m)return;
+  cm.classList.add('dim');
+  $$('.cell',cm).forEach(c=>{
+    const k=c.dataset.cell;
+    if(m.num.includes(k))c.classList.add('hl-num');else if(m.den.includes(k))c.classList.add('hl-den');
+  });
+}
+
+/* metric cards */
+function buildCards(){
+  const host=$('#groups');host.innerHTML='';
+  for(const g of GROUPS){
+    const sec=el('section','group');sec.dataset.g=g.id;
+    sec.innerHTML=`<h3>${g.title}</h3><p class="gdesc">${g.desc}</p><div class="cards"></div>`;
+    const cards=$('.cards',sec);
+    for(const m of METRICS.filter(x=>x.g===g.id)){
+      const a=el('article','metric');a.tabIndex=0;a.dataset.id=m.id;a.dataset.dep=m.dep;
+      const gauge=m.rng==='01'?'<div class="gauge"><i style="left:0;width:0"></i></div>':m.rng==='pm1'?'<div class="gauge pm"><i style="left:50%;width:0"></i></div>':'';
+      const beta=m.id==='fbeta'?`<div class="betactl"><label for="beta">β <output id="betaOut">1.0</output></label>
+        <input id="beta" type="range" min="0.2" max="5" step="0.1" value="1">
+        <div class="btns"><button type="button" class="chip" data-b="0.5">F0.5</button><button type="button" class="chip" data-b="1">F1</button><button type="button" class="chip" data-b="2">F2</button></div></div>`:'';
+      a.innerHTML=`<div class="mh"><h4>${m.name}</h4><span class="tag ${m.dep}">${TAGTEXT[m.dep]}</span></div>
+        <div class="aka">${m.aka}</div>
+        <div class="mval"><span class="v">–</span><span class="pc"></span><span class="dirm">${DIRTXT[m.dir]}</span></div>
+        ${gauge}
+        <div class="eq">${m.eq()}</div>${m.eq2?`<div class="eq eq2">${m.eq2()}</div>`:''}
+        ${beta}
+        <div class="sub"></div><div class="ci"></div><div class="note"></div>
+        <p class="say">${m.say}</p>
+        <details><summary>When to use it · what to watch for</summary><p><b>Use when.</b> ${m.use}</p><p><b>Watch for.</b> ${m.watch}</p></details>`;
+      m.r={card:a,v:$('.v',a),pc:$('.pc',a),g:$('.gauge i',a),pm:!!$('.gauge.pm',a),sub:$('.sub',a),ci:$('.ci',a),note:$('.note',a)};
+      a.addEventListener('mouseenter',()=>highlight(m));a.addEventListener('mouseleave',()=>highlight(null));
+      a.addEventListener('focus',()=>highlight(m));a.addEventListener('blur',()=>highlight(null));
+      cards.appendChild(a);
+    }
+    host.appendChild(sec);
+  }
+  const b=$('#beta');
+  b.addEventListener('input',()=>{state.beta=+b.value;$('#betaOut').textContent=(+b.value).toFixed(1);refresh();});
+  $$('.betactl [data-b]').forEach(x=>x.addEventListener('click',()=>{b.value=x.dataset.b;state.beta=+x.dataset.b;$('#betaOut').textContent=(+x.dataset.b).toFixed(1);refresh();}));
+}
+function updateCards(){
+  const c=counts(state),d=derive(c);
+  for(const m of METRICS){
+    const v=m.f(c,d,state),r=m.r;
+    r.v.textContent=fnum(v,m);
+    r.pc.textContent=(m.rng==='01'&&Number.isFinite(v))?(v*100).toFixed(2)+'%':'';
+    if(r.g){
+      const x=Number.isFinite(v)?v:0;
+      if(r.pm){r.g.style.left=(x>=0?50:50+x*50)+'%';r.g.style.width=Math.abs(x)*50+'%';}
+      else{r.g.style.left='0';r.g.style.width=clamp(x,0,1)*100+'%';}
+    }
+    r.sub.textContent=`${m.sub(c,d,state)} = ${fnum(v,m)}`;
+    if(m.ci){const [k,n]=m.ci(c),w=wilson(k,n);r.ci.textContent=w?`95% interval (Wilson): ${w[0].toFixed(3)} to ${w[1].toFixed(3)} · n = ${n.toLocaleString()}`:'';}
+    r.note.textContent=Number.isNaN(v)?'Undefined: a denominator is zero for these counts.':'';
+    r.card.classList.toggle('undef',Number.isNaN(v));
+  }
+}
+function applyFilter(f){
+  $$('#groups .metric').forEach(a=>{a.hidden=(f!=='all'&&a.dataset.dep!==f);});
+  $$('#groups .group').forEach(g=>{g.hidden=!$$('.metric',g).some(a=>!a.hidden);});
+}
+
+/* prevalence what-if */
+const PLO=Math.log(0.001),PHI=Math.log(0.9);
+const pFromSlider=v=>Math.exp(PLO+(PHI-PLO)*v/1000);
+const sliderFromP=p=>Math.round((Math.log(clamp(p,0.001,0.9))-PLO)/(PHI-PLO)*1000);
+function plotFrame(W,H,m,xr,yr){
+  const iw=W-m.l-m.r,ih=H-m.t-m.b;
+  return {W,H,m,iw,ih,sx:v=>m.l+(v-xr[0])/(xr[1]-xr[0])*iw,sy:v=>m.t+ih-(v-yr[0])/(yr[1]-yr[0])*ih};
+}
+function axes(p,o){
+  let s='';
+  for(const v of o.yt){const y=p.sy(v);s+=`<line class="grid" x1="${p.m.l}" x2="${p.W-p.m.r}" y1="${y}" y2="${y}"/><text class="ax" x="${p.m.l-6}" y="${y+4}" text-anchor="end">${(o.yf||(q=>q))(v)}</text>`;}
+  for(const v of o.xt){const x=p.sx(v);s+=`<line class="grid" x1="${x}" x2="${x}" y1="${p.m.t}" y2="${p.H-p.m.b}"/><text class="ax" x="${x}" y="${p.H-p.m.b+16}" text-anchor="middle">${(o.xf||(q=>q))(v)}</text>`;}
+  s+=`<rect class="frame" x="${p.m.l}" y="${p.m.t}" width="${p.iw}" height="${p.ih}"/>`;
+  if(o.xl)s+=`<text class="axl" x="${p.m.l+p.iw/2}" y="${p.H-6}" text-anchor="middle">${o.xl}</text>`;
+  if(o.yl)s+=`<text class="axl" transform="translate(13 ${p.m.t+p.ih/2}) rotate(-90)" text-anchor="middle">${o.yl}</text>`;
+  return s;
+}
+const pathOf=pts=>pts.map((q,i)=>(i?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1)).join('');
+function pathGaps(pts){let s='',pen=false;for(const q of pts){if(q===null){pen=false;continue;}s+=(pen?'L':'M')+q[0].toFixed(1)+' '+q[1].toFixed(1);pen=true;}return s;}
+function decimate(pts,max){if(pts.length<=max)return pts;const step=Math.ceil(pts.length/max),o=[];for(let i=0;i<pts.length;i+=step)o.push(pts[i]);o.push(pts[pts.length-1]);return o;}
+const pc0=v=>(v*100).toFixed(v<0.01?1:0)+'%';
+
+function ppvAt(sens,spec,pi){return div(sens*pi,sens*pi+(1-spec)*(1-pi));}
+function drawBayes(){
+  const c=counts(state),d=derive(c),sens=d.tpr,spec=d.tnr,host=$('#bayesPlot');
+  if(!(Number.isFinite(sens)&&Number.isFinite(spec))){
+    host.innerHTML='<p class="hint">Needs at least one actual positive and one actual negative.</p>';$('#bayesOut').innerHTML='';return;
+  }
+  if(bayesFollow&&c.N>0)$('#bayesP').value=sliderFromP(c.P/c.N);
+  const pi=pFromSlider(+$('#bayesP').value);
+  $('#bayesPo').textContent=(pi*100).toFixed(pi<0.1?2:1)+'%';
+  const ppv=pi_=>ppvAt(sens,spec,pi_),npv=pi_=>div(spec*(1-pi_),spec*(1-pi_)+(1-sens)*pi_);
+  const acc=pi_=>sens*pi_+spec*(1-pi_),f1=pi_=>{const p=ppv(pi_);return div(2*p*sens,p+sens);};
+  const p=plotFrame(640,300,{l:44,r:14,t:12,b:42},[PLO,PHI],[0,1]);
+  const xt=[0.001,0.01,0.1,0.5,0.9].map(Math.log);
+  let s=axes(p,{xt,yt:[0,.25,.5,.75,1],xf:v=>pc0(Math.exp(v)),yf:v=>v.toFixed(2),xl:'Prevalence (log scale)',yl:'Value'});
+  const curve=(fn,cls,extra='')=>{const pts=[];for(let i=0;i<=200;i++){const q=Math.exp(PLO+(PHI-PLO)*i/200),v=fn(q);pts.push(Number.isFinite(v)?[p.sx(Math.log(q)),p.sy(v)]:null);}
+    return `<path class="curve ${cls}" ${extra} d="${pathGaps(pts)}"/>`;};
+  s+=curve(acc,'s-acc','stroke-dasharray="6 4"')+curve(npv,'s-npv')+curve(f1,'s-f1')+curve(ppv,'s-prec');
+  if(c.N>0){const cp=clamp(c.P/c.N,0.001,0.9);const x=p.sx(Math.log(cp));
+    s+=`<line class="dash" x1="${x}" x2="${x}" y1="${p.m.t}" y2="${p.H-p.m.b}"/><text class="ax" x="${x+4}" y="${p.H-p.m.b-6}">matrix</text>`;}
+  const x=p.sx(Math.log(pi));
+  s+=`<line class="thr" x1="${x}" x2="${x}" y1="${p.m.t}" y2="${p.H-p.m.b}"/>`;
+  for(const [fn,cls] of [[ppv,'s-prec'],[npv,'s-npv'],[f1,'s-f1'],[acc,'s-acc']]){const v=fn(pi);if(Number.isFinite(v))s+=`<circle class="pt ${cls}" cx="${x}" cy="${p.sy(v)}" r="5"/>`;}
+  host.innerHTML=`<svg viewBox="0 0 ${p.W} ${p.H}" role="img" aria-label="Precision, NPV, F1 and accuracy as functions of prevalence for the current recall and specificity">${s}</svg>`;
+  const tp=sens*pi,fn=(1-sens)*pi,fp=(1-spec)*(1-pi),tn=spec*(1-pi),k=10000;
+  $('#bayesOut').innerHTML=[['Precision',fixed(ppv(pi),3)],['NPV',fixed(npv(pi),3)],['F1',fixed(f1(pi),3)],['Accuracy',fixed(acc(pi),3)],
+    ['Per 10,000: TP',Math.round(tp*k)],['FP',Math.round(fp*k)],['FN',Math.round(fn*k)],['TN',Math.round(tn*k)]]
+    .map(([a,b])=>`<div><b>${b}</b><span>${a}</span></div>`).join('');
+}
+
+function renderIdentities(){
+  const items=[
+   [eqn(tx('Accuracy'),t('π × Recall + ( 1 − π ) × Specificity')),'Accuracy is a prevalence-weighted average of the two class recalls, with π the prevalence.'],
+   [eqn(tx('F1'),frac(t('2'),`<mrow>${frac(t('1'),t('Precision'))}${mo('+')}${frac(t('1'),t('Recall'))}</mrow>`)),'The harmonic mean punishes imbalance: precision 0.9 with recall 0.1 gives F1 = 0.18, not 0.5.'],
+   [eqn(tx('Jaccard'),frac(t('F1'),t('2 − F1'))),'Jaccard and F1 rank classifiers identically. Jaccard is always the smaller.'],
+   [eqn(sup(tx('MCC'),mn('2')),t('J × Markedness')),'MCC is the signed geometric mean of informedness (a test property) and markedness (an answer property).'],
+   [eqn(tx('Posterior odds'),t('prior odds × LR+')),'Precision is the posterior probability. With π the prevalence, prior odds = π / (1 − π).'],
+   [eqn(tx('Precision'),frac(t('Recall × π'),t('Recall × π + FPR × ( 1 − π )'))),'Why precision collapses at low prevalence: the FPR term multiplies a huge negative class.']
+  ];
+  $('#identList').innerHTML=items.map(([m,c])=>`<li><div class="m">${m}</div><div class="c">${c}</div></li>`).join('');
+}
+
+function refresh(){
+  updateCellInfo();updateTotals();updateCards();markPreset();drawBayes();
+}
+function initBinary(){
+  renderPresets();renderMatrix();buildCards();renderIdentities();refresh();
+  $('#cm').addEventListener('input',e=>{
+    const k=e.target.dataset&&e.target.dataset.k;if(!k)return;
+    let v=Math.floor(Number(e.target.value));if(!(v>=0))v=0;state[k]=Math.min(v,1e9);
+    bayesFollow=true;refresh();
+  });
+  $('#cm').addEventListener('change',e=>{if(e.target.dataset&&e.target.dataset.k)e.target.value=state[e.target.dataset.k];});
+  $('#orientSeg').addEventListener('click',e=>{
+    const b=e.target.closest('button');if(!b)return;state.orient=b.dataset.v;
+    $$('#orientSeg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));renderMatrix();updateCellInfo();
+  });
+  $('#showSel').addEventListener('change',e=>{state.show=e.target.value;updateCellInfo();});
+  $('#depSeg').addEventListener('click',e=>{
+    const b=e.target.closest('button');if(!b)return;
+    $$('#depSeg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));applyFilter(b.dataset.v);
+  });
+  $('#swapBtn').addEventListener('click',()=>{
+    const before=counts(state),bd=derive(before);
+    [state.TP,state.TN]=[state.TN,state.TP];[state.FP,state.FN]=[state.FN,state.FP];
+    bayesFollow=true;syncInputs();refresh();
+    const af=counts(state),ad=derive(af);
+    $('#swapNote').textContent=`Positive class swapped. Precision ${fixed(bd.ppv,3)} → ${fixed(ad.ppv,3)}, recall ${fixed(bd.tpr,3)} → ${fixed(ad.tpr,3)}. Accuracy stayed ${fixed(div(af.TP+af.TN,af.N),3)}.`;
+  });
+  $('#resetBtn').addEventListener('click',()=>{Object.assign(state,{TP:90,FP:45,FN:10,TN:855,beta:1});
+    $('#beta').value=1;$('#betaOut').textContent='1.0';bayesFollow=true;syncInputs();refresh();
+    $('#swapNote').textContent='Swapping which class counts as "positive" changes precision, recall and F1 but not accuracy, MCC or balanced accuracy.';});
+  $('#bayesP').addEventListener('input',()=>{bayesFollow=false;drawBayes();});
+  $('#bayesReset').addEventListener('click',()=>{bayesFollow=true;drawBayes();});
+  $('#bayesLoad').addEventListener('click',()=>{
+    const d=derive(counts(state));if(!(Number.isFinite(d.tpr)&&Number.isFinite(d.tnr)))return;
+    const pi=pFromSlider(+$('#bayesP').value),k=10000;
+    state.TP=Math.round(d.tpr*pi*k);state.FN=Math.round((1-d.tpr)*pi*k);
+    state.FP=Math.round((1-d.tnr)*(1-pi)*k);state.TN=Math.round(d.tnr*(1-pi)*k);
+    bayesFollow=true;syncInputs();refresh();
+  });
+}
+
+/* ================= THRESHOLD EXPLORER ================= */
+let seed=7,Zn=makeNormals(seed),simKey='',sim=null,lastCounts=null,lastOpt={f1:50,J:50,cost:50},rafId=0;
+function colorTiles(items){return items.map(([n,v,s])=>`<div class="tile"><span>${n}</span><b>${v}</b>${s?`<small>${s}</small>`:''}</div>`).join('');}
+function miniCm(cnt){
+  const cell=(k)=>`<div class="c-${CELLS[k].cls}" style="background:var(--${CELLS[k].cls}-soft)"><span class="t-${CELLS[k].cls}" style="color:var(--${CELLS[k].cls})">${k}</span><b>${cnt[k].toLocaleString()}</b></div>`;
+  return cell('TP')+cell('FN')+cell('FP')+cell('TN');
+}
+function svgWrap(p,inner,label){return `<svg viewBox="0 0 ${p.W} ${p.H}" role="img" aria-label="${label}">${inner}</svg>`;}
+
+function drawDist(ev,j){
+  const W=800,H=340,m={l:46,r:16,t:0,b:0},iw=W-m.l-m.r,sx=v=>m.l+v*iw;
+  const panels=[{y0:28,h:104,H:ev.pos,title:`Actual positives (n = ${sim.nPos.toLocaleString()})`,left:'FN',right:'TP',lc:'fn',rc:'tp'},
+                {y0:188,h:104,H:ev.neg,title:`Actual negatives (n = ${sim.nNeg.toLocaleString()})`,left:'TN',right:'FP',lc:'tn',rc:'fp'}];
+  let s='';
+  const cnt=lastCounts;
+  panels.forEach((pn,pi)=>{
+    const mx=Math.max(1,...pn.H);
+    s+=`<text class="ttl" x="${m.l}" y="${pn.y0-9}">${pn.title}</text>`;
+    s+=`<text class="ann t-${pn.lc}" x="${W-m.r-92}" y="${pn.y0-9}" text-anchor="end">${pn.left} ${cnt[pn.left].toLocaleString()}</text>`;
+    s+=`<text class="ann t-${pn.rc}" x="${W-m.r}" y="${pn.y0-9}" text-anchor="end">${pn.right} ${cnt[pn.right].toLocaleString()}</text>`;
+    s+=`<line class="grid" x1="${m.l}" x2="${W-m.r}" y1="${pn.y0+pn.h}" y2="${pn.y0+pn.h}"/>`;
+    s+=`<text class="ax" x="${m.l-6}" y="${pn.y0+10}" text-anchor="end">${mx.toLocaleString()}</text><text class="ax" x="${m.l-6}" y="${pn.y0+pn.h+4}" text-anchor="end">0</text>`;
+    for(let i=0;i<100;i++){
+      const h=pn.H[i]/mx*pn.h;if(h<=0)continue;
+      const cls=i>=j?pn.rc:pn.lc;
+      s+=`<rect class="b-${cls}" x="${(sx(i/100)+0.4).toFixed(1)}" y="${(pn.y0+pn.h-h).toFixed(1)}" width="${(iw/100-0.8).toFixed(1)}" height="${h.toFixed(1)}"/>`;
+    }
+  });
+  for(const v of [0,.2,.4,.6,.8,1])s+=`<text class="ax" x="${sx(v)}" y="312" text-anchor="middle">${v.toFixed(1)}</text>`;
+  s+=`<text class="axl" x="${m.l+iw/2}" y="332" text-anchor="middle">Predicted probability of the positive class</text>`;
+  const x=sx(j/100);s+=`<line class="thr" x1="${x}" x2="${x}" y1="14" y2="292"/>`;
+  $('#distPlot').innerHTML=svgWrap({W,H},s,'Histograms of predicted probability for actual positives and actual negatives, split by the decision threshold');
+}
+function drawRoc(cnt){
+  const p=plotFrame(400,340,{l:46,r:14,t:12,b:44},[0,1],[0,1]);
+  let s=axes(p,{xt:[0,.25,.5,.75,1],yt:[0,.25,.5,.75,1],xf:v=>v.toFixed(2),yf:v=>v.toFixed(2),xl:'False positive rate',yl:'Recall (true positive rate)'});
+  const pts=decimate(sim.roc,900).map(q=>[p.sx(q[0]),p.sy(q[1])]);
+  s+=`<path class="area s-prec" style="fill:var(--accent)" d="${pathOf(pts)}L${p.sx(1)} ${p.sy(0)}L${p.sx(0)} ${p.sy(0)}Z"/>`;
+  s+=`<line class="dash" x1="${p.sx(0)}" y1="${p.sy(0)}" x2="${p.sx(1)}" y2="${p.sy(1)}"/>`;
+  s+=`<path class="curve s-prec" d="${pathOf(pts)}"/>`;
+  s+=`<circle class="pt s-prec" cx="${p.sx(cnt.FP/sim.nNeg)}" cy="${p.sy(cnt.TP/sim.nPos)}" r="6"/>`;
+  s+=`<text class="ttl" x="${p.sx(0.5)}" y="${p.sy(0.14)}">AUC = ${sim.auc.toFixed(3)}</text>`;
+  $('#rocPlot').innerHTML=svgWrap(p,s,'ROC curve');
+}
+function drawPr(cnt,dv){
+  const p=plotFrame(400,340,{l:46,r:14,t:12,b:44},[0,1],[0,1]);
+  let s=axes(p,{xt:[0,.25,.5,.75,1],yt:[0,.25,.5,.75,1],xf:v=>v.toFixed(2),yf:v=>v.toFixed(2),xl:'Recall',yl:'Precision'});
+  const base=sim.nPos/sim.N;
+  s+=`<line class="dash" x1="${p.sx(0)}" y1="${p.sy(base)}" x2="${p.sx(1)}" y2="${p.sy(base)}"/>`;
+  const raw=decimate(sim.pr,900);const pts=[[p.sx(0),p.sy(raw[0][1])]].concat(raw.map(q=>[p.sx(q[0]),p.sy(q[1])]));
+  s+=`<path class="curve s-prec" d="${pathOf(pts)}"/>`;
+  if(Number.isFinite(dv.ppv))s+=`<circle class="pt s-prec" cx="${p.sx(dv.tpr)}" cy="${p.sy(dv.ppv)}" r="6"/>`;
+  s+=`<text class="ttl" x="${p.sx(0.04)}" y="${p.sy(Math.min(0.97,base+0.12)>0.9?0.08:Math.min(0.97,base+0.12))}">AP = ${sim.ap.toFixed(3)}</text>`;
+  s+=`<text class="ax" x="${p.sx(0.98)}" y="${p.sy(base)-5}" text-anchor="end">no skill = prevalence</text>`;
+  $('#prPlot').innerHTML=svgWrap(p,s,'Precision-recall curve');
+}
+function drawSweep(sw,j){
+  const p=plotFrame(400,340,{l:46,r:14,t:12,b:44},[0,1],[0,1]);
+  let s=axes(p,{xt:[0,.25,.5,.75,1],yt:[0,.25,.5,.75,1],xf:v=>v.toFixed(2),yf:v=>v.toFixed(2),xl:'Decision threshold',yl:'Value'});
+  const line=(key,cls,dash)=>{const pts=sw.map(r=>Number.isFinite(r[key])?[p.sx(r.t),p.sy(r[key])]:null);return `<path class="curve ${cls}" ${dash?'stroke-dasharray="6 4"':''} d="${pathGaps(pts)}"/>`;};
+  s+=line('acc','s-acc',true)+line('prec','s-prec')+line('rec','s-rec')+line('f1','s-f1');
+  const x=p.sx(j/100);s+=`<line class="thr" x1="${x}" x2="${x}" y1="${p.m.t}" y2="${p.H-p.m.b}"/>`;
+  for(const [k,cls] of [['acc','s-acc'],['prec','s-prec'],['rec','s-rec'],['f1','s-f1']]){const v=sw[j][k];if(Number.isFinite(v))s+=`<circle class="pt ${cls}" cx="${x}" cy="${p.sy(v)}" r="4.5"/>`;}
+  $('#sweepPlot').innerHTML=svgWrap(p,s,'Precision, recall, F1 and accuracy versus threshold');
+}
+function drawRel(ev){
+  const p=plotFrame(400,340,{l:46,r:14,t:12,b:44},[0,1],[0,1]);
+  let s=axes(p,{xt:[0,.25,.5,.75,1],yt:[0,.25,.5,.75,1],xf:v=>v.toFixed(2),yf:v=>v.toFixed(2),xl:'Mean predicted probability',yl:'Observed positive rate'});
+  s+=`<line class="dash" x1="${p.sx(0)}" y1="${p.sy(0)}" x2="${p.sx(1)}" y2="${p.sy(1)}"/>`;
+  const bins=ev.rel.filter(b=>b.n>0),mx=Math.max(1,...bins.map(b=>b.n));
+  s+=`<path class="curve s-prec" d="${pathOf(bins.map(b=>[p.sx(b.sp/b.n),p.sy(b.sy/b.n)]))}"/>`;
+  for(const b of bins)s+=`<circle class="pt s-prec" cx="${p.sx(b.sp/b.n)}" cy="${p.sy(b.sy/b.n)}" r="${(3+8*Math.sqrt(b.n/mx)).toFixed(1)}" style="opacity:.85"/>`;
+  s+=`<text class="ax" x="${p.sx(0.02)}" y="${p.sy(0.97)+4}">above the line: underconfident</text><text class="ax" x="${p.sx(0.98)}" y="${p.sy(0.05)}" text-anchor="end">below the line: overconfident</text>`;
+  $('#relPlot').innerHTML=svgWrap(p,s,'Reliability diagram');
+}
+
+function updateExplorer(){
+  const d=+$('#x-d').value,prev=+$('#x-prev').value,N=+$('#x-n').value,T=+$('#x-t').value,j=+$('#x-thr').value;
+  const cFP=Math.max(0,+$('#x-cfp').value||0),cFN=Math.max(0,+$('#x-cfn').value||0);
+  const key=[d,prev,N,seed].join('|');if(key!==simKey){sim=buildSim(Zn,d,prev,N);simKey=key;}
+  const ev=evalP(sim,T),sw=sweep(sim,T,cFP,cFN);
+  const cnt=counts(countsAt(sim,T,j/100)),dv=derive(cnt);lastCounts=cnt;
+  $('#o-d').textContent=d.toFixed(2);$('#o-prev').textContent=(prev*100).toFixed(1)+'%  ('+sim.nPos.toLocaleString()+' of '+N.toLocaleString()+')';
+  $('#o-t').textContent=T.toFixed(2)+(Math.abs(T-1)<0.025?' · calibrated':T>1?' · overconfident':' · underconfident');
+  $('#o-thr').textContent=(j/100).toFixed(2);
+  /* optima */
+  let bf=0,bj=0,bc=0;for(const r of sw){if((r.f1||0)>(sw[bf].f1||0))bf=r.j;if(r.J>sw[bj].J)bj=r.j;if(r.cost<sw[bc].cost)bc=r.j;}
+  lastOpt={f1:bf,J:bj,cost:bc};
+  $('#optInfo').textContent=`Max F1 at ${(bf/100).toFixed(2)} (F1 ${fixed(sw[bf].f1)}). Max Youden J at ${(bj/100).toFixed(2)} (J ${fixed(sw[bj].J)}). Min cost at ${(bc/100).toFixed(2)} (cost ${sw[bc].cost.toLocaleString()}), searched on a 0.01 grid.`;
+  /* tiles */
+  $('#miniCm').innerHTML=miniCm(cnt);
+  const mv=id=>fnum(BYID[id].f(cnt,dv,state),BYID[id]);
+  $('#thrTiles').innerHTML=colorTiles([['Precision',mv('ppv')],['Recall',mv('tpr')],['Specificity',mv('tnr')],['F1',mv('f1')],['Accuracy',mv('acc')],
+    ['Balanced acc.',mv('bacc')],['MCC',mv('mcc')],['Cohen\'s κ',mv('kappa')],['Total cost',(cFP*cnt.FP+cFN*cnt.FN).toLocaleString(),`${cFP}×FP + ${cFN}×FN`]]);
+  const pi=sim.nPos/sim.N,ll0=-(pi*Math.log(pi)+(1-pi)*Math.log(1-pi));
+  $('#freeTiles').innerHTML=colorTiles([['ROC-AUC',sim.auc.toFixed(3),'no skill 0.500'],['PR-AUC (AP)',sim.ap.toFixed(3),`no skill ${pi.toFixed(3)}`],
+    ['Log loss',ev.logloss.toFixed(3),`prior-only ${ll0.toFixed(3)}`],['Brier score',ev.brier.toFixed(3),`prior-only ${(pi*(1-pi)).toFixed(3)}`],['ECE (10 bins)',ev.ece.toFixed(3),'0 is calibrated']]);
+  drawDist(ev,j);drawRoc(cnt);drawPr(cnt,dv);drawSweep(sw,j);drawRel(ev);
+}
+const schedule=()=>{if(!rafId)rafId=requestAnimationFrame(()=>{rafId=0;updateExplorer();});};
+function initExplorer(){
+  $$('#ctl input, #ctl select').forEach(i=>i.addEventListener('input',schedule));
+  $('#btnReseed').addEventListener('click',()=>{seed=(seed*1664525+1013904223)>>>0;Zn=makeNormals(seed);schedule();});
+  const jump=k=>()=>{$('#x-thr').value=lastOpt[k];schedule();};
+  $('#btnF1').addEventListener('click',jump('f1'));$('#btnJ').addEventListener('click',jump('J'));$('#btnCost').addEventListener('click',jump('cost'));
+  $('#btnSend').addEventListener('click',()=>{
+    if(!lastCounts)return;Object.assign(state,{TP:lastCounts.TP,FP:lastCounts.FP,FN:lastCounts.FN,TN:lastCounts.TN});
+    bayesFollow=true;syncInputs();refresh();document.getElementById('matrix').scrollIntoView({behavior:'smooth'});
+  });
+  updateExplorer();
+}
+
+/* ================= MULTI-CLASS ================= */
+const CLASS_NAMES=['Cat','Dog','Bird','Fish','Frog'];
+const mc={n:3,sel:0,m:[[50,7,3,2,1],[5,22,3,1,0],[1,2,7,0,1],[2,1,0,12,2],[0,1,1,3,9]]};
+function renderMC(){
+  const n=mc.n;let h='<thead><tr><th class="rn" style="font-size:11px;color:var(--fg3)">actual ↓ · predicted →</th>';
+  for(let j=0;j<n;j++)h+=`<th>${CLASS_NAMES[j]}</th>`;h+='<th class="tot">total</th></tr></thead><tbody>';
+  for(let i=0;i<n;i++){
+    h+=`<tr data-r="${i}"><td class="rn">${CLASS_NAMES[i]}</td>`;
+    for(let j=0;j<n;j++)h+=`<td class="${i===j?'dg':'of'}" data-r="${i}" data-c="${j}"><input type="number" min="0" step="1" inputmode="numeric" value="${mc.m[i][j]}" data-i="${i}" data-j="${j}" aria-label="Actual ${CLASS_NAMES[i]} predicted ${CLASS_NAMES[j]}"></td>`;
+    h+=`<td class="tot" data-rt="${i}"></td></tr>`;
+  }
+  h+='<tr><td class="rn tot">total</td>';for(let j=0;j<n;j++)h+=`<td class="tot" data-ct="${j}"></td>`;h+='<td class="tot" data-nt></td></tr></tbody>';
+  $('#mcTable').innerHTML=h;
+  const sel=$('#ovrSel');sel.innerHTML=Array.from({length:n},(_,k)=>`<option value="${k}">${CLASS_NAMES[k]}</option>`).join('');
+  mc.sel=Math.min(mc.sel,n-1);sel.value=mc.sel;
+}
+function hlClass(k){
+  $$('#mcTable td').forEach(td=>{td.classList.toggle('hlrow',k!==null&&td.dataset.r==k&&td.dataset.c!==undefined);td.classList.toggle('hlcol',k!==null&&td.dataset.c==k&&td.dataset.r!==undefined);});
+}
+function updateMC(){
+  const n=mc.n,st=mcStats(mc.m,n);
+  for(let i=0;i<n;i++){
+    $(`[data-rt="${i}"]`).textContent=st.row[i];$(`[data-ct="${i}"]`).textContent=st.col[i];
+    for(let j=0;j<n;j++){const td=$(`td[data-r="${i}"][data-c="${j}"]`);td.style.setProperty('--i',st.row[i]?(mc.m[i][j]/st.row[i]).toFixed(3):0);}
+  }
+  $('[data-nt]').textContent=st.N;
+  const T=(v)=>fixed(v,3);
+  $('#mcTiles').innerHTML=colorTiles([['Accuracy',T(st.acc),'= micro P, R, F1'],['Balanced acc.',T(st.bacc),'= macro recall'],['Macro F1',T(st.macro.F),'classes equal'],
+    ['Weighted F1',T(st.weighted.F),'by support'],['Micro F1',T(st.micro.F)],['Cohen\'s κ',T(st.kappa)],['MCC (multi-class)',T(st.mcc)]]);
+  let h='<thead><tr><th>Class</th><th class="n">Support</th><th class="n">Precision</th><th class="n">Recall</th><th class="n">F1</th><th class="n">Specificity</th><th class="n">IoU</th></tr></thead><tbody>';
+  st.per.forEach((p,k)=>{h+=`<tr class="hov" data-k="${k}"><td>${CLASS_NAMES[k]}</td><td class="n">${p.support}</td><td class="n">${T(p.P)}</td><td class="n">${T(p.R)}</td><td class="n">${T(p.F)}</td><td class="n">${T(p.S)}</td><td class="n">${T(p.J)}</td></tr>`;});
+  h+='</tbody><tfoot>';
+  for(const [nm,a] of [['Macro avg',st.macro],['Weighted avg',st.weighted],['Micro avg',st.micro]])
+    h+=`<tr><td>${nm}</td><td class="n">${st.N}</td><td class="n">${T(a.P)}</td><td class="n">${T(a.R)}</td><td class="n">${T(a.F)}</td><td class="n">—</td><td class="n">—</td></tr>`;
+  $('#mcPer').innerHTML=h+'</tfoot>';
+  const p=st.per[mc.sel];
+  $('#ovrCm').innerHTML=miniCm({TP:p.tp,FN:p.fn,FP:p.fp,TN:p.tn});
+  $('#ovrText').innerHTML=`Treating <b>${CLASS_NAMES[mc.sel]}</b> as positive and every other class as negative gives this 2×2. Precision ${T(p.P)}, recall ${T(p.R)}, F1 ${T(p.F)}. Open it in the binary calculator to see all ${METRICS.length} metrics for this class.`;
+}
+function initMC(){
+  renderMC();updateMC();
+  $('#mcTable').addEventListener('input',e=>{
+    const i=e.target.dataset&&e.target.dataset.i;if(i===undefined)return;
+    let v=Math.floor(Number(e.target.value));if(!(v>=0))v=0;mc.m[+i][+e.target.dataset.j]=Math.min(v,1e9);updateMC();
+  });
+  $('#mcTable').addEventListener('change',e=>{if(e.target.dataset&&e.target.dataset.i!==undefined)e.target.value=mc.m[+e.target.dataset.i][+e.target.dataset.j];});
+  $('#mcSize').addEventListener('click',e=>{
+    const b=e.target.closest('button');if(!b)return;mc.n=+b.dataset.v;
+    $$('#mcSize button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));renderMC();updateMC();
+  });
+  $('#ovrSel').addEventListener('change',e=>{mc.sel=+e.target.value;updateMC();});
+  $('#mcPer').addEventListener('mouseover',e=>{const r=e.target.closest('tr[data-k]');hlClass(r?+r.dataset.k:null);});
+  $('#mcPer').addEventListener('mouseleave',()=>hlClass(null));
+  $('#ovrSend').addEventListener('click',()=>{
+    const p=mcStats(mc.m,mc.n).per[mc.sel];Object.assign(state,{TP:p.tp,FP:p.fp,FN:p.fn,TN:p.tn});
+    bayesFollow=true;syncInputs();refresh();document.getElementById('matrix').scrollIntoView({behavior:'smooth'});
+  });
+}
+
+/* ================= copy button ================= */
+function initCopy(){
+  $('#copyCode').addEventListener('click',async()=>{
+    const txt=$('#codeBlock').innerText,b=$('#copyCode');let ok=false;
+    try{await navigator.clipboard.writeText(txt);ok=true;}catch(e){
+      try{const r=document.createRange();r.selectNodeContents($('#codeBlock'));const s=getSelection();s.removeAllRanges();s.addRange(r);ok=document.execCommand('copy');}catch(e2){}
+    }
+    b.textContent=ok?'Copied':'Select and copy manually';setTimeout(()=>{b.textContent='Copy';},1800);
+  });
+}
+
+initBinary();initExplorer();initMC();initCopy();
+</script>
+</body>
+</html>

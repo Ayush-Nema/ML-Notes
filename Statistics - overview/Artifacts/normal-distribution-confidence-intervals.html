@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The normal distribution and confidence intervals: an interactive guide</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #EDF0F5; --panel: #FFFFFF; --ink: #18212F; --muted: #566175; --line: #D3DAE6;
+    --accent: #2F5BEA; --tint: #E6ECFD;
+    --nor: #C8365C; --nor-soft: #EDB1C1;
+    --teal: #17795C; --teal-soft: #BFE3D8;
+    --amber: #D9780F; --amber-soft: #F4D3A8;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 66px; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.6; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 24px 18px 64px; }
+  h1 { font-family: var(--serif); font-weight: 700; font-size: clamp(1.9rem, 4.6vw, 2.8rem); line-height: 1.12; margin: 0 0 10px; letter-spacing: -0.01em; }
+  h2 { font-family: var(--serif); font-size: 1.3rem; margin: 0 0 8px; line-height: 1.25; }
+  h3 { font-family: var(--serif); font-size: 1.12rem; margin: 0 0 6px; }
+  p { margin: 0 0 10px; }
+  a { color: var(--accent); }
+  :focus-visible { outline: 3px solid #F0A02B; outline-offset: 2px; }
+  .lead { max-width: 66ch; font-size: 1.08rem; color: var(--muted); margin-bottom: 18px; }
+  .prose { max-width: 68ch; }
+  .small { font-size: .93rem; color: var(--muted); }
+  i.v { font-style: italic; }
+
+  .topnav { position: sticky; top: 0; z-index: 30; background: rgba(237,240,245,.95); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+  .topnav .in { max-width: 1080px; margin: 0 auto; padding: 8px 18px; display: flex; gap: 8px; overflow-x: auto; }
+  .topnav a { text-decoration: none; color: var(--ink); background: #fff; border: 1.5px solid var(--line); border-radius: 999px; padding: 5px 14px; font-size: .92rem; white-space: nowrap; }
+  .topnav a:hover { border-color: var(--accent); color: var(--accent); }
+  .topnav .sep { align-self: center; color: var(--muted); font-size: .85rem; padding: 0 2px; white-space: nowrap; }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; min-width: 0; }
+  .stack { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-content: start; min-width: 0; }
+  .sec { margin-top: 44px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .sec.a { --c: var(--nor); --cs: var(--nor-soft); }
+  .sec.b { --c: var(--accent); --cs: var(--tint); }
+  .sech { font-family: var(--serif); font-size: clamp(1.5rem, 3.4vw, 2.1rem); margin: 0; line-height: 1.15; border-bottom: 4px solid var(--c); padding-bottom: 6px; display: inline-block; justify-self: start; }
+  .kicker { color: var(--muted); margin: -6px 0 0; max-width: 72ch; }
+  .partbanner { margin-top: 56px; padding: 18px 20px; border-radius: 14px; color: #fff; }
+  .partbanner h2 { color: #fff; font-size: clamp(1.5rem, 3.4vw, 2rem); margin: 0 0 4px; }
+  .partbanner p { margin: 0; opacity: .95; max-width: 70ch; }
+  .partbanner.a { background: var(--nor); } .partbanner.b { background: var(--accent); }
+
+  .path { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 760px) { .path { grid-template-columns: 1fr 1fr; } }
+  .pcard { display: block; text-decoration: none; color: var(--ink); background: #fff; border: 1px solid var(--line); border-top: 5px solid var(--c); border-radius: 12px; padding: 14px; }
+  .pcard.a { --c: var(--nor); } .pcard.b { --c: var(--accent); }
+  .pcard b { font-family: var(--serif); font-size: 1.12rem; display: block; margin-bottom: 4px; }
+  .pcard span { color: var(--muted); font-size: .94rem; display: block; }
+
+  .math { font-family: var(--serif); font-size: 1.15rem; background: #F6F8FB; border-radius: 10px; padding: 10px 14px; margin: 8px 0; overflow-x: auto; font-variant-numeric: tabular-nums; line-height: 2; }
+  .math .ln { white-space: nowrap; }
+  .math .ln.wrap { white-space: normal; }
+  .math.key { border: 2px solid var(--c, var(--accent)); background: #fff; }
+  .frac { display: inline-flex; flex-direction: column; vertical-align: middle; text-align: center; margin: 0 .25em; line-height: 1.35; }
+  .frac > span:first-child { border-bottom: 1.5px solid currentColor; padding: 0 .35em .08em; }
+  .frac > span:last-child { padding: .08em .35em 0; }
+  .note { border-left: 4px solid #F0A02B; padding: 6px 12px; margin: 10px 0; max-width: 68ch; background: #FFF8EA; border-radius: 0 8px 8px 0; }
+  .warn { border-left: 4px solid var(--nor); padding: 6px 12px; margin: 10px 0; max-width: 68ch; background: #FCEEF2; border-radius: 0 8px 8px 0; }
+  .panel ul.plain, .panel ol.plain { margin: 0 0 10px; padding-left: 1.3em; max-width: 68ch; }
+  .panel li { margin-bottom: 5px; }
+  .live { background: var(--tint); border-radius: 10px; padding: 10px 14px; margin: 10px 0; overflow-x: auto; }
+  .live .tag { font-size: .85rem; color: var(--muted); display: block; margin-bottom: 2px; }
+  .live .steps div { font-family: var(--serif); font-size: 1.05rem; line-height: 1.8; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .answer { border: 1.5px solid var(--c); background: #fff; border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+  .answer .ctx { color: var(--muted); margin-bottom: 2px; }
+  .answer .qq { font-weight: 600; }
+  .answer .bigp { font-family: var(--serif); font-size: clamp(2.2rem, 7vw, 3.2rem); font-weight: 700; line-height: 1.05; color: var(--c); font-variant-numeric: tabular-nums; margin: 2px 0; }
+
+  .lab { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 940px) { .lab { grid-template-columns: 290px minmax(0, 1fr); align-items: start; } .lab > .controls { position: sticky; top: 76px; } }
+  .ctl { margin-bottom: 14px; }
+  .ctl label, .ctl .lbl { display: block; font-weight: 600; margin-bottom: 2px; }
+  .row { display: flex; align-items: center; gap: 12px; }
+  input[type=range] { flex: 1; min-width: 0; height: 28px; accent-color: var(--c, var(--accent)); }
+  output { min-width: 4.4ch; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { font: inherit; font-size: .9rem; border: 1.5px solid var(--line); background: #fff; color: var(--ink); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+  .chip:hover { border-color: var(--c, var(--accent)); }
+  .chip[aria-pressed="true"] { background: var(--c, var(--accent)); border-color: var(--c, var(--accent)); color: #fff; }
+  .seg { display: flex; flex-wrap: wrap; border: 1.5px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .seg button { flex: 1 1 auto; font: inherit; font-size: .92rem; border: 0; background: #fff; padding: 7px 8px; cursor: pointer; color: var(--ink); }
+  .seg button + button { border-left: 1.5px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--c, var(--accent)); color: #fff; font-weight: 600; }
+  .btn { font: inherit; font-weight: 600; cursor: pointer; border: 1.5px solid var(--c, var(--accent)); background: #fff; color: var(--c, var(--accent)); border-radius: 10px; padding: 8px 12px; }
+  .btn:hover { background: var(--cs, var(--tint)); }
+  .btn.solid { background: var(--c, var(--accent)); color: #fff; }
+  .btn.solid:hover { filter: brightness(.92); }
+  .btns { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+  .check { display: flex; align-items: center; gap: 8px; margin: 4px 0 10px; }
+  .check input { width: 18px; height: 18px; accent-color: var(--c, var(--accent)); }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 10px; }
+  .stat { border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: #FAFBFD; }
+  .stat b { display: block; font-family: var(--serif); font-size: 1.25rem; font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .stat span { font-size: .84rem; color: var(--muted); display: block; line-height: 1.25; }
+
+  svg.chart { width: 100%; height: auto; display: block; }
+  svg .grid { stroke: #E3E8F1; stroke-width: 1; }
+  svg .axis { stroke: #566175; stroke-width: 1.2; }
+  svg .tick { font: 12px var(--sans); fill: #566175; }
+  svg .axlab { font: 13px var(--sans); fill: #566175; }
+  svg .lblb { font: 700 12.5px var(--sans); fill: #18212F; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: .9rem; margin: 6px 0 2px; color: var(--muted); }
+  .legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .charttitle { font-weight: 600; font-size: .95rem; margin: 6px 0 0; }
+
+  .tblwrap { overflow-x: auto; }
+  .tbl { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  .tbl th, .tbl td { text-align: left; padding: 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .tbl th { color: var(--muted); font-weight: 600; font-size: .88rem; }
+  .tbl td.n { font-variant-numeric: tabular-nums; }
+  .tbl tr.hl td, .tbl tr.hl th { background: var(--tint); }
+  .cards4 { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); margin: 8px 0; }
+  .c4 { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: #FAFBFD; }
+  .c4 b { display: block; font-family: var(--serif); }
+  .c4 span { font-size: .93rem; color: var(--muted); }
+  .two { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 720px) { .two { grid-template-columns: 1fr 1fr; } }
+  .two > div { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: #FAFBFD; }
+  .badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .86rem; font-weight: 600; margin: 2px 4px 2px 0; }
+  .badge.ok { background: #DDF1EA; color: #0F5E47; } .badge.no { background: #FBE1E7; color: #8A1F3C; }
+
+  .qz { border: 0; padding: 0; margin: 0 0 22px; }
+  .qz legend { font-weight: 600; margin-bottom: 8px; padding: 0; max-width: 68ch; }
+  .qopts { display: grid; gap: 6px; max-width: 68ch; }
+  .qopt { font: inherit; text-align: left; background: #fff; border: 1.5px solid var(--line); border-radius: 10px; padding: 9px 12px; cursor: pointer; color: var(--ink); }
+  .qopt:hover { border-color: var(--accent); }
+  .qopt.ok { border-color: #17795C; background: #E4F3EE; }
+  .qopt.bad { border-color: #C23B3B; background: #FBE7E7; }
+  .qwhy { margin-top: 8px; max-width: 68ch; }
+</style>
+</head>
+<body>
+
+<nav class="topnav" aria-label="Sections">
+  <div class="in">
+    <span class="sep">Part 1</span>
+    <a href="#a1">Bell curve</a><a href="#a2">Mean &amp; SD</a><a href="#a3">68–95–99.7</a><a href="#a4">Probabilities</a><a href="#a5">z-score</a>
+    <span class="sep">Part 2</span>
+    <a href="#b1">Sample vs population</a><a href="#b2">Sampling</a><a href="#b3">Sampling distribution</a><a href="#b4">CLT</a><a href="#b5">Standard error</a><a href="#b6">Confidence intervals</a><a href="#b7">Z method</a><a href="#b8">t-distribution</a><a href="#b9">t method</a><a href="#b10">Margin of error</a><a href="#b11">Full example</a><a href="#b12">ML link</a><a href="#recap">Recap &amp; quiz</a>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<header>
+  <h1>The normal distribution, and how it lets us estimate with confidence</h1>
+  <p class="lead">This guide has two parts. <b>Part 1</b> introduces the bell curve through a coffee shop: what it looks like, what its two numbers mean, and how to read probabilities from it. <b>Part 2</b> shows why the bell curve matters so much: when you only see a <em>sample</em>, the normal distribution lets you say how far your estimate might be from the truth. That is the idea behind confidence intervals.</p>
+  <div class="path">
+    <a class="pcard a" href="#a1"><b>Part 1: The normal distribution</b><span>Bean &amp; Brew coffee shop: mean, standard deviation, the 68–95–99.7 rule, probabilities and z-scores.</span></a>
+    <a class="pcard b" href="#b1"><b>Part 2: From a sample to a confidence interval</b><span>Delivery times: population vs sample, sampling distributions, the central limit theorem, standard error, z and t intervals.</span></a>
+  </div>
+</header>
+
+<!-- ================= PART 1 ================= -->
+<div class="partbanner a"><h2>Part 1: The normal distribution</h2><p>A coffee shop, a few thousand customers and one very useful shape.</p></div>
+
+<section class="sec a" id="a1">
+  <h2 class="sech">What is a normal distribution?</h2>
+  <div class="panel">
+    <p class="prose">You own a coffee shop called <b>Bean &amp; Brew</b>. Hundreds of customers visit every day. Some spend ₹100, some ₹200, a few ₹400, but most spend somewhere around ₹250. You start wondering:</p>
+    <ul class="plain">
+      <li>Why do most customers spend around ₹250?</li>
+      <li>Why do very few spend extremely little or extremely much?</li>
+      <li>Can we predict what percentage of customers spend between ₹200 and ₹300?</li>
+    </ul>
+    <p class="prose">A <b>normal distribution</b> describes exactly this situation: most observations sit close to the average, and observations further away become steadily rarer. The pattern is symmetric, and the picture is a bell. Below, every customer is simulated from a normal distribution with an average of ₹250. Add more customers and use narrower bars, and the bars trace out the bell.</p>
+  </div>
+  <div class="lab" style="--c: var(--nor); --cs: var(--nor-soft)">
+    <div class="panel controls">
+      <h3>Customers at Bean &amp; Brew</h3>
+      <div class="ctl"><label for="h-w">Bar width (₹)</label><div class="row"><input type="range" id="h-w" min="5" max="50" step="5" value="25"><output id="h-wOut"></output></div></div>
+      <div class="ctl"><label for="h-N">Customers</label><div class="row"><input type="range" id="h-N" min="50" max="5000" step="50" value="400"><output id="h-NOut" style="min-width:5ch"></output></div></div>
+      <label class="check"><input type="checkbox" id="h-curve"><span>Show the bell curve</span></label>
+      <label class="check"><input type="checkbox" id="h-band"><span>Highlight ₹200 to ₹300</span></label>
+      <button class="btn solid" id="h-new">New day, new customers</button>
+    </div>
+    <div class="stack"><div class="panel">
+      <svg class="chart" id="h-chart" role="img" aria-label="Histogram of customer spending"></svg>
+      <div class="live" id="h-live" aria-live="polite"></div>
+    </div></div>
+  </div>
+  <div class="panel">
+    <div class="warn"><b>A fair warning.</b> Not every real-world measurement is normal. Real customer spending is often skewed, because a few customers spend unusually large amounts. We use an idealized example to learn the concept. Always check that data actually looks bell-shaped before relying on a normal model.</div>
+  </div>
+</section>
+
+<section class="sec a" id="a2">
+  <h2 class="sech">Two numbers describe it: mean and standard deviation</h2>
+  <div class="panel">
+    <div class="two">
+      <div><h3>Mean (μ): where is the center?</h3><p style="margin:0">The average. At Bean &amp; Brew, μ = ₹250. Move the mean and the whole bell slides left or right without changing shape.</p></div>
+      <div><h3>Standard deviation (σ): how spread out?</h3><p style="margin:0">How far spending typically strays from the average. Here σ = ₹50. A small σ gives a tall, narrow bell, and a large σ gives a low, wide one.</p></div>
+    </div>
+    <p class="prose" style="margin-top:12px">We write <b><i class="v">X</i> ~ N(μ, σ²)</b>, read "X is normally distributed with mean μ and variance σ²". Try the sliders.</p>
+  </div>
+  <div class="lab" style="--c: var(--nor); --cs: var(--nor-soft)">
+    <div class="panel controls">
+      <h3>Shape your own shop</h3>
+      <div class="ctl"><label for="m-mu">Average spend (μ)</label><div class="row"><input type="range" id="m-mu" min="150" max="350" step="5" value="250"><output id="m-muOut"></output></div></div>
+      <div class="ctl"><label for="m-sd">Spread (σ)</label><div class="row"><input type="range" id="m-sd" min="20" max="100" step="5" value="50"><output id="m-sdOut"></output></div></div>
+      <div class="chips" id="m-pre"><button class="chip" data-mu="250" data-sd="25">Shop A (σ = 25)</button><button class="chip" data-mu="250" data-sd="50">Bean &amp; Brew (σ = 50)</button><button class="chip" data-mu="250" data-sd="75">Shop B (σ = 75)</button></div>
+    </div>
+    <div class="stack"><div class="panel">
+      <svg class="chart" id="m-chart" role="img" aria-label="Normal curve with adjustable mean and spread"></svg>
+      <div class="live" id="m-live" aria-live="polite"></div>
+    </div></div>
+  </div>
+  <div class="panel">
+    <h3>Same average, different shops</h3>
+    <p class="prose">Shop A and Shop B both average ₹250 per customer, but their customers behave differently. Both bells are drawn on the same axes.</p>
+    <svg class="chart" id="m-cmp" role="img" aria-label="Shop A and Shop B curves"></svg>
+    <div class="legend"><span><span class="sw" style="background:#17795C"></span>Shop A (σ = ₹25)</span><span><span class="sw" style="background:#D9780F"></span>Shop B (σ = ₹75)</span></div>
+    <div class="live" id="m-cmpText"></div>
+    <p class="prose"><b>Remember:</b> the mean decides the center, and the standard deviation decides the spread. Knowing the average alone is not enough. We also need to know how observations spread around it.</p>
+  </div>
+</section>
+
+<section class="sec a" id="a3">
+  <h2 class="sech">The 68–95–99.7 rule</h2>
+  <p class="kicker">The most useful shortcut for reading a bell curve.</p>
+  <div class="lab" style="--c: var(--nor); --cs: var(--nor-soft)">
+    <div class="panel controls">
+      <h3>Bean &amp; Brew: μ = ₹250, σ = ₹50</h3>
+      <p class="small">Pick how many standard deviations either side of the average to look at.</p>
+      <div class="ctl"><div class="seg" id="r-seg" role="group" aria-label="Standard deviations"><button data-v="1" aria-pressed="true">±1 SD</button><button data-v="2" aria-pressed="false">±2 SD</button><button data-v="3" aria-pressed="false">±3 SD</button></div></div>
+    </div>
+    <div class="stack"><div class="panel">
+      <div class="answer" aria-live="polite"><div class="qq" id="r-q"></div><div class="bigp" id="r-big"></div><div id="r-sub"></div></div>
+      <svg class="chart" id="r-chart" role="img" aria-label="Normal curve with shaded band"></svg>
+      <div class="legend"><span><span class="sw" style="background:#EDB1C1"></span>inside the band</span><span><span class="sw" style="background:#E3E8F1"></span>outside</span></div>
+    </div></div>
+  </div>
+  <div class="panel">
+    <ul class="plain">
+      <li><b>68%</b> of customers spend between ₹200 and ₹300 (within 1 SD).</li>
+      <li><b>95%</b> spend between ₹150 and ₹350 (within 2 SDs).</li>
+      <li><b>99.7%</b> spend between ₹100 and ₹400 (within 3 SDs).</li>
+    </ul>
+    <p class="prose"><b>Using it.</b> What percentage of customers spend <em>more than ₹300</em>? ₹300 is one SD above the average. About 68% fall within one SD, so about 32% fall outside. The curve is symmetric, so half of that 32% is on the high side:</p>
+    <div class="math"><div class="ln">P(X &gt; 300) ≈ (100% − 68%) ÷ 2 ≈ 16%</div></div>
+    <p class="prose">Roughly 16 of every 100 customers spend more than ₹300. The calculator in the next section gives the exact figure.</p>
+  </div>
+</section>
+
+<section class="sec a" id="a4">
+  <h2 class="sech">Reading probabilities as areas</h2>
+  <p class="kicker">For a continuous measurement, probability is the area under the curve over a range.</p>
+  <div class="lab" style="--c: var(--nor); --cs: var(--nor-soft)">
+    <div class="panel controls">
+      <h3>Probability calculator</h3>
+      <p class="small">Spending at Bean &amp; Brew: μ = ₹250, σ = ₹50.</p>
+      <div class="ctl"><div class="lbl" id="c-modeL">What share of customers spend…</div>
+        <div class="seg" id="c-mode" role="group" aria-labelledby="c-modeL"><button data-v="gt" aria-pressed="true">more than</button><button data-v="lt" aria-pressed="false">less than</button><button data-v="bt" aria-pressed="false">between</button></div></div>
+      <div class="ctl"><label for="c-a" id="c-aL">Amount (₹)</label><div class="row"><input type="range" id="c-a" min="100" max="400" step="5" value="300"><output id="c-aOut"></output></div></div>
+      <div class="ctl" id="c-bwrap" hidden><label for="c-b">and (₹)</label><div class="row"><input type="range" id="c-b" min="100" max="400" step="5" value="300"><output id="c-bOut"></output></div></div>
+    </div>
+    <div class="stack"><div class="panel">
+      <div class="answer" aria-live="polite"><div class="qq" id="c-q"></div><div class="bigp" id="c-big"></div><div id="c-sub"></div></div>
+      <svg class="chart" id="c-chart" role="img" aria-label="Normal curve with shaded area"></svg>
+      <div class="live" id="c-live" aria-live="polite"></div>
+    </div></div>
+  </div>
+  <div class="panel">
+    <h3>Why the chance of one exact amount is zero</h3>
+    <p class="prose">Binomial and Poisson distributions count things (0, 1, 2, 3 customers), so each count has its own probability. A normal distribution is <b>continuous</b>: spending could be ₹250.00, ₹250.001, and so on forever, so any one exact value has zero chance. We always ask about <em>ranges</em>. Shrink the range around ₹250 and watch the probability vanish.</p>
+    <div class="ctl" style="max-width:480px"><label for="z-w">Width of the range around ₹250</label><div class="row"><input type="range" id="z-w" min="0" max="100" step="1" value="40"><output id="z-wOut" style="min-width:6ch"></output></div></div>
+    <div class="live" id="z-live" aria-live="polite"></div>
+  </div>
+</section>
+
+<section class="sec a" id="a5">
+  <h2 class="sech">The z-score: how unusual is this value?</h2>
+  <div class="panel">
+    <p class="prose">A customer spends ₹325. Is that unusually high? A <b>z-score</b> says how many standard deviations a value is above or below the mean:</p>
+    <div class="math key" style="--c: var(--nor)"><div class="ln">z = <span class="frac"><span><i>X</i> − μ</span><span>σ</span></span> = <span class="frac"><span>325 − 250</span><span>50</span></span> = 1.5</div></div>
+    <p class="prose">So ₹325 is 1.5 standard deviations above average. Z = 0 means exactly average, z = +1 is one SD above, z = −1 is one SD below, z = +2 is two SDs above. Because z-scores are in "SD units", they work for any normal distribution: heights, delivery times or exam scores.</p>
+  </div>
+  <div class="lab" style="--c: var(--nor); --cs: var(--nor-soft)">
+    <div class="panel controls">
+      <h3>Where does a customer stand?</h3>
+      <div class="ctl"><label for="s-x">Amount this customer spent (₹)</label><div class="row"><input type="range" id="s-x" min="100" max="400" step="5" value="325"><output id="s-xOut"></output></div></div>
+      <p class="small">Typical rule of thumb: |z| under 1 is ordinary, between 1 and 2 is notable, over 2 is unusual, over 3 is very rare.</p>
+    </div>
+    <div class="stack"><div class="panel">
+      <div class="answer" aria-live="polite"><div class="qq" id="s-q"></div><div class="bigp" id="s-big"></div><div id="s-sub"></div></div>
+      <svg class="chart" id="s-chart" role="img" aria-label="Normal curve with a marked customer"></svg>
+    </div></div>
+  </div>
+  <div class="panel">
+    <h3>Where normal fits among the three distributions</h3>
+    <div class="tblwrap"><table class="tbl">
+      <thead><tr><th>Distribution</th><th>What it describes</th><th>Coffee shop question</th></tr></thead>
+      <tbody>
+        <tr><td><b>Binomial</b></td><td>Successes out of a fixed number of opportunities</td><td>Out of 10 visitors, how many buy coffee?</td></tr>
+        <tr><td><b>Poisson</b></td><td>Number of events in an interval</td><td>How many customers arrive in an hour?</td></tr>
+        <tr><td><b>Normal</b></td><td>How values are spread around an average</td><td>How much does a customer spend?</td></tr>
+      </tbody></table></div>
+    <p class="prose" style="margin-top:10px">Approximately normal models can help with coffee preparation times, product quality (how much a machine dispenses), manufacturing measurements, and bell-shaped exam scores.</p>
+  </div>
+</section>
+
+<!-- ================= PART 2 ================= -->
+<div class="partbanner b"><h2>Part 2: From a sample to a confidence interval</h2><p>Why the normal distribution matters even when your data is <em>not</em> normal, and how to turn one sample into an honest range of plausible values.</p></div>
+
+<section class="sec b" id="b1">
+  <h2 class="sech">The business problem: population vs sample</h2>
+  <div class="panel">
+    <p class="prose">A food-delivery company wants the <b>average delivery time of all orders in Bengaluru this month</b>. There were 1,000,000 orders. Checking all of them is often impractical: collecting data costs money, measurements may need surveys, some measurements are destructive, and the whole population may simply not be available.</p>
+    <p class="prose">So the company examines <i class="v">n</i> = 100 orders and finds an average of 32 minutes. Does that mean the true average of all one million orders is <em>exactly</em> 32 minutes? <b>No.</b> We are trying to use a <b>sample</b> to learn about a <b>population</b> while being honest about our uncertainty.</p>
+    <div class="two">
+      <div><h3>Population</h3><p>Every delivery completed this month. Its mean μ and standard deviation σ are called <b>parameters</b>. We usually want them, but they are unknown.</p></div>
+      <div><h3>Sample</h3><p>100 randomly selected deliveries. Its mean <i class="v">x̄</i> and standard deviation <i class="v">s</i> are called <b>statistics</b>. We can compute them.</p></div>
+    </div>
+    <div class="math key" style="--c: var(--accent)"><div class="ln">Use statistics (x̄, s) to estimate parameters (μ, σ)</div></div>
+  </div>
+  <div class="lab" style="--c: var(--accent); --cs: var(--tint)">
+    <div class="panel controls">
+      <h3>Draw a sample</h3>
+      <p class="small">In this simulation the true average delivery time is hidden from the analyst. Draw a sample and compare its average with the truth.</p>
+      <div class="ctl"><label for="p-n">Sample size (n)</label><div class="row"><input type="range" id="p-n" min="5" max="500" step="5" value="100"><output id="p-nOut"></output></div></div>
+      <button class="btn solid" id="p-draw">Draw a sample</button>
+      <label class="check" style="margin-top:12px"><input type="checkbox" id="p-reveal"><span>Reveal the true average μ</span></label>
+    </div>
+    <div class="stack"><div class="panel">
+      <svg class="chart" id="p-chart" role="img" aria-label="Histogram of one sample of delivery times"></svg>
+      <div class="legend"><span><span class="sw" style="background:#2F5BEA"></span>sample average x̄</span><span><span class="sw" style="background:#17795C"></span>true average μ (when revealed)</span></div>
+      <div class="live" id="p-live" aria-live="polite"></div>
+    </div></div>
+  </div>
+  <div class="panel"><p class="prose" style="margin:0"><b>Notice:</b> every new sample gives a slightly different average, and none is exactly 30. That is not a mistake. Different samples contain different deliveries. This is called <b>sampling variability</b>, and the rest of this guide is about measuring it.</p></div>
+</section>
+
+<section class="sec b" id="b2">
+  <h2 class="sech">Which 100 deliveries? Sampling techniques</h2>
+  <p class="kicker">A bad sample gives a bad estimate no matter how clever the mathematics.</p>
+  <div class="panel">
+    <h3>Why the sampling method matters</h3>
+    <p class="prose">Suppose you want average customer satisfaction, but you survey only customers who left 5-star reviews. The sample will look wonderful, and it will be biased. Try it.</p>
+    <div class="btns" style="--c: var(--accent)"><button class="btn solid" id="bi-go">Survey 100 customers both ways</button></div>
+    <div class="live" id="bi-live" aria-live="polite">Press the button.</div>
+  </div>
+  <div class="panel">
+    <h3>Four popular methods</h3>
+    <div class="cards4">
+      <div class="c4"><b>Simple random</b><span>Every member has an equal chance. Example: pick 500 random IDs from 10,000 customers. Usually the cleanest starting point.</span></div>
+      <div class="c4"><b>Stratified</b><span>Split into important subgroups (region, age group, Android vs iOS) and sample from each. Use it when subgroups must be represented.</span></div>
+      <div class="c4"><b>Systematic</b><span>Take every k-th item, such as every 50th invoice. Easy, but biased if the data has a repeating pattern.</span></div>
+      <div class="c4"><b>Cluster</b><span>Randomly choose whole groups, such as 10 of 100 cities, and survey inside them. Cheaper when the population is naturally grouped.</span></div>
+    </div>
+    <h3 style="margin-top:14px">See why stratified sampling helps</h3>
+    <p class="prose">Your users are 70% Android and 30% iOS. You pick 100 users. A simple random sample is only <em>usually</em> close to 70% Android, while a stratified sample takes exactly 70 from Android and 30 from iOS every time.</p>
+    <div class="btns" style="--c: var(--accent)"><button class="btn solid" id="st-1">Draw one sample</button><button class="btn" id="st-1k">Draw 1,000 samples</button><button class="btn" id="st-clear">Clear</button></div>
+    <svg class="chart" id="st-chart" role="img" aria-label="Number of Android users in each sample"></svg>
+    <div class="legend"><span><span class="sw" style="background:#2F5BEA"></span>simple random</span><span><span class="sw" style="background:#D9780F"></span>stratified</span></div>
+    <div class="live" id="st-live" aria-live="polite"></div>
+  </div>
+</section>
+
+<section class="sec b" id="b3">
+  <h2 class="sech">Sampling distribution: the sample mean has its own distribution</h2>
+  <div class="panel">
+    <p class="prose">Suppose the true average delivery time is μ = 30 minutes. Take 100 deliveries and get x̄₁ = 29.6. Take another 100: x̄₂ = 30.8. Another: 29.9. Another: 30.4. <b>Why aren't all the sample means exactly 30?</b> Because sampling is random.</p>
+    <p class="prose">Now imagine repeating this 10,000 times: each time take <i class="v">n</i> deliveries and compute the average. Plot all those averages. That picture is the <b>sampling distribution of the sample mean</b>.</p>
+    <div class="warn"><b>Be careful.</b> It is <em>not</em> the distribution of individual delivery times. It is the distribution of <i>x̄</i> across many hypothetical samples. Two different histograms are in play below, so keep them apart.</div>
+  </div>
+  <div class="lab" style="--c: var(--accent); --cs: var(--tint)">
+    <div class="panel controls">
+      <h3>Repeat the sampling</h3>
+      <div class="ctl"><label for="d-n">Deliveries per sample (n)</label><div class="row"><input type="range" id="d-n" min="1" max="400" step="1" value="25"><output id="d-nOut"></output></div>
+        <div class="chips" id="d-pre"><button class="chip" data-n="1">1</button><button class="chip" data-n="5">5</button><button class="chip" data-n="25">25</button><button class="chip" data-n="100">100</button><button class="chip" data-n="400">400</button></div></div>
+      <div class="btns"><button class="btn solid" id="d-1">Take 1 sample</button><button class="btn" id="d-100">100</button><button class="btn" id="d-10k">10,000</button><button class="btn" id="d-clear">Clear</button></div>
+      <label class="check"><input type="checkbox" id="d-zoom"><span>Zoom in on the sample means</span></label>
+    </div>
+    <div class="stack"><div class="panel">
+      <div class="charttitle">1. Individual deliveries (the population)</div>
+      <svg class="chart" id="d-top" role="img" aria-label="Population of delivery times"></svg>
+      <div class="charttitle">2. Averages of samples of n deliveries (the sampling distribution)</div>
+      <svg class="chart" id="d-bot" role="img" aria-label="Distribution of sample means"></svg>
+      <div class="live" id="d-live" aria-live="polite"></div>
+    </div></div>
+  </div>
+  <div class="panel"><p class="prose" style="margin:0">Two things to notice. The sample means are centered on the true average (30), and they are much more tightly clustered than individual deliveries. Bigger samples squeeze the cluster tighter. The spread of the sample means has a name: the <b>standard error</b>, introduced shortly.</p></div>
+</section>
+
+<section class="sec b" id="b4">
+  <h2 class="sech">The Central Limit Theorem</h2>
+  <div class="panel">
+    <p class="prose">Here is why the normal distribution matters in Part 2. Many real-world measurements are roughly normal, but more importantly, <b>sample means often become approximately normal</b>, even when the original data is not.</p>
+    <div class="math key" style="--c: var(--accent)"><div class="ln wrap">If we repeatedly take sufficiently large independent random samples, the distribution of the <b>sample means</b> tends to look approximately normal, even when the population is not.</div></div>
+    <p class="prose">Customer purchases are typically heavily right-skewed: most people spend little, a few spend a lot. Definitely not normal. Yet the averages of repeated samples form a bell. Pick a population below and increase <i class="v">n</i>.</p>
+  </div>
+  <div class="lab" style="--c: var(--accent); --cs: var(--tint)">
+    <div class="panel controls">
+      <h3>Watch the bell appear</h3>
+      <div class="ctl"><div class="lbl" id="k-popL">Population</div>
+        <div class="chips" id="k-pop" role="group" aria-labelledby="k-popL"><button class="chip" data-v="skew" aria-pressed="true">Purchases (skewed)</button><button class="chip" data-v="expo" aria-pressed="false">Waiting times (skewed)</button><button class="chip" data-v="bimodal" aria-pressed="false">Quick vs slow orders (two humps)</button><button class="chip" data-v="normal" aria-pressed="false">Delivery times (normal)</button></div></div>
+      <div class="ctl"><label for="k-n">Sample size (n)</label><div class="row"><input type="range" id="k-n" min="1" max="100" step="1" value="1"><output id="k-nOut"></output></div>
+        <div class="chips" id="k-pre"><button class="chip" data-n="1">1</button><button class="chip" data-n="2">2</button><button class="chip" data-n="5">5</button><button class="chip" data-n="10">10</button><button class="chip" data-n="30">30</button><button class="chip" data-n="100">100</button></div></div>
+      <label class="check"><input type="checkbox" id="k-curve"><span>Show the matching bell curve</span></label>
+      <button class="btn solid" id="k-new">Draw 3,000 new sample means</button>
+    </div>
+    <div class="stack"><div class="panel">
+      <div class="charttitle" id="k-t1"></div>
+      <svg class="chart" id="k-top" role="img" aria-label="Shape of the population"></svg>
+      <div class="charttitle" id="k-t2"></div>
+      <svg class="chart" id="k-bot" role="img" aria-label="Histogram of sample means"></svg>
+      <div class="stats" id="k-stats"></div>
+      <div class="live" id="k-live" aria-live="polite"></div>
+    </div></div>
+  </div>
+  <div class="panel">
+    <div class="two">
+      <div><h3>What CLT does <u>not</u> say</h3><p style="margin:0">It does not say your raw data becomes normal. Individual purchases stay skewed forever. It says the distribution of <b>sample means</b> tends toward normal.</p></div>
+      <div><h3>Why we care</h3><p style="margin:0">We know a great deal about the normal distribution, such as the 68–95–99.7 rule. That lets us reason about how close a sample mean is likely to be to μ, which leads straight to standard error and confidence intervals.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec b" id="b5">
+  <h2 class="sech">Standard error: how much does the sample mean wobble?</h2>
+  <div class="panel">
+    <p class="prose">If repeated sample means come out as 29.9, 30.1, 30.0, 29.8, 30.2, they are tightly clustered, and our estimate is stable. If they come out as 26, 32, 28, 35, 29, our estimate depends heavily on which sample we happened to draw. We need one number for "how much would the sample mean vary from sample to sample?" That number is the <b>standard error</b>.</p>
+    <div class="math key" style="--c: var(--accent)"><div class="ln">SE = <span class="frac"><span>σ</span><span>√<i>n</i></span></span> &nbsp;&nbsp;(usually estimated by <span class="frac"><span><i>s</i></span><span>√<i>n</i></span></span>, since σ is unknown)</div></div>
+    <div class="tblwrap"><table class="tbl">
+      <thead><tr><th>Standard deviation (SD)</th><th>Standard error (SE)</th></tr></thead>
+      <tbody>
+        <tr><td>Variation among <b>individual observations</b></td><td>Variation among <b>sample means</b></td></tr>
+        <tr><td>Describes the data</td><td>Describes the uncertainty in an estimate</td></tr>
+        <tr><td>Does not shrink as the sample grows</td><td>Shrinks as the sample grows</td></tr>
+      </tbody></table></div>
+    <p class="prose" style="margin-top:8px">SD asks, "how different are individuals?" SE asks, "how uncertain is my estimated mean?"</p>
+  </div>
+  <div class="lab" style="--c: var(--accent); --cs: var(--tint)">
+    <div class="panel controls">
+      <h3>Why sample size matters</h3>
+      <div class="ctl"><label for="e-s">Spread of individuals (σ)</label><div class="row"><input type="range" id="e-s" min="2" max="20" step="1" value="10"><output id="e-sOut"></output></div></div>
+      <div class="ctl"><label for="e-n">Sample size (n)</label><div class="row"><input type="range" id="e-n" min="4" max="1600" step="1" value="25"><output id="e-nOut" style="min-width:5ch"></output></div></div>
+      <div class="btns"><button class="btn" data-n="25" id="e-25">n = 25</button><button class="btn" data-n="100" id="e-100">n = 100</button><button class="btn" data-n="400" id="e-400">n = 400</button><button class="btn solid" id="e-x4">Quadruple n</button></div>
+    </div>
+    <div class="stack"><div class="panel">
+      <div class="stats" id="e-stats"></div>
+      <svg class="chart" id="e-chart" role="img" aria-label="Standard error against sample size"></svg>
+      <div class="live" id="e-live" aria-live="polite"></div>
+    </div></div>
+  </div>
+  <div class="panel"><p class="prose" style="margin:0"><b>Business takeaway:</b> to cut the standard error in half you need about <b>4 times</b> the sample size. Precision gets expensive: going from 25 to 100 observations halves the uncertainty, but halving it again needs 400.</p></div>
+</section>
+
+<section class="sec b" id="b6">
+  <h2 class="sech">Confidence intervals: the core idea</h2>
+  <div class="panel">
+    <p class="prose">Instead of reporting only "average delivery time = 32 minutes", we can report: "Our estimate is 32 minutes, and a plausible range for the population mean is roughly 30 to 34 minutes." That range is a <b>confidence interval</b>. It always has the same structure:</p>
+    <div class="math key" style="--c: var(--accent)">
+      <div class="ln">Estimate ± Margin of error</div>
+      <div class="ln"><i>x̄</i> ± (critical value) × SE</div>
+    </div>
+    <p class="prose">This single recipe unifies everything that follows. The critical value comes from the normal (or t) distribution and says how many standard errors to extend on each side.</p>
+    <h3>What does "95% confident" actually mean?</h3>
+    <p class="prose">A common misreading is "there is a 95% probability that μ lies inside <em>this</em> interval." In the standard interpretation μ is a fixed number, and it is the <em>procedure</em> that has the 95%:</p>
+    <div class="math key" style="--c: var(--accent)"><div class="ln wrap">If we repeated the whole sampling procedure many times and built a 95% interval each time, about 95% of those intervals would contain the true mean.</div></div>
+    <p class="prose">Try it. Each row below is one imagined analyst who took their own sample of deliveries (true average μ = 30 minutes, drawn as the vertical line) and built an interval. Green intervals capture μ. Red ones miss.</p>
+  </div>
+  <div class="panel" style="--c: var(--accent); --cs: var(--tint)"><div id="ci1"></div></div>
+</section>
+
+<section class="sec b" id="b7">
+  <h2 class="sech">The z method (σ known)</h2>
+  <div class="panel">
+    <p class="prose">In the classic textbook setup the population standard deviation σ is known (or the sample is large enough that a normal approximation is justified). For a 95% interval the critical value is <b>z* = 1.96</b>:</p>
+    <div class="math key" style="--c: var(--accent)"><div class="ln">CI = <i>x̄</i> ± <i>z</i>* × <span class="frac"><span>σ</span><span>√<i>n</i></span></span></div></div>
+    <p class="prose"><b>Where does 1.96 come from?</b> For a standard normal distribution, about 95% of the probability lies between −1.96 and +1.96 standard deviations. So a 95% interval extends 1.96 standard errors each side of the estimate. Move the confidence level below to see the shaded central area and its critical value.</p>
+  </div>
+  <div class="lab" style="--c: var(--accent); --cs: var(--tint)">
+    <div class="panel controls">
+      <h3>Z interval calculator</h3>
+      <div class="chips" id="z-pre"><button class="chip" data-x="50" data-s="10" data-n="100">Textbook: x̄ 50, σ 10, n 100</button><button class="chip" data-x="32" data-s="8" data-n="100">Delivery: x̄ 32, σ 8, n 100</button></div>
+      <div class="ctl" style="margin-top:12px"><label for="z-x">Sample mean (x̄)</label><div class="row"><input type="range" id="z-x" min="20" max="100" step="0.5" value="50"><output id="z-xOut"></output></div></div>
+      <div class="ctl"><label for="z-s">Population SD (σ)</label><div class="row"><input type="range" id="z-s" min="1" max="30" step="0.5" value="10"><output id="z-sOut"></output></div></div>
+      <div class="ctl"><label for="z-n">Sample size (n)</label><div class="row"><input type="range" id="z-n" min="4" max="1000" step="1" value="100"><output id="z-nOut" style="min-width:5ch"></output></div></div>
+      <div class="ctl"><div class="lbl" id="z-cL">Confidence level</div><div class="seg" id="z-c" role="group" aria-labelledby="z-cL"><button data-v="0.8" aria-pressed="false">80%</button><button data-v="0.9" aria-pressed="false">90%</button><button data-v="0.95" aria-pressed="true">95%</button><button data-v="0.99" aria-pressed="false">99%</button></div></div>
+    </div>
+    <div class="stack"><div class="panel">
+      <div class="answer" aria-live="polite"><div class="qq" id="zc-q"></div><div class="bigp" id="zc-big"></div><div id="zc-sub"></div></div>
+      <div class="live"><span class="tag">Step by step</span><div class="steps" id="zc-steps"></div></div>
+      <svg class="chart" id="zc-chart" role="img" aria-label="Standard normal curve with central area"></svg>
+      <div class="tblwrap"><table class="tbl" id="zc-tbl"></table></div>
+      <p class="small" style="margin-top:6px"><b>Notice:</b> higher confidence means a larger critical value and a wider interval.</p>
+    </div></div>
+  </div>
+</section>
+
+<section class="sec b" id="b8">
+  <h2 class="sech">The t-distribution: when σ is unknown</h2>
+  <div class="panel">
+    <p class="prose">In real life we almost never know σ. We only have the sample, so we estimate it with <i class="v">s</i>. That adds extra uncertainty, and we account for it by using the <b>t-distribution</b> instead of the normal.</p>
+    <p class="prose">A t-distribution looks like a normal distribution but with <b>heavier tails</b>: it gives more probability to extreme values. Its exact shape depends on the <b>degrees of freedom</b>, which for a one-sample mean is <b>df = n − 1</b>. Small samples carry little information about variability (small df, heavy tails). Large samples carry plenty, and t becomes almost exactly normal.</p>
+  </div>
+  <div class="lab" style="--c: var(--accent); --cs: var(--tint)">
+    <div class="panel controls">
+      <h3>t versus normal</h3>
+      <div class="ctl"><label for="t-df">Degrees of freedom (df = n − 1)</label><div class="row"><input type="range" id="t-df" min="1" max="100" step="1" value="4"><output id="t-dfOut"></output></div>
+        <div class="chips" id="t-pre"><button class="chip" data-df="1">1</button><button class="chip" data-df="4">4</button><button class="chip" data-df="10">10</button><button class="chip" data-df="24">24</button><button class="chip" data-df="100">100</button></div></div>
+    </div>
+    <div class="stack"><div class="panel">
+      <svg class="chart" id="t-chart" role="img" aria-label="t distribution compared with normal"></svg>
+      <div class="legend"><span><span class="sw" style="background:#C8365C"></span>normal</span><span><span class="sw" style="background:#2F5BEA"></span>t-distribution</span><span><span class="sw" style="background:#BCCBF8"></span>t area beyond ±1.96</span></div>
+      <div class="live" id="t-live" aria-live="polite"></div>
+    </div></div>
+  </div>
+  <div class="panel">
+    <h3>Critical values: t* versus z*</h3>
+    <p class="prose">The critical value you multiply by SE is larger for t, especially with few degrees of freedom. The bottom row (df = ∞) is the normal distribution's z*.</p>
+    <div class="tblwrap"><table class="tbl" id="t-tbl"></table></div>
+  </div>
+</section>
+
+<section class="sec b" id="b9">
+  <h2 class="sech">The t interval</h2>
+  <div class="panel">
+    <p class="prose">The structure never changed. Only the critical value and the standard deviation used differ:</p>
+    <div class="two">
+      <div><b>Z (σ known)</b><div class="math" style="margin-bottom:0"><i>x̄</i> ± <i>z</i>* · σ/√<i>n</i></div></div>
+      <div><b>T (σ unknown, use s)</b><div class="math" style="margin-bottom:0"><i>x̄</i> ± <i>t</i>* · <i>s</i>/√<i>n</i></div></div>
+    </div>
+    <p class="prose" style="margin-top:10px">It is always <b>estimate ± critical value × standard error</b>. The default example below samples 25 customers with an average spend of $80 and a sample standard deviation of $20.</p>
+  </div>
+  <div class="lab" style="--c: var(--accent); --cs: var(--tint)">
+    <div class="panel controls">
+      <h3>t interval calculator</h3>
+      <div class="ctl"><label for="u-x">Sample mean (x̄, $)</label><div class="row"><input type="range" id="u-x" min="40" max="120" step="1" value="80"><output id="u-xOut"></output></div></div>
+      <div class="ctl"><label for="u-s">Sample SD (s, $)</label><div class="row"><input type="range" id="u-s" min="5" max="40" step="1" value="20"><output id="u-sOut"></output></div></div>
+      <div class="ctl"><label for="u-n">Sample size (n)</label><div class="row"><input type="range" id="u-n" min="3" max="200" step="1" value="25"><output id="u-nOut"></output></div></div>
+      <div class="ctl"><div class="lbl" id="u-cL">Confidence level</div><div class="seg" id="u-c" role="group" aria-labelledby="u-cL"><button data-v="0.9" aria-pressed="false">90%</button><button data-v="0.95" aria-pressed="true">95%</button><button data-v="0.99" aria-pressed="false">99%</button></div></div>
+    </div>
+    <div class="stack"><div class="panel">
+      <div class="answer" aria-live="polite"><div class="qq" id="uc-q"></div><div class="bigp" id="uc-big"></div><div id="uc-sub"></div></div>
+      <div class="live"><span class="tag">Step by step</span><div class="steps" id="uc-steps"></div></div>
+      <svg class="chart" id="uc-chart" role="img" aria-label="t interval versus z interval"></svg>
+      <p class="small" id="uc-note"></p>
+    </div></div>
+  </div>
+  <div class="panel">
+    <h3>Does it really matter? Test the claim</h3>
+    <p class="prose">Using z* with an estimated s ignores the extra uncertainty. With small samples the intervals come out too narrow and fail to capture μ as often as promised. Compare methods below: with n = 5 and "z with s plugged in" selected, a "95%" interval captures the true mean noticeably less than 95% of the time. The t interval fixes it.</p>
+    <div id="ci2"></div>
+  </div>
+</section>
+
+<section class="sec b" id="b10">
+  <h2 class="sech">Margin of error: what controls it?</h2>
+  <div class="panel">
+    <div class="math key" style="--c: var(--accent)"><div class="ln">ME = (critical value) × SE &nbsp;&nbsp;and&nbsp;&nbsp; CI = estimate ± ME</div></div>
+    <div class="two">
+      <div><b>Z or T?</b>
+        <ul class="plain" style="margin-top:6px"><li>Know σ → use <b>Z</b>.</li><li>Don't know σ (the usual case) → use <b>T</b>.</li><li>Large sample, σ unknown: T still works and is almost identical to Z.</li></ul></div>
+      <div><b>Three levers on the margin of error</b>
+        <ul class="plain" style="margin-top:6px"><li>Larger <i class="v">n</i> → smaller SE → smaller ME.</li><li>More variable data (larger σ or s) → larger ME.</li><li>Higher confidence level → larger ME.</li></ul></div>
+    </div>
+    <p class="prose">More confidence usually means less precision. Experiment with the three levers:</p>
+  </div>
+  <div class="lab" style="--c: var(--accent); --cs: var(--tint)">
+    <div class="panel controls">
+      <h3>Pull the levers</h3>
+      <div class="ctl"><label for="o-n">Sample size (n)</label><div class="row"><input type="range" id="o-n" min="5" max="500" step="1" value="30"><output id="o-nOut"></output></div></div>
+      <div class="ctl"><label for="o-s">Variability (s)</label><div class="row"><input type="range" id="o-s" min="2" max="40" step="1" value="10"><output id="o-sOut"></output></div></div>
+      <div class="ctl"><div class="lbl" id="o-cL">Confidence level</div><div class="seg" id="o-c" role="group" aria-labelledby="o-cL"><button data-v="0.9" aria-pressed="false">90%</button><button data-v="0.95" aria-pressed="true">95%</button><button data-v="0.99" aria-pressed="false">99%</button></div></div>
+      <button class="btn" id="o-pin">Pin the current interval for comparison</button>
+    </div>
+    <div class="stack"><div class="panel">
+      <div class="stats" id="o-stats"></div>
+      <svg class="chart" id="o-chart" role="img" aria-label="Interval width"></svg>
+      <div class="live" id="o-live" aria-live="polite"></div>
+    </div></div>
+  </div>
+</section>
+
+<section class="sec b" id="b11">
+  <h2 class="sech">A full example, start to finish</h2>
+  <p class="kicker">A streaming company wants the average hours customers watch per week.</p>
+  <div class="lab" style="--c: var(--accent); --cs: var(--tint)">
+    <div class="panel controls">
+      <h3>The study</h3>
+      <p class="small">10,000,000 customers (the population). The unknown average hours per week is μ.</p>
+      <div class="ctl"><label for="v-n">Step 2: customers sampled at random (n)</label><div class="row"><input type="range" id="v-n" min="25" max="2500" step="5" value="400"><output id="v-nOut" style="min-width:5ch"></output></div></div>
+      <div class="ctl"><label for="v-s">Step 3: sample SD (s, hours)</label><div class="row"><input type="range" id="v-s" min="1" max="8" step="0.5" value="4"><output id="v-sOut"></output></div></div>
+      <p class="small">Sample mean: x̄ = 7.5 hours.</p>
+    </div>
+    <div class="stack"><div class="panel">
+      <div class="live"><span class="tag">Step 1: population</span><div>10,000,000 customers, unknown mean μ.</div></div>
+      <div class="live"><span class="tag">Steps 2 to 5</span><div class="steps" id="v-steps"></div></div>
+      <svg class="chart" id="v-chart" role="img" aria-label="Confidence interval for average hours"></svg>
+      <div class="answer" aria-live="polite"><div class="qq">Translate it back to the business:</div><div id="v-sum"></div></div>
+    </div></div>
+  </div>
+</section>
+
+<section class="sec b" id="b12">
+  <h2 class="sech">An ML connection: is Model B really better?</h2>
+  <div class="panel">
+    <p class="prose">Model A scores 84% accuracy and Model B scores 85%. Is B definitely better? Both numbers come from a finite test set. With a different test set the accuracies would change slightly, so model performance is itself an <b>estimate</b>. It deserves an interval: "85% ± 2%" rather than just "85%".</p>
+    <p class="prose">For an accuracy (a proportion), the standard error has the form √(p(1 − p) ÷ n), and the interval is the same recipe: estimate ± 1.96 × SE.</p>
+  </div>
+  <div class="lab" style="--c: var(--accent); --cs: var(--tint)">
+    <div class="panel controls">
+      <h3>Compare two models</h3>
+      <div class="ctl"><label for="l-n">Test set size</label><div class="row"><input type="range" id="l-n" min="100" max="20000" step="100" value="1000"><output id="l-nOut" style="min-width:6ch"></output></div></div>
+      <div class="ctl"><label for="l-a">Model A accuracy (%)</label><div class="row"><input type="range" id="l-a" min="60" max="99" step="0.5" value="84"><output id="l-aOut"></output></div></div>
+      <div class="ctl"><label for="l-b">Model B accuracy (%)</label><div class="row"><input type="range" id="l-b" min="60" max="99" step="0.5" value="85"><output id="l-bOut"></output></div></div>
+    </div>
+    <div class="stack"><div class="panel">
+      <svg class="chart" id="l-chart" role="img" aria-label="Accuracy intervals for two models"></svg>
+      <div class="live" id="l-live" aria-live="polite"></div>
+    </div></div>
+  </div>
+  <div class="panel"><p class="prose" style="margin:0">The same logic applies to precision and recall, A/B tests, business metrics and model comparisons. (A formal comparison of two models would test the difference directly, but intervals already show that a one-point gap on a small test set can be well within the noise.)</p></div>
+</section>
+
+<section class="sec b" id="recap">
+  <h2 class="sech">The whole story in one picture</h2>
+  <div class="panel">
+    <svg class="chart" viewBox="0 0 700 520" role="img" aria-label="Flow from population to confidence interval">
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#566175"/></marker></defs>
+      <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="15">
+        <rect x="190" y="8" width="320" height="52" rx="10" fill="#fff" stroke="#D3DAE6"/><text x="350" y="30" text-anchor="middle" font-weight="700" fill="#18212F">POPULATION</text><text x="350" y="49" text-anchor="middle" fill="#566175">unknown mean μ</text>
+        <rect x="190" y="92" width="320" height="52" rx="10" fill="#fff" stroke="#D3DAE6"/><text x="350" y="114" text-anchor="middle" font-weight="700" fill="#18212F">SAMPLE</text><text x="350" y="133" text-anchor="middle" fill="#566175">sample mean x̄</text>
+        <rect x="190" y="176" width="320" height="52" rx="10" fill="#E6ECFD" stroke="#2F5BEA" stroke-width="2"/><text x="350" y="198" text-anchor="middle" font-weight="700" fill="#18212F">SAMPLING DISTRIBUTION</text><text x="350" y="217" text-anchor="middle" fill="#566175">approximately normal (CLT)</text>
+        <rect x="190" y="260" width="320" height="52" rx="10" fill="#fff" stroke="#D3DAE6"/><text x="350" y="282" text-anchor="middle" font-weight="700" fill="#18212F">STANDARD ERROR</text><text x="350" y="301" text-anchor="middle" fill="#566175">σ/√n, or s/√n</text>
+        <rect x="190" y="344" width="320" height="52" rx="10" fill="#fff" stroke="#D3DAE6"/><text x="350" y="366" text-anchor="middle" font-weight="700" fill="#18212F">MARGIN OF ERROR</text><text x="350" y="385" text-anchor="middle" fill="#566175">critical value (z* or t*) × SE</text>
+        <rect x="190" y="428" width="320" height="56" rx="10" fill="#DDF1EA" stroke="#17795C" stroke-width="2"/><text x="350" y="452" text-anchor="middle" font-weight="700" fill="#18212F">CONFIDENCE INTERVAL</text><text x="350" y="473" text-anchor="middle" fill="#18212F">x̄ ± margin of error</text>
+        <g stroke="#566175" stroke-width="2" marker-end="url(#ah)"><line x1="350" y1="60" x2="350" y2="90"/><line x1="350" y1="144" x2="350" y2="174"/><line x1="350" y1="228" x2="350" y2="258"/><line x1="350" y1="312" x2="350" y2="342"/><line x1="350" y1="396" x2="350" y2="426"/></g>
+        <g fill="#566175" font-size="13.5"><text x="362" y="80">random sampling</text><text x="362" y="164">imagine repeating it many times</text><text x="362" y="248">spread of the sample means</text><text x="362" y="332">pick a confidence level</text><text x="362" y="416">add and subtract</text></g>
+      </g>
+    </svg>
+    <h3>Key takeaways</h3>
+    <ul class="plain">
+      <li>A normal distribution is described by its mean (center) and standard deviation (spread). About 68%, 95% and 99.7% of values lie within 1, 2 and 3 SDs.</li>
+      <li>A z-score says how many SDs a value is from the mean.</li>
+      <li>A sample mean is an estimate. It wobbles from sample to sample, and the standard error σ/√n measures how much.</li>
+      <li>The central limit theorem says sample means are approximately normal even when the data is not, which is why normal-based intervals work so broadly.</li>
+      <li>Every confidence interval is <b>estimate ± critical value × SE</b>. Use z* when σ is known, t* (with df = n − 1) when it is not.</li>
+      <li>"95% confident" is a statement about the <em>procedure</em>: 95% of intervals built this way capture the true value.</li>
+    </ul>
+  </div>
+  <div class="panel">
+    <h2>Test yourself</h2>
+    <div id="quizBox"></div>
+    <p class="small" id="score"></p>
+  </div>
+</section>
+
+</div>
+
+<script>
+(function () {
+"use strict";
+const $ = (s) => document.querySelector(s);
+const on = (id, fn) => $(id).addEventListener("input", fn);
+
+/* ================= math ================= */
+const SQ2 = Math.SQRT2, SQ2PI = Math.sqrt(2 * Math.PI);
+const nPdf = (x, m, s) => Math.exp(-0.5 * ((x - m) / s) ** 2) / (s * SQ2PI);
+function erfcPos(x) {
+  if (x < 2.5) { let sum = x, term = x; for (let n = 1; n < 80; n++) { term *= -x * x / n; const add = term / (2 * n + 1); sum += add; if (Math.abs(add) < 1e-17) break; } return 1 - 2 / Math.sqrt(Math.PI) * sum; }
+  let t = x; for (let k = 60; k >= 1; k--) t = x + (k / 2) / t;
+  return Math.exp(-x * x) / Math.sqrt(Math.PI) / t;
+}
+const erfc = (x) => (x >= 0 ? erfcPos(x) : 2 - erfcPos(-x));
+const Phi = (z) => 0.5 * erfc(-z / SQ2);
+const Qf = (z) => 0.5 * erfc(z / SQ2);
+function invPhi(p) { let lo = -9, hi = 9; for (let i = 0; i < 70; i++) { const m = (lo + hi) / 2; if (Phi(m) < p) lo = m; else hi = m; } return (lo + hi) / 2; }
+function lgamma(x) { const c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5]; let y = x, t = x + 5.5; t -= (x + 0.5) * Math.log(t); let s = 1.000000000190015; for (let j = 0; j < 6; j++) { y += 1; s += c[j] / y; } return -t + Math.log(2.5066282746310005 * s / x); }
+function betacf(a, b, x) { const FP = 1e-300; const qab = a + b, qap = a + 1, qam = a - 1; let c = 1, d = 1 - qab * x / qap; if (Math.abs(d) < FP) d = FP; d = 1 / d; let h = d; for (let m = 1; m <= 300; m++) { const m2 = 2 * m; let aa = m * (b - m) * x / ((qam + m2) * (a + m2)); d = 1 + aa * d; if (Math.abs(d) < FP) d = FP; c = 1 + aa / c; if (Math.abs(c) < FP) c = FP; d = 1 / d; h *= d * c; aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2)); d = 1 + aa * d; if (Math.abs(d) < FP) d = FP; c = 1 + aa / c; if (Math.abs(c) < FP) c = FP; d = 1 / d; const del = d * c; h *= del; if (Math.abs(del - 1) < 3e-14) break; } return h; }
+function betai(a, b, x) { if (x <= 0) return 0; if (x >= 1) return 1; const bt = Math.exp(lgamma(a + b) - lgamma(a) - lgamma(b) + a * Math.log(x) + b * Math.log(1 - x)); return x < (a + 1) / (a + b + 2) ? bt * betacf(a, b, x) / a : 1 - bt * betacf(b, a, 1 - x) / b; }
+const tPdf = (x, df) => Math.exp(lgamma((df + 1) / 2) - lgamma(df / 2)) / Math.sqrt(df * Math.PI) * Math.pow(1 + x * x / df, -(df + 1) / 2);
+function tCdf(t, df) { const x = df / (df + t * t); const p = 0.5 * betai(df / 2, 0.5, x); return t > 0 ? 1 - p : p; }
+function tQ(p, df) { let lo = -3000, hi = 3000; for (let i = 0; i < 110; i++) { const m = (lo + hi) / 2; if (tCdf(m, df) < p) lo = m; else hi = m; } return (lo + hi) / 2; }
+const tcache = new Map();
+function tstar(conf, df) { const k = conf + "|" + df; if (!tcache.has(k)) tcache.set(k, tQ(1 - (1 - conf) / 2, df)); return tcache.get(k); }
+const zstar = (conf) => invPhi(1 - (1 - conf) / 2);
+function rnorm() { let u = 0; while (!u) u = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * Math.random()); }
+const mean = (a) => { let s = 0; for (let i = 0; i < a.length; i++) s += a[i]; return s / a.length; };
+const sdev = (a, m) => { m = m === undefined ? mean(a) : m; let s = 0; for (let i = 0; i < a.length; i++) s += (a[i] - m) ** 2; return Math.sqrt(s / (a.length - 1)); };
+
+/* ================= formatting ================= */
+const fi = (n) => Math.round(n).toLocaleString("en-US");
+const fN = (x, d = 2) => String(Number(x.toFixed(d)));
+const fz = (x, d = 2) => fN(x, d).replace("-", "−");
+const R = (x) => "₹" + fi(x);
+const pc = (x) => { const v = x * 100; if (v === 0) return "0%"; if (v >= 99.95) return "100%"; if (v >= 10) return v.toFixed(1) + "%"; if (v >= 0.1) return v.toFixed(2) + "%"; if (v >= 0.001) return v.toFixed(3) + "%"; return "under 0.001%"; };
+function oneIn(p) { if (!(p > 0)) return "practically never"; if (p >= 0.995) return "practically everyone"; if (p < 0.5) { const r = 1 / p; return "about 1 in " + (r < 100 ? Math.round(r) : fi(Number(r.toPrecision(2)))); } return "about " + Math.round(p * 100) + " out of every 100"; }
+const statCards = (arr) => arr.map((a) => `<div class="stat"><b>${a[0]}</b><span>${a[1]}</span></div>`).join("");
+const steps = (arr) => arr.map((s) => `<div>${s}</div>`).join("");
+
+/* ================= chart toolkit ================= */
+function ticks(lo, hi, target, int) {
+  const span = hi - lo; if (!(span > 0)) return [lo];
+  const raw = span / target, mag = Math.pow(10, Math.floor(Math.log10(raw))), nrm = raw / mag;
+  let step = (nrm < 1.5 ? 1 : nrm < 3 ? 2 : nrm < 7 ? 5 : 10) * mag; if (int) step = Math.max(1, Math.round(step));
+  const out = []; for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + 1e-9; v += step) out.push(+v.toPrecision(12)); return out;
+}
+const fmtTick = (v) => String(+v.toFixed(4));
+function plot(el, o) {
+  const W = 680, H = o.h || 300, m = { l: o.hideY ? 24 : 56, r: 14, t: 14, b: 46 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const X = (x) => m.l + (x - o.xmin) / (o.xmax - o.xmin) * iw, Y = (y) => m.t + ih - (y / o.ymax) * ih;
+  el.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  let g = "";
+  if (!o.hideY) for (const v of ticks(0, o.ymax, 4)) g += `<line class="grid" x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}"/><text class="tick" x="${m.l - 8}" y="${Y(v) + 4}" text-anchor="end">${(o.fy || fmtTick)(v)}</text>`;
+  for (const v of (o.xticks || ticks(o.xmin, o.xmax, 8, o.int))) g += `<line class="axis" x1="${X(v)}" x2="${X(v)}" y1="${m.t + ih}" y2="${m.t + ih + 5}"/><text class="tick" x="${X(v)}" y="${m.t + ih + 19}" text-anchor="middle">${(o.fx || fmtTick)(v)}</text>`;
+  g += `<line class="axis" x1="${m.l}" x2="${W - m.r}" y1="${m.t + ih}" y2="${m.t + ih}"/>`;
+  g += `<text class="axlab" x="${m.l + iw / 2}" y="${H - 6}" text-anchor="middle">${o.xl || ""}</text>`;
+  if (o.yl) g += `<text class="axlab" transform="rotate(-90 12 ${m.t + ih / 2})" x="12" y="${m.t + ih / 2}" text-anchor="middle">${o.yl}</text>`;
+  const P = { X, Y, W, H, m, iw, ih, xmin: o.xmin, xmax: o.xmax, ymax: o.ymax, body: "", add(s) { this.body += s; }, done() { el.innerHTML = g + this.body; } };
+  return P;
+}
+function area(P, f, a, b, fill, steps) {
+  a = Math.max(a, P.xmin); b = Math.min(b, P.xmax); if (!(b > a)) return ""; steps = steps || 160;
+  let d = "M" + P.X(a) + " " + P.Y(0);
+  for (let i = 0; i <= steps; i++) { const x = a + (b - a) * i / steps; d += " L" + P.X(x) + " " + P.Y(Math.min(f(x), P.ymax)); }
+  return `<path d="${d} L${P.X(b)} ${P.Y(0)}Z" fill="${fill}"/>`;
+}
+function curve(P, f, a, b, stroke, w, steps) {
+  steps = steps || 220; let d = "";
+  for (let i = 0; i <= steps; i++) { const x = a + (b - a) * i / steps; d += (i ? "L" : "M") + P.X(x).toFixed(1) + " " + P.Y(Math.min(f(x), P.ymax)).toFixed(1); }
+  return `<path d="${d}" fill="none" stroke="${stroke}" stroke-width="${w || 2.5}" stroke-linejoin="round"/>`;
+}
+const vline = (P, x, stroke, dash, w) => `<line x1="${P.X(x)}" x2="${P.X(x)}" y1="${P.m.t}" y2="${P.m.t + P.ih}" stroke="${stroke}" stroke-width="${w || 1.5}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>`;
+function histPlot(el, o) {
+  const N = o.data.length, bins = new Map();
+  for (let i = 0; i < N; i++) { const x = o.data[i]; if (x < o.xmin || x >= o.xmax) continue; const j = Math.floor((x - o.lo) / o.bw); bins.set(j, (bins.get(j) || 0) + 1); }
+  let mx = 0; bins.forEach((c) => { mx = Math.max(mx, c / (N * o.bw)); });
+  let peak = 0; if (o.curve) for (let i = 0; i <= 120; i++) peak = Math.max(peak, o.curve(o.xmin + (o.xmax - o.xmin) * i / 120));
+  const P = plot(el, { xmin: o.xmin, xmax: o.xmax, ymax: Math.max(mx, o.showCurve ? peak : 0, o.ymaxMin || 0) * 1.12 || 1, hideY: true, xl: o.xl, yl: o.yl === undefined ? "more common ↑" : o.yl, fx: o.fx, xticks: o.xticks, h: o.h });
+  bins.forEach((c, j) => {
+    let x0 = o.lo + j * o.bw, x1 = x0 + o.bw; const mid = (x0 + x1) / 2;
+    x0 = Math.max(x0, o.xmin); x1 = Math.min(x1, o.xmax); if (x1 <= x0) return;
+    const y = P.Y(c / (N * o.bw));
+    P.add(`<rect x="${P.X(x0)}" y="${y}" width="${Math.max(P.X(x1) - P.X(x0) - 1, 0.6)}" height="${P.Y(0) - y}" fill="${o.hlf && o.hlf(mid) ? o.hlcol : o.fill}"/>`);
+  });
+  if (o.showCurve && o.curve) P.add(curve(P, o.curve, o.xmin, o.xmax, o.curveCol || "#C8365C", 3));
+  return P;
+}
+function seg(id, cb) { const el = $(id); el.addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; el.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); cb(b.dataset.v); }); }
+const segVal = (id) => $(id).querySelector('button[aria-pressed="true"]').dataset.v;
+function ciBar(el, rows, xmin, xmax, xl, fx, vl) {
+  const P = plot(el, { xmin, xmax, ymax: 1, hideY: true, xl, fx, h: Math.max(150, rows.length * 72 + 60) });
+  rows.forEach((r, i) => {
+    const y = P.m.t + (i + 0.5) * P.ih / rows.length, a = P.X(Math.max(r.lo, xmin)), b = P.X(Math.min(r.hi, xmax));
+    P.add(`<line x1="${a}" x2="${b}" y1="${y}" y2="${y}" stroke="${r.col}" stroke-width="9" stroke-linecap="round" opacity=".85"/><circle cx="${P.X(r.est)}" cy="${y}" r="6" fill="#18212F" stroke="#fff" stroke-width="2"/>` +
+      `<text class="lblb" x="${P.m.l + 4}" y="${y - 14}">${r.label}</text><text class="tick" x="${(a + b) / 2}" y="${y + 24}" text-anchor="middle">${r.text}</text>`);
+  });
+  if (vl !== undefined) P.add(vline(P, vl, "#17795C", "5 4", 2));
+  P.done();
+}
+
+/* ================= PART 1 ================= */
+/* A1: histogram of customers */
+const H1 = { w: 25, N: 400, curve: false, band: false, d: null };
+function newCust() { H1.d = new Float64Array(5000); for (let i = 0; i < 5000; i++) H1.d[i] = 250 + 50 * rnorm(); }
+function renderH1() {
+  $("#h-wOut").textContent = "₹" + H1.w; $("#h-NOut").textContent = fi(H1.N);
+  const data = H1.d.subarray(0, H1.N);
+  const P = histPlot($("#h-chart"), { data, lo: 250 - H1.w / 2, bw: H1.w, xmin: 75, xmax: 425, xl: "Amount spent (₹)", fill: "#EDB1C1", hlf: H1.band ? (x) => x >= 200 && x <= 300 : null, hlcol: "#C8365C", curve: (x) => nPdf(x, 250, 50), showCurve: H1.curve, xticks: [100, 150, 200, 250, 300, 350, 400], fx: (v) => "₹" + v });
+  P.add(vline(P, 250, "#18212F", "6 4", 1.5)); P.done();
+  let inb = 0; for (let i = 0; i < H1.N; i++) if (data[i] >= 200 && data[i] <= 300) inb++;
+  $("#h-live").innerHTML = `<span class="tag">Reading it</span><div>${fi(H1.N)} customers in bars ₹${H1.w} wide. <b>${fi(inb)}</b> of them (${pc(inb / H1.N)}) spent between ₹200 and ₹300. Theory for a normal distribution with σ = ₹50: ${pc(Phi(1) - Phi(-1))}.</div>` +
+    `<div style="margin-top:4px">${H1.N < 400 || H1.w > 25 ? "Try more customers and narrower bars: the bars follow the curve more and more closely." : "The bars now hug the bell shape. The curve is what you get in the limit."}</div>`;
+}
+on("#h-w", (e) => { H1.w = +e.target.value; renderH1(); }); on("#h-N", (e) => { H1.N = +e.target.value; renderH1(); });
+$("#h-curve").addEventListener("change", (e) => { H1.curve = e.target.checked; renderH1(); });
+$("#h-band").addEventListener("change", (e) => { H1.band = e.target.checked; renderH1(); });
+$("#h-new").addEventListener("click", () => { newCust(); renderH1(); });
+
+/* A2: mean & sd */
+const M2 = { mu: 250, sd: 50 };
+function renderM2() {
+  $("#m-muOut").textContent = R(M2.mu); $("#m-sdOut").textContent = R(M2.sd);
+  document.querySelectorAll("#m-pre .chip").forEach((c) => c.setAttribute("aria-pressed", String(+c.dataset.mu === M2.mu && +c.dataset.sd === M2.sd)));
+  const f = (x) => nPdf(x, M2.mu, M2.sd);
+  const P = plot($("#m-chart"), { xmin: 0, xmax: 500, ymax: 0.02, hideY: true, xl: "Amount spent (₹)", xticks: [0, 100, 200, 300, 400, 500], fx: (v) => "₹" + v, yl: "more common ↑" });
+  P.add(area(P, f, 0, 500, "#EDB1C1")); P.add(curve(P, f, 0, 500, "#C8365C", 3)); P.add(vline(P, M2.mu, "#18212F", "6 4", 1.5));
+  P.add(`<text class="lblb" x="${P.X(M2.mu) + 6}" y="${P.m.t + 14}">μ = ${R(M2.mu)}</text>`);
+  const y0 = P.Y(f(M2.mu + M2.sd) * 0.9);
+  P.add(`<line x1="${P.X(M2.mu)}" x2="${P.X(M2.mu + M2.sd)}" y1="${y0}" y2="${y0}" stroke="#18212F" stroke-width="2"/><text class="lblb" x="${P.X(M2.mu + M2.sd / 2)}" y="${y0 - 6}" text-anchor="middle">σ</text>`);
+  P.done();
+  const within = Phi(1) - Phi(-1);
+  $("#m-live").innerHTML = `<span class="tag">What this means</span><div>Average spend ${R(M2.mu)}. A typical customer is within about ${R(M2.sd)} of that: about 68% spend between <b>${R(M2.mu - M2.sd)}</b> and <b>${R(M2.mu + M2.sd)}</b>.</div>`;
+}
+on("#m-mu", (e) => { M2.mu = +e.target.value; $("#m-mu").value = M2.mu; renderM2(); }); on("#m-sd", (e) => { M2.sd = +e.target.value; renderM2(); });
+document.querySelectorAll("#m-pre .chip").forEach((c) => c.addEventListener("click", () => { M2.mu = +c.dataset.mu; M2.sd = +c.dataset.sd; $("#m-mu").value = M2.mu; $("#m-sd").value = M2.sd; renderM2(); }));
+(function cmp() {
+  const fA = (x) => nPdf(x, 250, 25), fB = (x) => nPdf(x, 250, 75);
+  const P = plot($("#m-cmp"), { xmin: 50, xmax: 450, ymax: 0.017, hideY: true, xl: "Amount spent (₹)", xticks: [100, 150, 200, 250, 300, 350, 400], fx: (v) => "₹" + v, yl: "more common ↑" });
+  P.add(area(P, fA, 50, 450, "rgba(23,121,92,.18)")); P.add(area(P, fB, 50, 450, "rgba(217,120,15,.18)"));
+  P.add(curve(P, fA, 50, 450, "#17795C", 3)); P.add(curve(P, fB, 50, 450, "#D9780F", 3)); P.add(vline(P, 250, "#18212F", "6 4", 1.2)); P.done();
+  const a = Phi(2) - Phi(-2), b = Phi(50 / 75) - Phi(-50 / 75);
+  $("#m-cmpText").innerHTML = `<span class="tag">Same average, different behavior</span><div><b>Shop A</b> (σ = ₹25): ${pc(a)} of customers spend between ₹200 and ₹300, so spending is tightly clustered around ₹250.</div><div><b>Shop B</b> (σ = ₹75): only ${pc(b)} fall in that same range, so spending is widely spread out.</div>`;
+})();
+
+/* A3: 68-95-99.7 */
+const R3 = { k: 1 };
+function renderR3() {
+  const k = R3.k, f = (x) => nPdf(x, 250, 50), lo = 250 - 50 * k, hi = 250 + 50 * k, p = Phi(k) - Phi(-k);
+  const P = plot($("#r-chart"), { xmin: 75, xmax: 425, ymax: 0.0105, hideY: true, xl: "Amount spent (₹)", xticks: [100, 150, 200, 250, 300, 350, 400], fx: (v) => "₹" + v, yl: "more common ↑" });
+  P.add(area(P, f, 75, 425, "#E3E8F1")); P.add(area(P, f, lo, hi, "#EDB1C1"));
+  P.add(curve(P, f, 75, 425, "#C8365C", 3)); P.add(vline(P, lo, "#18212F", "4 4", 1.3) + vline(P, hi, "#18212F", "4 4", 1.3) + vline(P, 250, "#18212F", "6 4", 1)); P.done();
+  const lab = ["68%", "95%", "99.7%"][k - 1];
+  $("#r-q").textContent = `Customers spending between ${R(lo)} and ${R(hi)} (within ${k} SD${k > 1 ? "s" : ""}):`;
+  $("#r-big").textContent = lab; $("#r-sub").textContent = `Exact value: ${(p * 100).toFixed(k === 3 ? 2 : 1)}%. The remaining ${pc(1 - p)} are outside this band.`;
+}
+seg("#r-seg", (v) => { R3.k = +v; renderR3(); });
+
+/* A4: probability calculator */
+const C4 = { mode: "gt", a: 300, b: 300 };
+function renderC4() {
+  const { mode } = C4; $("#c-bwrap").hidden = mode !== "bt";
+  $("#c-aL").textContent = mode === "bt" ? "From (₹)" : "Amount (₹)";
+  $("#c-aOut").textContent = R(C4.a); $("#c-bOut").textContent = R(C4.b);
+  const a = mode === "bt" ? Math.min(C4.a, C4.b) : C4.a, b = Math.max(C4.a, C4.b), za = (a - 250) / 50, zb = (b - 250) / 50, f = (x) => nPdf(x, 250, 50);
+  let p, q, lo, hi;
+  if (mode === "gt") { p = Qf(za); q = `Share of customers spending more than ${R(a)}:`; lo = a; hi = 425; }
+  else if (mode === "lt") { p = Phi(za); q = `Share of customers spending less than ${R(a)}:`; lo = 75; hi = a; }
+  else { p = Phi(zb) - Phi(za); q = `Share of customers spending between ${R(a)} and ${R(b)}:`; lo = a; hi = b; }
+  $("#c-q").textContent = q; $("#c-big").textContent = pc(p); $("#c-sub").textContent = `That is ${oneIn(p)} customers.`;
+  const P = plot($("#c-chart"), { xmin: 75, xmax: 425, ymax: 0.0105, hideY: true, xl: "Amount spent (₹)", xticks: [100, 150, 200, 250, 300, 350, 400], fx: (v) => "₹" + v, yl: "more common ↑" });
+  P.add(area(P, f, 75, 425, "#E3E8F1")); P.add(area(P, f, lo, hi, "#EDB1C1")); P.add(curve(P, f, 75, 425, "#C8365C", 3)); P.add(vline(P, 250, "#18212F", "6 4", 1)); P.done();
+  let h = `<span class="tag">How it was found</span><div>${R(a)} is <b>${fz(Math.abs(za), 2)}</b> SD${Math.abs(za) === 1 ? "" : "s"} ${za >= 0 ? "above" : "below"} the average (z = ${za >= 0 ? "+" : "−"}${fN(Math.abs(za), 2)}).</div>`;
+  if (mode === "bt") h += `<div>${R(b)} is ${fz(Math.abs(zb), 2)} SDs ${zb >= 0 ? "above" : "below"} the average. The area between the two z-scores is the answer.</div>`;
+  if (mode === "gt" && za === 1) h += `<div>Shortcut from the 68% rule: (100% − 68%) ÷ 2 ≈ 16%. The exact figure is ${pc(p)}.</div>`;
+  if (mode === "gt" && za === -1 || mode === "lt" && za === 1) h += `<div>Shortcut: this is 50% + 34% = 84%.</div>`;
+  $("#c-live").innerHTML = h;
+}
+seg("#c-mode", (v) => { C4.mode = v; renderC4(); }); on("#c-a", (e) => { C4.a = +e.target.value; renderC4(); }); on("#c-b", (e) => { C4.b = +e.target.value; renderC4(); });
+function renderZW() {
+  const w = +$("#z-w").value; $("#z-wOut").textContent = "₹" + w;
+  const p = Phi(w / 2 / 50) - Phi(-w / 2 / 50);
+  $("#z-live").innerHTML = `<span class="tag">Chance a customer spends in this range</span><div>Between ${R(250 - w / 2)} and ${R(250 + w / 2)}: <b>${pc(p)}</b>${w === 0 ? ". A range of zero width has zero area, so the chance of one exact amount is 0." : "."}</div>`;
+}
+on("#z-w", renderZW);
+
+/* A5: z-score */
+function renderS5() {
+  const x = +$("#s-x").value; $("#s-xOut").textContent = R(x);
+  const z = (x - 250) / 50, pct = Phi(z), az = Math.abs(z);
+  const desc = az < 1 ? "ordinary" : az < 2 ? "notable" : az < 3 ? "unusual" : "very rare";
+  $("#s-q").textContent = `A customer who spent ${R(x)}:`;
+  $("#s-big").textContent = `z = ${z >= 0 ? "+" : "−"}${fN(az, 2)}`;
+  $("#s-sub").innerHTML = `That is ${fN(az, 2)} standard deviation${az === 1 ? "" : "s"} ${z >= 0 ? "above" : "below"} the average, which is <b>${desc}</b>. They spent more than <b>${pc(pct)}</b> of customers${pct < 0.5 ? " (and less than " + pc(1 - pct) + ")" : ""}.`;
+  const f = (t) => nPdf(t, 250, 50);
+  const P = plot($("#s-chart"), { xmin: 75, xmax: 425, ymax: 0.0105, hideY: true, xl: "Amount spent (₹)", xticks: [100, 150, 200, 250, 300, 350, 400], fx: (v) => "₹" + v, yl: "more common ↑" });
+  P.add(area(P, f, 75, x, "#EDB1C1")); P.add(curve(P, f, 75, 425, "#C8365C", 3)); P.add(vline(P, 250, "#18212F", "6 4", 1)); P.add(vline(P, x, "#18212F", null, 2.5));
+  P.add(`<text class="lblb" x="${P.X(x) + (x > 340 ? -6 : 6)}" y="${P.m.t + 14}" text-anchor="${x > 340 ? "end" : "start"}">${R(x)}</text>`); P.done();
+}
+on("#s-x", renderS5);
+
+/* ================= PART 2 ================= */
+const MU = 30, SG = 8;
+/* B1: draw a sample */
+const B1 = { n: 100, means: [], cur: null, rev: false };
+function renderB1() {
+  $("#p-nOut").textContent = B1.n;
+  const el = $("#p-chart");
+  if (!B1.cur) { el.setAttribute("viewBox", "0 0 680 260"); el.innerHTML = `<text class="tick" x="340" y="130" text-anchor="middle">Press “Draw a sample”.</text>`; $("#p-live").innerHTML = `<span class="tag">Waiting</span><div>Each press picks ${B1.n} random deliveries.</div>`; return; }
+  const d = B1.cur.d, xb = B1.cur.m;
+  const P = histPlot(el, { data: d, lo: 4, bw: 2, xmin: 4, xmax: 56, xl: "Delivery time (minutes)", fill: "#BCCBF8", h: 260 });
+  P.add(vline(P, xb, "#2F5BEA", null, 3)); if (B1.rev) P.add(vline(P, MU, "#17795C", "6 4", 3)); P.done();
+  const s = sdev(d, xb);
+  let h = `<span class="tag">This sample</span><div>n = ${d.length} deliveries. Sample average <b>x̄ = ${fN(xb)} min</b>, sample SD <b>s = ${fN(s)} min</b>.</div>`;
+  if (B1.rev) h += `<div>The true average is μ = ${MU}. This sample is off by ${fz(xb - MU, 2)} minutes. Draw again: the average changes every time.</div>`; else h += `<div>Is the true average exactly ${fN(xb)}? Almost certainly not. Reveal μ to check.</div>`;
+  if (B1.means.length > 1) h += `<div style="margin-top:4px">Sample averages so far: ${B1.means.slice(-8).map((v) => fN(v, 1)).join(", ")}${B1.means.length > 8 ? " …" : ""}</div>`;
+  $("#p-live").innerHTML = h;
+}
+function drawB1() { const d = new Float64Array(B1.n); for (let i = 0; i < B1.n; i++) d[i] = MU + SG * rnorm(); B1.cur = { d, m: mean(d) }; B1.means.push(B1.cur.m); renderB1(); }
+on("#p-n", (e) => { B1.n = +e.target.value; B1.means = []; B1.cur = null; renderB1(); });
+$("#p-draw").addEventListener("click", drawB1);
+$("#p-reveal").addEventListener("change", (e) => { B1.rev = e.target.checked; renderB1(); });
+
+/* B2: bias + stratified */
+const popSat = (() => { let s = 0; for (let i = 0; i < 20000; i++) s += Math.max(1, Math.min(10, 7 + 1.5 * rnorm())); return s / 20000; })();
+$("#bi-go").addEventListener("click", () => {
+  const sat = () => Math.max(1, Math.min(10, 7 + 1.5 * rnorm()));
+  let r = 0, b = 0; for (let i = 0; i < 100; i++) r += sat();
+  for (let i = 0; i < 100; i++) { let v; do v = sat(); while (v < 9); b += v; }
+  $("#bi-live").innerHTML = `<span class="tag">Results</span><div>True average satisfaction of all customers: <b>${fN(popSat, 1)} / 10</b></div><div>Random sample of 100: average <b>${fN(r / 100, 1)}</b>. Close to the truth.</div><div>Only customers who gave 5 stars (satisfaction 9 or above): average <b>${fN(b / 100, 1)}</b>. Far too rosy, and collecting more of them will not fix it. A bad sample leads to a bad estimate regardless of the mathematics.</div>`;
+});
+const ST = { r: [], s: [], n: 0, last: null };
+function renderST() {
+  const el = $("#st-chart");
+  if (!ST.n) { el.setAttribute("viewBox", "0 0 680 220"); el.innerHTML = `<text class="tick" x="340" y="110" text-anchor="middle">Draw samples to see how many Android users each one contains.</text>`; $("#st-live").innerHTML = `<span class="tag">Waiting</span><div>Target: 70 Android users out of 100.</div>`; return; }
+  let mx = 1; for (let k = 50; k <= 90; k++) mx = Math.max(mx, ST.r[k] || 0, ST.s[k] || 0);
+  const P = plot(el, { xmin: 49.5, xmax: 90.5, ymax: mx * 1.15, xl: "Android users in the sample of 100", yl: "samples", int: true, h: 260 });
+  for (let k = 50; k <= 90; k++) {
+    const r = ST.r[k] || 0, s = ST.s[k] || 0;
+    if (r) P.add(`<rect x="${P.X(k - 0.45)}" y="${P.Y(r)}" width="${P.X(k + 0.45) - P.X(k - 0.45)}" height="${P.Y(0) - P.Y(r)}" fill="#2F5BEA" opacity=".85"/>`);
+    if (s) P.add(`<rect x="${P.X(k - 0.45)}" y="${P.Y(s)}" width="${P.X(k + 0.45) - P.X(k - 0.45)}" height="${P.Y(0) - P.Y(s)}" fill="#D9780F"/>`);
+  }
+  P.add(vline(P, 70, "#18212F", "5 4", 1.3)); P.done();
+  let mn = 100, mxs = 0, near = 0, tot = 0; for (let k = 0; k <= 100; k++) { const c = ST.r[k] || 0; if (c) { mn = Math.min(mn, k); mxs = Math.max(mxs, k); } if (k >= 65 && k <= 75) near += c; tot += c; }
+  $("#st-live").innerHTML = `<span class="tag">After ${fi(ST.n)} sample${ST.n === 1 ? "" : "s"}</span>` + (ST.last !== null && ST.n === 1 ? `<div>This random sample has ${ST.last} Android users (${100 - ST.last} iOS). The stratified one always has exactly 70.</div>` : `<div>Simple random: Android counts ranged from ${mn} to ${mxs}, and only ${pc(near / tot)} of samples landed within 65 to 75.</div><div>Stratified: exactly 70 every time.</div>`);
+}
+function drawST(t) { for (let i = 0; i < t; i++) { let a = 0; for (let j = 0; j < 100; j++) if (Math.random() < 0.7) a++; ST.r[a] = (ST.r[a] || 0) + 1; ST.s[70] = (ST.s[70] || 0) + 1; ST.n++; ST.last = a; } renderST(); }
+$("#st-1").addEventListener("click", () => drawST(1)); $("#st-1k").addEventListener("click", () => drawST(1000)); $("#st-clear").addEventListener("click", () => { ST.r = []; ST.s = []; ST.n = 0; ST.last = null; renderST(); });
+
+/* B3: sampling distribution */
+const B3 = { n: 25, means: [], zoom: false };
+function renderB3() {
+  $("#d-nOut").textContent = B3.n;
+  document.querySelectorAll("#d-pre .chip").forEach((c) => c.setAttribute("aria-pressed", String(+c.dataset.n === B3.n)));
+  const se = SG / Math.sqrt(B3.n), xlo = B3.zoom ? MU - 5 * se : 5, xhi = B3.zoom ? MU + 5 * se : 55;
+  const P1 = plot($("#d-top"), { xmin: 5, xmax: 55, ymax: nPdf(MU, MU, SG) * 1.15, hideY: true, xl: "Delivery time of one order (minutes)", h: 200, yl: "more common ↑" });
+  P1.add(area(P1, (x) => nPdf(x, MU, SG), 5, 55, "#BCCBF8")); P1.add(curve(P1, (x) => nPdf(x, MU, SG), 5, 55, "#2F5BEA", 3)); P1.add(vline(P1, MU, "#17795C", "6 4", 2)); P1.done();
+  const bw = Math.max(se / 3, 0.05);
+  const P2 = histPlot($("#d-bot"), { data: B3.means, lo: MU - bw / 2 - Math.ceil(30 / bw) * bw, bw, xmin: xlo, xmax: xhi, xl: `Average of ${B3.n} deliveries (minutes)`, fill: "#7F9BF2", curve: (x) => nPdf(x, MU, se), showCurve: false, ymaxMin: B3.means.length ? 0 : nPdf(MU, MU, se), h: 220, yl: "more common ↑" });
+  P2.add(vline(P2, MU, "#17795C", "6 4", 2)); P2.done();
+  const nm = B3.means.length;
+  let h = `<span class="tag">What you are looking at</span>`;
+  if (!nm) h += `<div>Press “Take 1 sample” a few times, then 10,000. Each press takes ${B3.n} deliveries and records one average.</div>`;
+  else { const m = mean(B3.means), s = nm > 1 ? sdev(B3.means, m) : NaN; h += `<div><b>${fi(nm)}</b> sample average${nm === 1 ? "" : "s"} so far, centered at <b>${fN(m, 2)}</b> (true μ = ${MU}).</div>` + (nm > 1 ? `<div>Spread of the sample averages: <b>${fN(s, 2)}</b> minutes. Spread of individual deliveries: ${SG}. The ratio is the standard error: σ/√n = ${SG}/√${B3.n} = ${fN(se, 2)}.</div>` : "") + (nm <= 8 ? `<div>Averages: ${B3.means.map((v) => fN(v, 1)).join(", ")}</div>` : ""); }
+  $("#d-live").innerHTML = h;
+}
+function takeB3(t) { for (let i = 0; i < t; i++) { let s = 0; for (let j = 0; j < B3.n; j++) s += MU + SG * rnorm(); B3.means.push(s / B3.n); } renderB3(); }
+on("#d-n", (e) => { B3.n = +e.target.value; B3.means = []; renderB3(); });
+document.querySelectorAll("#d-pre .chip").forEach((c) => c.addEventListener("click", () => { B3.n = +c.dataset.n; $("#d-n").value = B3.n; B3.means = []; renderB3(); }));
+$("#d-1").addEventListener("click", () => takeB3(1)); $("#d-100").addEventListener("click", () => takeB3(100)); $("#d-10k").addEventListener("click", () => takeB3(10000)); $("#d-clear").addEventListener("click", () => { B3.means = []; renderB3(); });
+$("#d-zoom").addEventListener("change", (e) => { B3.zoom = e.target.checked; renderB3(); });
+
+/* B4: CLT */
+const LNS = 0.9, LNM = Math.log(100) - LNS * LNS / 2;
+const POPS = {
+  skew: { name: "Customer purchases (₹)", unit: "₹", mu: 100, sd: 100 * Math.sqrt(Math.exp(LNS * LNS) - 1), draw: () => Math.exp(LNM + LNS * rnorm()), pdf: (x) => x <= 0 ? 0 : Math.exp(-0.5 * ((Math.log(x) - LNM) / LNS) ** 2) / (x * LNS * SQ2PI), xlo: 0, xhi: 400, floor: 0, note: "Most customers spend little, and a few spend a lot (the tail runs past ₹400)." },
+  expo: { name: "Waiting times (minutes)", unit: "min", mu: 5, sd: 5, draw: () => -5 * Math.log(1 - Math.random()), pdf: (x) => x < 0 ? 0 : Math.exp(-x / 5) / 5, xlo: 0, xhi: 30, floor: 0, note: "Many short waits and a long tail." },
+  bimodal: { name: "Delivery times (minutes)", unit: "min", mu: 30, sd: Math.sqrt(0.5 * 16 + 0.5 * 25 + 225), draw: () => (Math.random() < 0.5 ? 15 + 4 * rnorm() : 45 + 5 * rnorm()), pdf: (x) => 0.5 * nPdf(x, 15, 4) + 0.5 * nPdf(x, 45, 5), xlo: -5, xhi: 65, floor: -Infinity, note: "Half the orders are quick (about 15 min) and half are slow (about 45 min): two humps." },
+  normal: { name: "Delivery times (minutes)", unit: "min", mu: 30, sd: 8, draw: () => 30 + 8 * rnorm(), pdf: (x) => nPdf(x, 30, 8), xlo: 0, xhi: 60, floor: -Infinity, note: "Already bell-shaped, so sample means are exactly normal for every n." },
+};
+const K = { pop: "skew", n: 1, curve: false, means: null };
+function genK() { const p = POPS[K.pop], d = new Float64Array(3000); for (let i = 0; i < 3000; i++) { let s = 0; for (let j = 0; j < K.n; j++) s += p.draw(); d[i] = s / K.n; } K.means = d; }
+function renderK() {
+  const p = POPS[K.pop], n = K.n, se = p.sd / Math.sqrt(n);
+  $("#k-nOut").textContent = n;
+  document.querySelectorAll("#k-pop .chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.v === K.pop)));
+  document.querySelectorAll("#k-pre .chip").forEach((c) => c.setAttribute("aria-pressed", String(+c.dataset.n === n)));
+  $("#k-t1").textContent = `1. The population: ${p.name}`;
+  $("#k-t2").textContent = `2. Averages of ${n} ${n === 1 ? "value" : "values"} (3,000 samples)`;
+  let peak = 0; for (let i = 0; i <= 200; i++) peak = Math.max(peak, p.pdf(p.xlo + (p.xhi - p.xlo) * i / 200));
+  const P1 = plot($("#k-top"), { xmin: p.xlo, xmax: p.xhi, ymax: peak * 1.12, hideY: true, xl: p.name, h: 200, yl: "more common ↑" });
+  P1.add(area(P1, p.pdf, p.xlo, p.xhi, "#BCCBF8")); P1.add(curve(P1, p.pdf, p.xlo, p.xhi, "#2F5BEA", 3)); P1.add(vline(P1, p.mu, "#17795C", "6 4", 2)); P1.done();
+  const xmin = Math.max(p.floor, p.mu - 4.5 * se), xmax = p.mu + 4.5 * se, bw = (xmax - xmin) / 42;
+  const P2 = histPlot($("#k-bot"), { data: K.means, lo: xmin, bw, xmin, xmax, xl: `Sample average (${p.unit})`, fill: "#7F9BF2", curve: (x) => nPdf(x, p.mu, se), showCurve: K.curve, curveCol: "#C8365C", h: 240, yl: "more common ↑" });
+  P2.add(vline(P2, p.mu, "#17795C", "6 4", 2)); P2.done();
+  const m = mean(K.means), s = sdev(K.means, m); let c3 = 0; for (let i = 0; i < K.means.length; i++) c3 += (K.means[i] - m) ** 3; const skew = (c3 / K.means.length) / Math.pow(s * s * (K.means.length - 1) / K.means.length, 1.5);
+  $("#k-stats").innerHTML = statCards([[fN(m, 2) + " vs " + fN(p.mu, 2), "average of the means vs true μ"], [fN(s, 2) + " vs " + fN(se, 2), "spread of the means vs σ/√n"], [fz(skew, 2), "skewness of the means (0 for a bell)"]]);
+  let cap; if (n === 1) cap = "With n = 1, a sample mean is just one value, so the bottom chart copies the population."; else if (n < 6) cap = "A hump is starting to form, but still rough" + (K.pop === "normal" ? "." : " and lopsided."); else if (n < 25) cap = "A clear bell is emerging" + (K.pop === "skew" || K.pop === "expo" ? ", though it still leans a little to the right." : "."); else cap = "Now it looks like a bell curve, even though the individual values do not.";
+  $("#k-live").innerHTML = `<span class="tag">What you are seeing</span><div>${p.note}</div><div style="margin-top:4px">${cap}</div>`;
+}
+document.querySelectorAll("#k-pop .chip").forEach((c) => c.addEventListener("click", () => { K.pop = c.dataset.v; genK(); renderK(); }));
+document.querySelectorAll("#k-pre .chip").forEach((c) => c.addEventListener("click", () => { K.n = +c.dataset.n; $("#k-n").value = K.n; genK(); renderK(); }));
+on("#k-n", (e) => { K.n = +e.target.value; genK(); renderK(); });
+$("#k-curve").addEventListener("change", (e) => { K.curve = e.target.checked; renderK(); });
+$("#k-new").addEventListener("click", () => { genK(); renderK(); });
+
+/* B5: standard error */
+const E5 = { s: 10, n: 25 };
+function renderE5() {
+  $("#e-sOut").textContent = E5.s; $("#e-nOut").textContent = fi(E5.n);
+  const se = E5.s / Math.sqrt(E5.n);
+  $("#e-stats").innerHTML = statCards([[fN(E5.s, 1), "SD of individuals (does not change with n)"], [fN(se, 2), "standard error of the mean"], [fi(E5.n), "sample size"]]);
+  const P = plot($("#e-chart"), { xmin: 0, xmax: 1600, ymax: E5.s / 2 * 1.1, xl: "Sample size (n)", yl: "standard error", fx: (v) => fi(v), xticks: [0, 400, 800, 1200, 1600] });
+  P.add(curve(P, (n) => E5.s / Math.sqrt(Math.max(n, 4)), 4, 1600, "#2F5BEA", 3, 300));
+  [25, 100, 400].forEach((n) => { const v = E5.s / Math.sqrt(n); P.add(`<circle cx="${P.X(n)}" cy="${P.Y(v)}" r="4.5" fill="#fff" stroke="#2F5BEA" stroke-width="2"/><text class="tick" x="${P.X(n) + 7}" y="${P.Y(v) - 8}">n=${n}: ${fN(v, 2)}</text>`); });
+  P.add(`<circle cx="${P.X(E5.n)}" cy="${P.Y(se)}" r="7" fill="#C8365C" stroke="#fff" stroke-width="2"/>`); P.done();
+  $("#e-live").innerHTML = `<span class="tag">The arithmetic</span><div class="steps">${steps([`SE = σ ÷ √n = ${E5.s} ÷ √${fi(E5.n)} = ${E5.s} ÷ ${fN(Math.sqrt(E5.n), 2)} = <b>${fN(se, 2)}</b>`, `n = ${fi(E5.n)} → ${fi(E5.n * 4)} (4× as many): SE ${fN(se, 2)} → ${fN(se / 2, 2)} (half)`])}</div>`;
+}
+on("#e-s", (e) => { E5.s = +e.target.value; renderE5(); }); on("#e-n", (e) => { E5.n = +e.target.value; renderE5(); });
+["#e-25", "#e-100", "#e-400"].forEach((id) => $(id).addEventListener("click", (e) => { E5.n = +e.currentTarget.dataset.n; $("#e-n").value = E5.n; renderE5(); }));
+$("#e-x4").addEventListener("click", () => { E5.n = Math.min(1600, E5.n * 4); $("#e-n").value = E5.n; renderE5(); });
+
+/* CI simulator (factory) */
+function ciSim(root, methods, defMethod, defN) {
+  const el = $(root), S = { n: defN, conf: 0.95, method: defMethod, rows: [], tot: 0, hit: 0, w: 0 };
+  const mlabel = { z: "Z (σ known)", t: "t (using s)", naive: "Z with s plugged in" };
+  el.innerHTML = `<div class="lab"><div class="controls"><div class="ctl"><label>Sample size (n)</label><div class="row"><input type="range" data-r="n" min="3" max="200" step="1" value="${defN}"><output data-r="nOut"></output></div></div>
+    <div class="ctl"><div class="lbl">Confidence level</div><div class="seg" data-r="conf"><button data-v="0.8" aria-pressed="false">80%</button><button data-v="0.9" aria-pressed="false">90%</button><button data-v="0.95" aria-pressed="true">95%</button><button data-v="0.99" aria-pressed="false">99%</button></div></div>
+    <div class="ctl"><div class="lbl">Interval method</div><div class="seg" data-r="method">${methods.map((m) => `<button data-v="${m}" aria-pressed="${m === defMethod}">${mlabel[m]}</button>`).join("")}</div></div>
+    <div class="btns"><button class="btn solid" data-r="b50">Draw 50 intervals</button><button class="btn" data-r="b1k">Add 1,000 more</button><button class="btn" data-r="clr">Reset</button></div></div>
+    <div class="stack"><svg class="chart" data-r="chart" role="img" aria-label="Fifty confidence intervals"></svg><div class="legend"><span><span class="sw" style="background:#17795C"></span>captures μ = 30</span><span><span class="sw" style="background:#C8365C"></span>misses</span></div><div class="live" data-r="live" aria-live="polite"></div></div></div>`;
+  const q = (k) => el.querySelector(`[data-r=${k}]`);
+  function one() {
+    const n = S.n, d = new Float64Array(n); for (let i = 0; i < n; i++) d[i] = MU + SG * rnorm();
+    const m = mean(d), s = sdev(d, m); let me;
+    if (S.method === "z") me = zstar(S.conf) * SG / Math.sqrt(n); else if (S.method === "t") me = tstar(S.conf, n - 1) * s / Math.sqrt(n); else me = zstar(S.conf) * s / Math.sqrt(n);
+    const lo = m - me, hi = m + me, hit = lo <= MU && MU <= hi; S.tot++; if (hit) S.hit++; S.w += 2 * me; return { lo, hi, m, hit };
+  }
+  function render() {
+    q("nOut").textContent = S.n; const el2 = q("chart"), se0 = SG / Math.sqrt(S.n), half = 4 * se0 * (S.method === "z" ? 1 : 1.3);
+    const P = plot(el2, { xmin: MU - half, xmax: MU + half, ymax: 1, hideY: true, xl: "Delivery time (minutes)", h: 400 });
+    S.rows.forEach((r, i) => { const y = P.m.t + (i + 0.5) * P.ih / 50, a = P.X(Math.max(r.lo, MU - half)), b = P.X(Math.min(r.hi, MU + half)); P.add(`<line x1="${a}" x2="${b}" y1="${y}" y2="${y}" stroke="${r.hit ? "#17795C" : "#C8365C"}" stroke-width="${r.hit ? 3 : 4}" stroke-linecap="round"/><circle cx="${P.X(Math.min(Math.max(r.m, MU - half), MU + half))}" cy="${y}" r="2.4" fill="#18212F"/>`); });
+    P.add(vline(P, MU, "#18212F", "6 4", 2)); P.done();
+    const bh = S.rows.filter((r) => r.hit).length;
+    q("live").innerHTML = `<span class="tag">Coverage</span>` + (S.tot ? `<div>This batch: <b>${bh} of ${S.rows.length}</b> intervals capture μ.</div><div>Over all ${fi(S.tot)} intervals so far: <b>${pc(S.hit / S.tot)}</b> captured (promised ${Math.round(S.conf * 100)}%). Average width ${fN(S.w / S.tot, 2)} min.</div>` + (S.method === "naive" && S.tot > 300 && S.hit / S.tot < S.conf - 0.02 ? `<div><b>Too low!</b> Ignoring the uncertainty in s makes the intervals too narrow. Switch to the t method.</div>` : "") : `<div>Press “Draw 50 intervals”. Each row is a different analyst's sample.</div>`);
+  }
+  const reset = () => { S.rows = []; S.tot = 0; S.hit = 0; S.w = 0; render(); };
+  q("n").addEventListener("input", (e) => { S.n = +e.target.value; reset(); });
+  q("conf").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; q("conf").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); S.conf = +b.dataset.v; reset(); });
+  q("method").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; q("method").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); S.method = b.dataset.v; reset(); });
+  q("b50").addEventListener("click", () => { S.rows = []; for (let i = 0; i < 50; i++) S.rows.push(one()); render(); });
+  q("b1k").addEventListener("click", () => { for (let i = 0; i < 1000; i++) one(); if (!S.rows.length) { for (let i = 0; i < 50; i++) S.rows.push(one()); } render(); });
+  q("clr").addEventListener("click", reset);
+  render(); return S;
+}
+ciSim("#ci1", ["z", "t"], "z", 25);
+ciSim("#ci2", ["t", "naive"], "naive", 5);
+
+/* B7: Z calculator */
+const Z7 = { x: 50, s: 10, n: 100, conf: 0.95 };
+function renderZ7() {
+  $("#z-xOut").textContent = fN(Z7.x, 1); $("#z-sOut").textContent = fN(Z7.s, 1); $("#z-nOut").textContent = fi(Z7.n);
+  document.querySelectorAll("#z-pre .chip").forEach((c) => c.setAttribute("aria-pressed", String(+c.dataset.x === Z7.x && +c.dataset.s === Z7.s && +c.dataset.n === Z7.n)));
+  document.querySelectorAll("#z-c button").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.v === Z7.conf)));
+  const se = Z7.s / Math.sqrt(Z7.n), z = zstar(Z7.conf), me = z * se, lo = Z7.x - me, hi = Z7.x + me, cl = Math.round(Z7.conf * 100);
+  $("#zc-q").textContent = `${cl}% confidence interval for the population mean:`;
+  $("#zc-big").textContent = `${fN(lo, 2)} to ${fN(hi, 2)}`;
+  $("#zc-sub").textContent = `We estimate the mean at ${fN(Z7.x, 1)}, give or take ${fN(me, 2)}.`;
+  $("#zc-steps").innerHTML = steps([`SE = σ ÷ √n = ${fN(Z7.s, 1)} ÷ √${fi(Z7.n)} = <b>${fN(se, 3)}</b>`, `z* for ${cl}% = <b>${fN(z, 3)}</b>`, `ME = z* × SE = ${fN(z, 3)} × ${fN(se, 3)} = <b>${fN(me, 3)}</b>`, `CI = ${fN(Z7.x, 1)} ± ${fN(me, 3)} = [<b>${fN(lo, 2)}</b>, <b>${fN(hi, 2)}</b>]`]);
+  const f = (t) => nPdf(t, 0, 1), P = plot($("#zc-chart"), { xmin: -4, xmax: 4, ymax: 0.46, hideY: true, xl: "z (standard deviations)", xticks: [-4, -3, -2, -1, 0, 1, 2, 3, 4], fx: (v) => String(v).replace("-", "−"), h: 240, yl: "more likely ↑" });
+  P.add(area(P, f, -4, 4, "#EDB1C1")); P.add(area(P, f, -z, z, "#BCCBF8")); P.add(curve(P, f, -4, 4, "#18212F", 2.2)); P.add(vline(P, -z, "#2F5BEA", null, 2) + vline(P, z, "#2F5BEA", null, 2));
+  P.add(`<text class="lblb" x="${P.X(0)}" y="${P.Y(0.2)}" text-anchor="middle">${cl}%</text><text class="lblb" x="${P.X(z)}" y="${P.m.t + 12}" text-anchor="start"> +${fN(z, 3)}</text><text class="lblb" x="${P.X(-z)}" y="${P.m.t + 12}" text-anchor="end">−${fN(z, 3)} </text>`); P.done();
+  const rows = [[0.9, "90%"], [0.95, "95%"], [0.99, "99%"]];
+  $("#zc-tbl").innerHTML = `<thead><tr><th>Confidence</th><th>z*</th><th>Margin of error here</th><th>Interval width</th></tr></thead><tbody>` + rows.map(([c, l]) => { const zz = zstar(c); return `<tr${c === Z7.conf ? ' class="hl"' : ""}><td>${l}</td><td class="n">${fN(zz, 3)}</td><td class="n">${fN(zz * se, 3)}</td><td class="n">${fN(2 * zz * se, 3)}</td></tr>`; }).join("") + "</tbody>";
+}
+on("#z-x", (e) => { Z7.x = +e.target.value; renderZ7(); }); on("#z-s", (e) => { Z7.s = +e.target.value; renderZ7(); }); on("#z-n", (e) => { Z7.n = +e.target.value; renderZ7(); });
+seg("#z-c", (v) => { Z7.conf = +v; renderZ7(); });
+document.querySelectorAll("#z-pre .chip").forEach((c) => c.addEventListener("click", () => { Z7.x = +c.dataset.x; Z7.s = +c.dataset.s; Z7.n = +c.dataset.n; $("#z-x").value = Z7.x; $("#z-s").value = Z7.s; $("#z-n").value = Z7.n; renderZ7(); }));
+
+/* B8: t vs normal */
+const T8 = { df: 4 };
+function renderT8() {
+  const df = T8.df; $("#t-dfOut").textContent = df;
+  document.querySelectorAll("#t-pre .chip").forEach((c) => c.setAttribute("aria-pressed", String(+c.dataset.df === df)));
+  const ft = (x) => tPdf(x, df), fn = (x) => nPdf(x, 0, 1), P = plot($("#t-chart"), { xmin: -5, xmax: 5, ymax: 0.42, hideY: true, xl: "standardized value", xticks: [-4, -2, 0, 2, 4], fx: (v) => String(v).replace("-", "−"), h: 270, yl: "more likely ↑" });
+  P.add(area(P, ft, -5, -1.96, "#BCCBF8")); P.add(area(P, ft, 1.96, 5, "#BCCBF8"));
+  P.add(curve(P, fn, -5, 5, "#C8365C", 2.6)); P.add(curve(P, ft, -5, 5, "#2F5BEA", 3)); P.add(vline(P, -1.96, "#566175", "4 4", 1) + vline(P, 1.96, "#566175", "4 4", 1)); P.done();
+  const tt = 2 * (1 - tCdf(1.96, df)), nt = 2 * Qf(1.96);
+  $("#t-live").innerHTML = `<span class="tag">The heavy tails in numbers</span><div>Chance of landing beyond ±1.96: normal <b>${pc(nt)}</b>, t with df = ${df}: <b>${pc(tt)}</b>.</div><div>To capture the middle 95% you must go out to <b>±${fN(tstar(0.95, df), 3)}</b> with this t, versus ±1.960 for the normal.</div><div>${df >= 60 ? "At this many degrees of freedom the two curves are almost indistinguishable." : "Fewer degrees of freedom means heavier tails, which means wider intervals."}</div>`;
+}
+on("#t-df", (e) => { T8.df = +e.target.value; renderT8(); });
+document.querySelectorAll("#t-pre .chip").forEach((c) => c.addEventListener("click", () => { T8.df = +c.dataset.df; $("#t-df").value = T8.df; renderT8(); }));
+(function tbl() {
+  const dfs = [1, 2, 5, 10, 24, 50, 100, 1000], cs = [0.9, 0.95, 0.99];
+  $("#t-tbl").innerHTML = `<thead><tr><th>Degrees of freedom</th>${cs.map((c) => `<th>${Math.round(c * 100)}%</th>`).join("")}</tr></thead><tbody>` + dfs.map((d) => `<tr><td>${fi(d)}</td>${cs.map((c) => `<td class="n">${fN(tstar(c, d), 3)}</td>`).join("")}</tr>`).join("") + `<tr class="hl"><td>∞ (normal z*)</td>${cs.map((c) => `<td class="n">${fN(zstar(c), 3)}</td>`).join("")}</tr></tbody>`;
+})();
+
+/* B9: t calculator */
+const U9 = { x: 80, s: 20, n: 25, conf: 0.95 };
+function renderU9() {
+  $("#u-xOut").textContent = "$" + U9.x; $("#u-sOut").textContent = "$" + U9.s; $("#u-nOut").textContent = U9.n;
+  document.querySelectorAll("#u-c button").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.v === U9.conf)));
+  const df = U9.n - 1, se = U9.s / Math.sqrt(U9.n), t = tstar(U9.conf, df), z = zstar(U9.conf), me = t * se, zme = z * se, cl = Math.round(U9.conf * 100);
+  $("#uc-q").textContent = `${cl}% confidence interval for the average spend:`;
+  $("#uc-big").textContent = `$${fN(U9.x - me, 2)} to $${fN(U9.x + me, 2)}`;
+  $("#uc-sub").textContent = `Best estimate $${U9.x}, with a margin of error of $${fN(me, 2)}.`;
+  $("#uc-steps").innerHTML = steps([`SE = s ÷ √n = ${U9.s} ÷ √${U9.n} = <b>${fN(se, 3)}</b>`, `df = n − 1 = ${U9.n} − 1 = <b>${df}</b>`, `t* (${cl}%, df = ${df}) = <b>${fN(t, 3)}</b>`, `ME = t* × SE = ${fN(t, 3)} × ${fN(se, 3)} = <b>${fN(me, 3)}</b>`, `CI = ${U9.x} ± ${fN(me, 3)} = [<b>${fN(U9.x - me, 2)}</b>, <b>${fN(U9.x + me, 2)}</b>]`]);
+  ciBar($("#uc-chart"), [{ label: "t interval (correct)", est: U9.x, lo: U9.x - me, hi: U9.x + me, col: "#2F5BEA", text: `${fN(U9.x - me, 1)} to ${fN(U9.x + me, 1)}` }, { label: "z interval (too narrow when σ is unknown)", est: U9.x, lo: U9.x - zme, hi: U9.x + zme, col: "#D9780F", text: `${fN(U9.x - zme, 1)} to ${fN(U9.x + zme, 1)}` }], U9.x - Math.max(me * 1.5, 12), U9.x + Math.max(me * 1.5, 12), "Average spend ($)");
+  $("#uc-note").textContent = `With only ${U9.n} customers there is substantial uncertainty around the estimate. Because t* (${fN(t, 3)}) is larger than z* (${fN(z, 3)}), the t interval is ${fN((t / z - 1) * 100, 1)}% wider${U9.n >= 100 ? ", a small difference at this sample size" : ""}.`;
+}
+on("#u-x", (e) => { U9.x = +e.target.value; renderU9(); }); on("#u-s", (e) => { U9.s = +e.target.value; renderU9(); }); on("#u-n", (e) => { U9.n = +e.target.value; renderU9(); });
+seg("#u-c", (v) => { U9.conf = +v; renderU9(); });
+
+/* B10: margin of error */
+const O10 = { n: 30, s: 10, conf: 0.95, pin: null };
+function renderO10() {
+  $("#o-nOut").textContent = O10.n; $("#o-sOut").textContent = O10.s;
+  document.querySelectorAll("#o-c button").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.v === O10.conf)));
+  const se = O10.s / Math.sqrt(O10.n), t = tstar(O10.conf, O10.n - 1), me = t * se;
+  $("#o-stats").innerHTML = statCards([[fN(se, 2), "standard error"], [fN(t, 3), "critical value t*"], [fN(me, 2), "margin of error"], [fN(2 * me, 2), "interval width"]]);
+  const rows = [{ label: "Current setting", est: 100, lo: 100 - me, hi: 100 + me, col: "#2F5BEA", text: `±${fN(me, 2)}` }];
+  if (O10.pin) rows.push({ label: `Pinned (n=${O10.pin.n}, s=${O10.pin.s}, ${Math.round(O10.pin.conf * 100)}%)`, est: 100, lo: 100 - O10.pin.me, hi: 100 + O10.pin.me, col: "#D9780F", text: `±${fN(O10.pin.me, 2)}` });
+  ciBar($("#o-chart"), rows, 55, 145, "Estimate ± margin of error (centered at 100 for comparison)");
+  $("#o-live").innerHTML = `<span class="tag">Reading it</span><div>ME = t* × s/√n = ${fN(t, 3)} × ${O10.s}/√${O10.n} = <b>${fN(me, 2)}</b>.</div><div>${O10.pin ? (me < O10.pin.me ? "Narrower than the pinned interval: more precision." : me > O10.pin.me ? "Wider than the pinned interval: less precision." : "Same as the pinned interval.") : "Change one lever at a time. Pin the current interval first to compare."}</div>`;
+}
+on("#o-n", (e) => { O10.n = +e.target.value; renderO10(); }); on("#o-s", (e) => { O10.s = +e.target.value; renderO10(); });
+seg("#o-c", (v) => { O10.conf = +v; renderO10(); });
+$("#o-pin").addEventListener("click", () => { O10.pin = { n: O10.n, s: O10.s, conf: O10.conf, me: tstar(O10.conf, O10.n - 1) * O10.s / Math.sqrt(O10.n) }; renderO10(); });
+
+/* B11: streaming example */
+const V11 = { n: 400, s: 4 };
+function renderV11() {
+  $("#v-nOut").textContent = fi(V11.n); $("#v-sOut").textContent = V11.s;
+  const se = V11.s / Math.sqrt(V11.n), t = tstar(0.95, V11.n - 1), me = t * se, lo = 7.5 - me, hi = 7.5 + me;
+  $("#v-steps").innerHTML = steps([`Sample: n = <b>${fi(V11.n)}</b> customers, x̄ = <b>7.5</b> h, s = <b>${V11.s}</b> h`, `SE = s ÷ √n = ${V11.s} ÷ √${fi(V11.n)} = <b>${fN(se, 3)}</b>`, `σ unknown, so use t: t* (95%, df = ${V11.n - 1}) = <b>${fN(t, 3)}</b>${V11.n >= 100 ? " (about 1.96 anyway)" : ""}`, `ME = ${fN(t, 3)} × ${fN(se, 3)} = <b>${fN(me, 3)}</b>`, `CI = 7.5 ± ${fN(me, 3)} = [<b>${fN(lo, 2)}</b>, <b>${fN(hi, 2)}</b>]`]);
+  ciBar($("#v-chart"), [{ label: "95% interval for μ (hours per week)", est: 7.5, lo, hi, col: "#2F5BEA", text: `${fN(lo, 2)} to ${fN(hi, 2)}` }], 5, 10, "Hours watched per week");
+  $("#v-sum").innerHTML = `“We sampled ${fi(V11.n)} users and observed an average of 7.5 hours. Based on this sample, a 95% confidence interval for the population mean is roughly <b>${fN(lo, 1)} to ${fN(hi, 1)} hours</b>.”`;
+}
+on("#v-n", (e) => { V11.n = +e.target.value; renderV11(); }); on("#v-s", (e) => { V11.s = +e.target.value; renderV11(); });
+
+/* B12: ML */
+const L12 = { n: 1000, a: 84, b: 85 };
+function renderL12() {
+  $("#l-nOut").textContent = fi(L12.n); $("#l-aOut").textContent = L12.a + "%"; $("#l-bOut").textContent = L12.b + "%";
+  const mk = (p) => { const q = p / 100, se = Math.sqrt(q * (1 - q) / L12.n), me = 1.96 * se; return { p, me: me * 100, lo: p - me * 100, hi: Math.min(100, p + me * 100) }; };
+  const A = mk(L12.a), B = mk(L12.b), overlap = A.hi >= B.lo && B.hi >= A.lo;
+  ciBar($("#l-chart"), [{ label: "Model A", est: A.p, lo: A.lo, hi: A.hi, col: "#D9780F", text: `${fN(A.p, 1)}% ± ${fN(A.me, 1)}` }, { label: "Model B", est: B.p, lo: B.lo, hi: B.hi, col: "#2F5BEA", text: `${fN(B.p, 1)}% ± ${fN(B.me, 1)}` }], 55, 100, "Accuracy (%)");
+  $("#l-live").innerHTML = `<span class="tag">Reading it</span><div class="steps">${steps([`SE for A = √(${fN(A.p / 100, 3)} × ${fN(1 - A.p / 100, 3)} ÷ ${fi(L12.n)}) = ${fN(Math.sqrt(A.p / 100 * (1 - A.p / 100) / L12.n) * 100, 2)} points`, `95% interval for A: ${fN(A.lo, 1)}% to ${fN(A.hi, 1)}%`, `95% interval for B: ${fN(B.lo, 1)}% to ${fN(B.hi, 1)}%`])}</div><div style="margin-top:6px">${overlap ? "The intervals overlap, so on this test set the gap between the models could easily be noise. A bigger test set shrinks the intervals." : "The intervals do not overlap, so the gap is larger than the test-set noise."}</div>`;
+}
+on("#l-n", (e) => { L12.n = +e.target.value; renderL12(); }); on("#l-a", (e) => { L12.a = +e.target.value; renderL12(); }); on("#l-b", (e) => { L12.b = +e.target.value; renderL12(); });
+
+/* ================= quiz ================= */
+const QUIZ = [
+  { q: "A sample of 100 orders has an average delivery time of 32 minutes. What can we say about the average of all 1,000,000 orders?", o: ["It is exactly 32 minutes", "It is probably close to 32, and a confidence interval says how close", "It cannot be estimated from a sample", "It is the same as the sample standard deviation"], a: 1, why: "A sample statistic estimates the population parameter, with some sampling variability. An interval quantifies it." },
+  { q: "Which of these is a parameter (not a statistic)?", o: ["The average of 100 sampled orders", "The standard deviation of a sample", "The true average delivery time of every order this month", "The standard error"], a: 2, why: "Parameters describe the whole population (μ, σ). Statistics (x̄, s) are computed from a sample." },
+  { q: "Your users are 70% Android and 30% iOS and both groups must be represented. Which sampling method fits?", o: ["Stratified sampling", "Systematic sampling", "Asking only people who reply first", "Using the largest cluster"], a: 0, why: "Stratified sampling draws from each subgroup, so the sample mirrors the population's mix." },
+  { q: "Customer spending at Bean & Brew is normal with mean ₹250 and SD ₹50. About what share of customers spend more than ₹300?", o: ["About 5%", "About 16%", "About 32%", "About 50%"], a: 1, why: "₹300 is 1 SD above the mean. About 68% are within 1 SD, so 32% are outside, and half of that (16%) is on the high side." },
+  { q: "What does the central limit theorem say?", o: ["Raw data always becomes normal if you collect enough of it", "The distribution of sample means tends toward normal as samples get large", "The standard deviation equals the standard error", "Samples must always come from a normal population"], a: 1, why: "It is about sample means, not raw data, and it works even when the population is skewed." },
+  { q: "The standard error of the mean is 2 with n = 25. About what sample size gives a standard error of 1?", o: ["50", "75", "100", "625"], a: 2, why: "SE = σ/√n, so halving it needs 4 times the sample: 25 × 4 = 100." },
+  { q: "Which statement about a 95% confidence interval is correct?", o: ["There is a 95% probability that μ is inside this specific interval", "95% of individual observations lie inside the interval", "If we repeated the sampling many times, about 95% of the intervals built this way would contain μ", "The sample mean is 95% accurate"], a: 2, why: "The 95% describes the procedure's long-run success rate. μ is fixed, and each interval either contains it or does not." },
+  { q: "You sample 25 customers and only know the sample SD s. Which critical value do you use?", o: ["z* = 1.96", "t* with 24 degrees of freedom (about 2.064)", "t* with 25 degrees of freedom", "No critical value is needed"], a: 1, why: "σ is unknown, so use the t-distribution with df = n − 1 = 24." },
+  { q: "You switch from a 95% to a 99% confidence level, keeping everything else the same. What happens to the interval?", o: ["It gets narrower", "It stays the same", "It gets wider", "It moves to a different center"], a: 2, why: "A higher confidence level needs a larger critical value, so the margin of error grows. More confidence usually means less precision." },
+  { q: "The sample average is 80, s = 20, n = 25. Which interval is the 95% t interval?", o: ["80 ± 1.96", "80 ± 4", "80 ± 8.26 (about 71.7 to 88.3)", "80 ± 20"], a: 2, why: "SE = 20/5 = 4, t* ≈ 2.064, ME = 2.064 × 4 ≈ 8.26." },
+];
+(function quiz() {
+  const box = $("#quizBox"), score = $("#score"); let done = 0, right = 0;
+  QUIZ.forEach((it) => {
+    const f = document.createElement("fieldset"); f.className = "qz"; const lg = document.createElement("legend"); lg.textContent = it.q; f.appendChild(lg);
+    const opts = document.createElement("div"); opts.className = "qopts"; const why = document.createElement("div"); why.className = "qwhy"; why.hidden = true; why.setAttribute("aria-live", "polite");
+    it.o.forEach((t, oi) => { const b = document.createElement("button"); b.type = "button"; b.className = "qopt"; b.textContent = t; b.addEventListener("click", () => {
+      if (f.dataset.done) return; f.dataset.done = "1"; done++; const ok = oi === it.a; if (ok) right++; b.classList.add(ok ? "ok" : "bad"); if (!ok) b.textContent = "✗ " + t;
+      const good = opts.children[it.a]; good.classList.add("ok"); good.textContent = "✓ " + it.o[it.a]; why.hidden = false; why.textContent = (ok ? "Correct. " : "Not quite. ") + it.why;
+      score.textContent = `Score so far: ${right} of ${done} answered, out of ${QUIZ.length} questions.`; }); opts.appendChild(b); });
+    f.appendChild(opts); f.appendChild(why); box.appendChild(f);
+  });
+})();
+
+/* ================= init ================= */
+newCust(); genK();
+renderH1(); renderM2(); renderR3(); renderC4(); renderZW(); renderS5();
+renderB1(); renderST(); renderB3(); renderK(); renderE5(); renderZ7(); renderT8(); renderU9(); renderO10(); renderV11(); renderL12();
+})();
+</script>
+</body>
+</html>

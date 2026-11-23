@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>From points to predictions · Linear Regression Lab</title>
+<style>
+:root{--ink:#172f3c;--muted:#526775;--teal:#087e83;--pale:#e5f4f1;--coral:#d76648;--paper:#f5f4ef;--line:#dce4e5}*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,select{font:inherit}button,select{cursor:pointer}button{border:1px solid #cbd8db;border-radius:9px;background:#fff;color:var(--ink);padding:9px 13px;font-weight:600}button:hover{background:#edf6f4}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid #e99b3f;outline-offset:3px}button.primary{background:var(--teal);color:white;border-color:var(--teal)}button:disabled{cursor:default;opacity:.45}.wrap{max-width:1440px;margin:auto;padding:28px 32px 44px}.eyebrow{text-transform:uppercase;letter-spacing:.16em;font-size:12px;font-weight:750;color:var(--teal)}header{display:flex;justify-content:space-between;gap:20px;align-items:center}h1{font-size:clamp(27px,3.2vw,43px);line-height:1.15;letter-spacing:-.04em;margin:8px 0 12px}h2{font-size:21px;line-height:1.3;margin:0 0 10px}h3{font-size:16px;margin:0 0 8px}p{margin:0 0 12px}.sub{max-width:760px;color:var(--muted)}.badge{white-space:nowrap;border:1px solid #cadad8;padding:8px 12px;border-radius:30px;font-size:12px;color:var(--teal)}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:22px 0 18px}.step{text-align:left;padding:13px 17px;border-radius:12px;display:flex;gap:12px;align-items:center}.step span:first-child{border:1px solid #cbd8db;border-radius:50%;width:30px;height:30px;display:grid;place-items:center;flex-shrink:0}.step small{display:block;font-weight:400;color:var(--muted)}.step[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}.step[aria-pressed=true] small{color:#d3e6e7}.layout{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(315px,1fr);gap:20px;align-items:start}.card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 4px 18px #16344004}.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.toolbar select{padding:8px;border:1px solid #cad7db;border-radius:8px;background:#fff;color:var(--ink);max-width:100%}.hint{color:var(--muted);font-size:13px;margin:10px 0 0}.plot-wrap{position:relative;margin-top:6px}svg{display:block;width:100%;height:auto;overflow:visible;user-select:none}svg .point,svg .line-drag{cursor:grab;touch-action:none}svg .line-drag:active{cursor:grabbing}svg .handle-label{font-size:13px;font-weight:700;fill:#087e83;paint-order:stroke;stroke:white;stroke-width:4px;pointer-events:none}svg .point:active{cursor:grabbing}svg text{font-family:inherit}.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:0 0 14px}.key{display:inline-block;width:20px;height:3px;background:var(--teal);vertical-align:middle;margin-right:7px}.key.dot{width:9px;height:9px;border-radius:50%;background:var(--ink)}.key.err{background:var(--coral)}.controls{display:flex;gap:15px;align-items:center;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--line);font-size:14px}.controls label{display:flex;gap:6px;align-items:center}input[type=checkbox]{accent-color:var(--teal)}input[type=range]{accent-color:var(--teal);width:100%}.side{display:grid;gap:16px}.lesson{border-top:4px solid var(--teal)}.formula{font-size:clamp(20px,2.2vw,29px);font-weight:650;letter-spacing:-.02em;background:#f1f7f6;padding:14px;border-radius:10px;margin:14px 0;text-align:center}.teal{color:var(--teal)}.coral{color:var(--coral)}.muted{color:var(--muted)}.small{font-size:13px}.coefs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}.coef{background:#f5f8f8;border-radius:10px;padding:13px}.coef strong{display:block;font-size:26px;color:var(--teal);font-variant-numeric:tabular-nums}.coef span{font-size:13px}.callout{padding:12px 14px;background:var(--pale);border-radius:10px;margin-top:12px}.callout p:last-child{margin:0}.manual-row{margin:13px 0}.manual-row label{display:flex;justify-content:space-between}.score{background:#fff3ed;padding:13px;border-radius:10px;margin-top:14px}.score strong{font-size:24px;font-variant-numeric:tabular-nums}.prediction input{width:80px;padding:6px 8px;border:1px solid #c7d6db;border-radius:7px}.prediction output{font-size:29px;display:block;color:var(--teal);font-weight:700;margin-top:8px}.footer-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px}.questions li{margin:8px 0}.questions{padding-left:22px;margin:0}details summary{cursor:pointer;font-weight:650}details p{margin-top:10px}table{width:100%;border-collapse:collapse;font-size:14px;margin-top:12px}td,th{text-align:left;padding:6px;border-bottom:1px solid #e5ebed}td input{width:100%;min-width:50px;padding:5px;border:1px solid #cbd8db;border-radius:5px}td button{font-size:12px;padding:5px 8px}th{font-size:12px;color:var(--muted)}.table-scroll{max-height:300px;overflow:auto;margin-top:10px}.notice{color:#92452d;font-size:13px;margin-top:8px}.next{margin-top:16px;width:100%}[hidden]{display:none!important}.caption{margin-top:18px;color:var(--muted);font-size:12px}.dot-note{display:flex;gap:9px;align-items:baseline}.dot-note b{color:var(--teal)}@media(max-width:980px){.layout{grid-template-columns:1fr}.side{grid-template-columns:1fr 1fr}.lesson{grid-row:span 2}.footer-grid{grid-template-columns:1fr}}@media(max-width:620px){.wrap{padding:18px 13px}.badge{display:none}.steps{gap:6px}.step{padding:10px 7px;font-size:12px;gap:6px}.step small{display:none}.step span:first-child{width:23px;height:23px}.card{padding:16px}.side{grid-template-columns:1fr}.lesson{grid-row:auto}.toolbar{align-items:start}h1{font-size:31px}}@media print{body{background:white}.wrap{padding:0}.steps,.controls,button,.manual-row{display:none}.layout{grid-template-columns:1.5fr 1fr}.card{box-shadow:none;break-inside:avoid}.footer-grid{grid-template-columns:1fr 1fr}}
+
+.calc-panel{margin-top:20px}.calc-panel>summary{font-size:20px;padding:2px 0}.calc-panel>summary small{font-size:13px;font-weight:400;color:var(--muted);display:block;margin:5px 0 0 19px}.calc-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;margin-top:18px}.calc-section{min-width:0;border:1px solid var(--line);border-radius:12px;padding:17px}.math-step{background:#f4f8f8;border-radius:9px;padding:12px;margin:10px 0;overflow-wrap:anywhere}.math-step strong{display:block;margin-bottom:5px}.math-value{font-variant-numeric:tabular-nums;color:var(--teal);font-weight:650}.calc-table{overflow:auto;max-height:340px}.calc-table table{min-width:540px;font-variant-numeric:tabular-nums}.calc-table td,.calc-table th{text-align:right;white-space:nowrap}.calc-table tfoot{font-weight:700;background:var(--pale)}.metric-table{overflow:auto}.metric-table table{min-width:520px}.metric-table td:first-child{font-weight:650}.metric-table td{vertical-align:top}.calc-controls{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin:12px 0}.calc-controls select{max-width:100%;padding:8px;border:1px solid #cad7db;border-radius:8px;background:white;color:var(--ink)}.calc-controls label{font-size:14px}.calc-selected{background:#e5f4f1}.calc-range{width:100%;max-width:330px}.calc-range label{display:block}.calc-note{font-size:13px;color:var(--muted);margin-top:12px}@media(max-width:980px){.calc-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header><div><div class="eyebrow">The interactive classroom</div><h1>From points to predictions.</h1><p class="sub">A straight line is familiar. Regression answers the new question: <strong>which straight line best fits our data?</strong></p></div><div class="badge">LINEAR REGRESSION LAB</div></header>
+<nav class="steps" aria-label="Lesson stages">
+<button class="step" data-step="0" aria-pressed="true"><span>1</span><span>Meet the data<small>Look for a pattern</small></span></button>
+<button class="step" data-step="1" aria-pressed="false"><span>2</span><span>Try your own line<small>Measure its mistakes</small></span></button>
+<button class="step" data-step="2" aria-pressed="false"><span>3</span><span>Find the best fit<small>Let the data choose</small></span></button>
+</nav>
+<div class="layout">
+<section class="card">
+<div class="toolbar"><h2 style="margin:0">Study hours & exam scores</h2><label class="small">Example <select id="preset"><option value="up">Upward pattern</option><option value="down">Downward pattern</option><option value="flat">No linear pattern</option><option value="perfect">Perfect straight line</option></select></label></div>
+<p class="hint" id="interactionHint">Drag a point to move it. Click an empty space inside the grid to add one. Use the data table below for precise or keyboard edits.</p>
+<div class="plot-wrap"><svg id="plot" viewBox="0 0 760 460" role="img" aria-labelledby="plotTitle plotDesc"><title id="plotTitle">Study hours and exam scores</title><desc id="plotDesc">Interactive scatter plot. Edit point coordinates using the accessible data table below the chart.</desc></svg></div>
+<div class="legend"><span><i class="key dot"></i>Actual student</span><span id="lineLegend" hidden><i class="key"></i><span id="lineName">Prediction line</span></span><span id="errorLegend" hidden><i class="key err"></i>Vertical prediction error</span></div>
+<div class="controls"><label><input id="errors" type="checkbox" checked>Show errors</label><label><input id="squares" type="checkbox">Square the errors</label><button id="outlier">Add an unusual point</button><button id="reset">Reset data</button></div>
+<p id="chartStatus" class="hint"></p>
+<details style="margin-top:18px"><summary>Edit the data · <span id="count">8</span> students</summary><p class="small muted">Hours: 0–10. Scores: 0–100. Edits recalculate immediately. These are fictional teaching examples.</p><div class="table-scroll"><table><thead><tr><th scope="col">Student</th><th scope="col">Hours (x)</th><th scope="col">Score (y)</th><th scope="col">Action</th></tr></thead><tbody id="rows"></tbody></table></div><button id="addRow" style="margin-top:12px">Add student</button></details>
+</section>
+<aside class="side">
+<section class="card lesson">
+<div class="eyebrow" id="stageLabel">01 / OBSERVE</div><h2 id="lessonTitle" style="margin-top:8px">Start with two measurements.</h2><div id="lessonText"></div>
+<div id="lineInfo" hidden><div class="formula" id="equation"></div><div class="coefs"><div class="coef"><span>Slope · b₁ (or m)</span><strong id="slope"></strong></div><div class="coef"><span>Intercept · b₀ (or c)</span><strong id="intercept"></strong></div></div><p class="small" id="slopeMeaning"></p><p class="small" id="interceptMeaning"></p></div>
+<div id="manual" hidden><p class="small teal"><strong>Drag the teal line or MOVE handle up/down to change the intercept. Drag TILT up/down to change the slope, keeping the intercept fixed.</strong> You can also use these sliders.</p><div class="manual-row"><label for="m">Tilt the line · slope <strong id="mValue"></strong></label><input id="m" type="range" min="-20" max="20" step="0.1" value="5"></div><div class="manual-row"><label for="b">Move it up/down · intercept <strong id="bValue"></strong></label><input id="b" type="range" min="-100" max="200" step="0.5" value="30"></div><button id="match">Match the best-fitting line</button> <button id="resetLine">Reset trial line</button></div>
+<div id="loss" class="score" hidden><div class="small">Sum of squared errors · SSE</div><strong id="sse"></strong><p class="small" id="lossExplanation" style="margin:4px 0 0"></p><div class="small" id="comparison"></div></div>
+<div id="undefinedFit" class="notice" hidden></div><button id="next" class="primary next">Next: try a line →</button>
+</section>
+<section class="card prediction" id="predictCard" hidden><h3>Use the line to predict</h3><label for="predictX">If a student studies <input id="predictX" type="number" min="0" max="12" step="0.5" value="4"> hours…</label><output id="prediction"></output><div class="small muted" id="substitution"></div><p class="notice" id="predictWarning"></p><p class="small muted" style="margin:8px 0 0">The line estimates a score; it does not guarantee an individual student's result.</p></section>
+<section class="card" id="bridge"><h3>One shape. Two ways to get it.</h3><div class="dot-note"><b>Geometry</b><span class="small">y = mx + c<br>Given the coefficients, draw the line.</span></div><hr style="border:0;border-top:1px solid var(--line);margin:12px 0"><div class="dot-note"><b>Regression</b><span class="small">ŷ = b₀ + b₁x<br>Given the data, find the coefficients.</span></div><p class="small muted" style="margin:12px 0 0">b₁ is the slope m. b₀ is the intercept c. The hat in ŷ means “predicted y.”</p></section>
+</aside>
+</div>
+<div class="footer-grid">
+<section class="card"><div class="eyebrow">Try it with your class</div><h2 style="margin-top:8px">Ask. Predict. Then move a point.</h2><ol class="questions"><li>In step 2, can you make the total squared error smaller by tilting or moving the line?</li><li>In step 3, drag a point upward. Which coefficients change? Does every point need to lie on the line?</li><li>Choose “Downward pattern.” What does a negative slope mean?</li><li>Add an unusual point. Does one observation change the fitted line?</li></ol></section>
+<section class="card"><h2>What the line does—and its limits</h2><p class="small">It summarizes a <strong>straight-line pattern</strong> and predicts y from x. A pattern alone does not prove that changing x causes a change in y. Many other factors may affect exam scores.</p><p class="small">Use predictions near the observed data. Outside that range, the pattern may not continue. A zero slope means no fitted linear trend; curved relationships can still exist.</p><details><summary class="small">Why squares? What exactly is minimized?</summary><p class="small">Each vertical error is actual score − predicted score: eᵢ = yᵢ − (b₀ + b₁xᵢ). Add the squares: SSE = Σeᵢ². Squaring prevents positive and negative errors from cancelling and gives large mistakes more weight. The shaded squares use the vertical-error length as their side in score units; their areas are proportional to eᵢ².</p><p class="small">Ordinary least squares with an intercept calculates b₁ = Σ[(xᵢ − x̄)(yᵢ − ȳ)] / Σ(xᵢ − x̄)² and b₀ = ȳ − b₁x̄. This finds the minimum directly; the computer need not try every line. When all x values are equal, a unique slope and intercept cannot be identified.</p></details></section>
+</div>
+
+<details id="calculations" class="card calc-panel">
+<summary>Show the calculations: OLS & error metrics<small>Intuition → formula → substitution using the current data. Closed until you choose to explore.</small></summary>
+<p class="small muted" style="margin-top:16px">Everything below updates when you move, add, remove, or edit a point. OLS coefficients always use all current students; the metric selector lets you evaluate different prediction lines.</p>
+<div class="calc-grid">
+<section class="calc-section"><div class="eyebrow">A / FIND THE COEFFICIENTS</div><h2 style="margin-top:8px">How does OLS get this line?</h2>
+<p class="small"><strong>Intuition:</strong> start at the center of the data, (x̄, ȳ). Ask whether students above the average in x also tend to be above the average in y. Divide this joint movement by the spread in x to get a slope. Then choose the intercept so the line passes through the center.</p>
+<div class="math-step"><strong>1. Find the averages</strong><div class="small">x̄ = Σxᵢ / n &nbsp; · &nbsp; ȳ = Σyᵢ / n</div><div class="math-value" id="calcMeans"></div></div>
+<div class="math-step"><strong>2. Center each point and add its contributions</strong><div class="small">Sxx = Σ(xᵢ − x̄)²<br>Sxy = Σ[(xᵢ − x̄)(yᵢ − ȳ)]</div><div class="math-value" id="calcSums"></div></div>
+<p class="small muted">A positive product means x and y deviate from their averages in the same direction; a negative product means opposite directions. Positive and negative products may cancel.</p>
+<div class="calc-table"><table><caption class="small" style="text-align:left">Every student's contribution to the OLS calculation</caption><thead><tr><th>Student</th><th>xᵢ</th><th>yᵢ</th><th>xᵢ − x̄</th><th>yᵢ − ȳ</th><th>(xᵢ − x̄)²</th><th>(xᵢ − x̄)(yᵢ − ȳ)</th></tr></thead><tbody id="calcOlsRows"></tbody><tfoot id="calcOlsTotal"></tfoot></table></div>
+<div class="math-step"><strong>3. Calculate the slope</strong><div class="small">b₁ = Sxy / Sxx</div><div class="math-value" id="calcSlope"></div></div>
+<div class="math-step"><strong>4. Calculate the intercept</strong><div class="small">b₀ = ȳ − b₁x̄</div><div class="math-value" id="calcIntercept"></div></div>
+<div class="callout small" id="calcFitEquation"></div>
+<p class="calc-note">These formulas minimize SSE for a straight line with an intercept. They calculate the solution directly. If all x values are equal, Sxx = 0 and the slope and intercept are not uniquely determined.</p>
+</section>
+<section class="calc-section"><div class="eyebrow">B / MEASURE THE MISTAKES</div><h2 style="margin-top:8px">How good are the predictions?</h2>
+<div class="calc-controls"><label for="calcModel">Evaluate <select id="calcModel"><option value="fit">OLS best-fitting line</option><option value="trial">Your trial line</option><option value="mean">Mean-only baseline</option></select></label><label><input id="calcShowMean" type="checkbox">Show the mean-score baseline on the chart</label></div>
+<p class="small" id="calcModelDescription"></p><div class="math-step math-value" id="calcModelEquation"></div>
+<div class="calc-range"><label class="small" for="calcStudent">Inspect student <strong id="calcStudentLabel">1</strong></label><input id="calcStudent" type="range" min="0" max="7" step="1" value="0"></div>
+<p class="small muted">Move this slider to inspect one student's prediction and error. A teal ring marks that student on the chart while this section is open; the colored vertical gap uses the line selected here.</p>
+<div class="math-step" id="calcWorkedError"></div>
+<div class="calc-table"><table><caption class="small" style="text-align:left">Errors from the selected prediction line</caption><thead><tr><th>Student</th><th>Actual yᵢ</th><th>Predicted ŷᵢ</th><th>Error eᵢ</th><th>|eᵢ|</th><th>eᵢ²</th></tr></thead><tbody id="calcErrorRows"></tbody><tfoot id="calcErrorTotal"></tfoot></table></div>
+<h3 style="margin-top:18px">From individual errors to metrics</h3><div class="metric-table"><table><thead><tr><th>Metric & intuition</th><th>Formula & live calculation</th></tr></thead><tbody id="calcMetrics"></tbody></table></div>
+<div class="math-step"><strong>The baseline for R²</strong><div class="small">Predict ȳ for every student. Its total squared error is SST = Σ(yᵢ − ȳ)².</div><div class="math-value" id="calcBaselineValue"></div></div>
+<div class="callout small" id="calcR2Meaning"></div>
+<p class="calc-note"><strong>How to compare:</strong> smaller SSE, MSE, RMSE, and MAE mean smaller errors on the same data. OLS minimizes SSE (and therefore MSE and RMSE on these fixed data), but does not necessarily minimize MAE. SSE increases with dataset size, so do not compare raw SSE across datasets of different sizes.</p>
+<p class="calc-note">Here, MSE divides by n to average prediction errors. The residual variance estimator SSE/(n − 2) is a different quantity for simple OLS. These metrics evaluate the data used here; they do not measure performance on unseen students. R² is not a measure of causation.</p>
+</section></div>
+</details>
+<p class="caption">Fictional data for learning · No internet connection or installation needed · Every fit includes an intercept · Displayed values are rounded; calculations use full precision.</p>
+</main>
+<script>
+'use strict';
+const $=id=>document.getElementById(id), NS='http://www.w3.org/2000/svg';
+const datasets={up:[[1,43],[2,46],[3,60],[4,57],[5,72],[6,70],[7,85],[8,82]],down:[[1,88],[2,79],[3,83],[4,67],[5,69],[6,53],[7,55],[8,40]],flat:[[1,60],[2,80],[3,40],[4,60],[5,60],[6,40],[7,80],[8,60]],perfect:[[1,35],[2,42],[3,49],[4,56],[5,63],[6,70],[7,77],[8,84]]};
+let points=[],serial=0,stage=0,dragId=null,moved=false,dragStart=null,lineDrag=null;
+const bounds={left:66,right:730,top:26,bottom:400};
+const sx=x=>bounds.left+x/10*(bounds.right-bounds.left),sy=y=>bounds.bottom-y/100*(bounds.bottom-bounds.top);
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const fmt=(v,n=2)=>{if(Math.abs(v)<0.5*Math.pow(10,-n))v=0;return v.toLocaleString('en-US',{maximumFractionDigits:n,minimumFractionDigits:n});};
+function fit(){if(points.length<2)return null;const mx=points.reduce((s,p)=>s+p.x,0)/points.length,my=points.reduce((s,p)=>s+p.y,0)/points.length;let xx=0,xy=0;points.forEach(p=>{xx+=(p.x-mx)**2;xy+=(p.x-mx)*(p.y-my);});if(xx<1e-10)return null;const m=xy/xx;return {m,b:my-m*mx};}
+function loss(l){return points.reduce((s,p)=>s+(p.y-l.b-l.m*p.x)**2,0);}
+function currentLine(){return stage===0?null:stage===1?{m:+$('m').value,b:+$('b').value}:fit();}
+function setManual(m,b){
+// Preserve precision when synchronizing dragging with range inputs.
+for(const [id,value] of [['m',m],['b',b]]){const el=$(id);el.min=Math.min(+el.min,value);el.max=Math.max(+el.max,value);el.step='any';el.value=value;}
+}
+function visibleLineRange(line){
+let lo=0,hi=10;
+if(Math.abs(line.m)<1e-10)return line.b>=0&&line.b<=100?[lo,hi]:null;
+const a=(0-line.b)/line.m,b=(100-line.b)/line.m;
+lo=Math.max(lo,Math.min(a,b));hi=Math.min(hi,Math.max(a,b));
+return hi-lo>0.01?[lo,hi]:null;
+}
+function lineHandles(line,parent){
+const range=visibleLineRange(line);if(!range)return;
+const [lo,hi]=range;
+for(const [kind,fraction,label] of [['move',.25,'MOVE ↕'],['tilt',.75,'TILT ↕']]){
+const x=lo+(hi-lo)*fraction,y=line.b+line.m*x;
+const h=node('circle',{cx:sx(x),cy:sy(y),r:12,fill:kind==='move'?'#087e83':'#fff',stroke:'#087e83','stroke-width':3,class:'line-drag','data-line-action':kind,'data-handle-x':x},parent);
+node('title',{text:kind==='move'?'Drag vertically to change intercept; slope stays fixed.':'Drag vertically to change slope; intercept stays fixed.'},h);
+node('text',{x:sx(x),y:sy(y)+(y>89?29:-20),'text-anchor':'middle',class:'handle-label',text:label},parent);
+}
+}
+function node(tag,attrs,parent=$('plot')){const n=document.createElementNS(NS,tag);Object.entries(attrs).forEach(([k,v])=>{if(k==='text')n.textContent=v;else n.setAttribute(k,v);});parent.appendChild(n);return n;}
+function plot(line){const svg=$('plot');svg.replaceChildren();node('title',{text:'Study hours and exam scores',id:'plotTitle'});node('desc',{text:'Drag points, click the grid to add points, or use the editable table. '+points.length+' fictional students.',id:'plotDesc'});const defs=node('defs',{});node('rect',{x:bounds.left,y:bounds.top,width:bounds.right-bounds.left,height:bounds.bottom-bounds.top},node('clipPath',{id:'clip'},defs));
+for(let x=0;x<=10;x++){node('line',{x1:sx(x),y1:bounds.top,x2:sx(x),y2:bounds.bottom,stroke:'#e8edef'});node('text',{x:sx(x),y:422,'text-anchor':'middle',fill:'#526775','font-size':13,text:x});}
+for(let y=0;y<=100;y+=20){node('line',{x1:bounds.left,y1:sy(y),x2:bounds.right,y2:sy(y),stroke:'#e8edef'});node('text',{x:54,y:sy(y)+5,'text-anchor':'end',fill:'#526775','font-size':13,text:y});}
+node('text',{x:398,y:452,'text-anchor':'middle',fill:'#172f3c','font-size':14,text:'Study hours (x)'});node('text',{transform:'translate(18,214) rotate(-90)','text-anchor':'middle',fill:'#172f3c','font-size':14,text:'Exam score (y)'});
+const g=node('g',{'clip-path':'url(#clip)'});
+if(line){points.forEach(p=>{const yp=line.b+line.m*p.x,px=sx(p.x),py=sy(p.y),fy=sy(yp);if($('squares').checked){const size=Math.abs(py-fy);node('rect',{x:px,y:Math.min(py,fy),width:size,height:size,fill:'#d76648','fill-opacity':'.08',stroke:'#d76648','stroke-opacity':'.3'},g);}if($('errors').checked)node('line',{x1:px,x2:px,y1:py,y2:fy,stroke:'#d76648','stroke-width':2,'stroke-dasharray':'5 3'},g);});node('line',{x1:sx(0),x2:sx(10),y1:sy(line.b),y2:sy(line.b+10*line.m),stroke:'#087e83','stroke-width':3.5},g);
+if(stage===1)node('line',{x1:sx(0),x2:sx(10),y1:sy(line.b),y2:sy(line.b+10*line.m),stroke:'transparent','stroke-width':22,'pointer-events':'stroke',class:'line-drag','data-line-action':'move'},g);
+const x=+$('predictX').value,y=line.b+line.m*x;if(Number.isFinite(x)&&x>=0&&x<=10&&y>=0&&y<=100){node('line',{x1:sx(x),x2:sx(x),y1:sy(0),y2:sy(y),stroke:'#087e83','stroke-opacity':'.4','stroke-dasharray':'4 4'},g);node('circle',{cx:sx(x),cy:sy(y),r:7,fill:'#fff',stroke:'#087e83','stroke-width':3},g);}}
+points.forEach((p,i)=>{const c=node('circle',{cx:sx(p.x),cy:sy(p.y),r:8,fill:'#172f3c',stroke:'#fff','stroke-width':2,class:'point','data-id':p.id},g);node('title',{text:'Student '+(i+1)+': '+fmt(p.x,1)+' hours, '+fmt(p.y,1)+' score. Drag to move.'},c);});if(stage===1&&line)lineHandles(line,g);calculationOverlay(g);}
+function rows(){const body=$('rows');body.replaceChildren();points.forEach((p,i)=>{const tr=document.createElement('tr');const name=document.createElement('td');name.textContent=i+1;tr.appendChild(name);['x','y'].forEach(key=>{const td=document.createElement('td'),input=document.createElement('input');input.type='number';input.min=0;input.max=key==='x'?10:100;input.step='.1';input.value=p[key];input.setAttribute('aria-label','Student '+(i+1)+' '+(key==='x'?'study hours':'exam score'));input.addEventListener('input',()=>{if(input.value===''||!Number.isFinite(input.valueAsNumber))return;p[key]=clamp(input.valueAsNumber,0,key==='x'?10:100);update();});input.addEventListener('change',()=>{input.value=p[key];});td.appendChild(input);tr.appendChild(td);});const td=document.createElement('td'),btn=document.createElement('button');btn.textContent='Remove';btn.setAttribute('aria-label','Remove student '+(i+1));btn.onclick=()=>{points=points.filter(q=>q.id!==p.id);rows();update();};td.appendChild(btn);tr.appendChild(td);body.appendChild(tr);});}
+function update(){const best=fit(),line=currentLine(),show=!!line;updateCalculations();plot(line);$('lineInfo').hidden=!show;$('predictCard').hidden=!show;$('loss').hidden=!show;$('lineLegend').hidden=!show;$('errorLegend').hidden=!show||!$('errors').checked;$('lineName').textContent=stage===2?'Best-fitting line':'Your trial line';$('count').textContent=points.length;$('mValue').textContent=fmt(+$('m').value,1);$('bValue').textContent=fmt(+$('b').value,1);$('match').disabled=!best;$('undefinedFit').hidden=stage!==2||!!best;$('undefinedFit').textContent=points.length<2?'Add at least two students with different study hours to fit a unique line.':'All study hours are equal. Add or move a point horizontally so a unique slope and intercept can be found.';
+$('chartStatus').textContent=stage===0?'Each dot is one student. x is the input; y is the outcome we want to estimate.':stage===1?'Drag MOVE (or the line) up/down to change intercept. Drag TILT up/down to change slope. The equation and squared errors update live.':'Move a point: the best-fitting coefficients are recalculated from all the data.';
+if(!show)return;
+$('equation').textContent='ŷ = '+fmt(line.b)+(line.m<0?' − ':' + ')+fmt(Math.abs(line.m))+'x';$('slope').textContent=fmt(line.m);$('intercept').textContent=fmt(line.b);
+$('slopeMeaning').textContent=Math.abs(line.m)<1e-9?'Slope: the fitted score stays the same as study hours increase. There is no fitted linear trend.':'Slope: for each additional hour of study, the line predicts a score '+fmt(Math.abs(line.m))+' points '+(line.m>0?'higher':'lower')+'. This describes the fitted pattern, not a causal effect.';
+$('interceptMeaning').textContent='Intercept: at 0 hours of study, the line predicts '+fmt(line.b)+' points.'+(points.length&&Math.min(...points.map(p=>p.x))>0?' Zero hours is outside these observed hours, so interpret this cautiously.':'')+(line.b<0||line.b>100?' This is outside the valid 0–100 score range.':'');
+$('sse').textContent=fmt(loss(line),1);$('lossExplanation').textContent=stage===2?'This is the smallest total squared error achievable by any straight line for these points.':'Actual − predicted → square each error → add the squares. Smaller is a better fit.';$('comparison').textContent=stage===1&&best?'Best possible SSE: '+fmt(loss(best),1)+' · Your excess: '+fmt(Math.max(0,loss(line)-loss(best)),1):'';
+const x=$('predictX').valueAsNumber;if(!Number.isFinite(x)){ $('prediction').textContent='Enter study hours';$('substitution').textContent='';$('predictWarning').textContent='';return;}
+const y=line.b+line.m*x;$('prediction').textContent=fmt(y,1)+' points';$('substitution').textContent=fmt(line.b)+' + ('+fmt(line.m)+' × '+fmt(x,1)+') = '+fmt(y,1);let warnings=[];if(points.length&&(x<Math.min(...points.map(p=>p.x))||x>Math.max(...points.map(p=>p.x))))warnings.push('Outside the observed study hours: this is extrapolation.');if(y<0||y>100)warnings.push('Outside the valid 0–100 score range: this prediction is not realistic.');$('predictWarning').textContent=warnings.join(' ');
+}
+const lessons=[{label:'01 / OBSERVE',title:'Start with two measurements.',text:'<p>For each student, record <strong>study hours (x)</strong> and <strong>exam score (y)</strong>. Each dot puts those two measurements together.</p><p>Can we use x to estimate y? Look for an overall pattern. Real observations usually do not fall exactly on a straight line.</p><div class="callout"><strong>Ask the class</strong><p>“As we move right, do scores tend to go up, go down, or stay roughly the same?”</p></div>'},{label:'02 / EXPERIMENT',title:'Which line should we draw?',text:'<p>We know the form of a straight line: <strong>y = mx + c</strong>. But which slope and intercept should we use?</p><p>Drag the line or its labeled handles, or try the sliders. The line gives a predicted score, <strong>ŷ</strong>. Each vertical gap is <strong>actual score − predicted score</strong>.</p><div class="callout"><strong>Your challenge</strong><p>Make the sum of squared errors as small as you can. All these candidates are straight lines; they fit the data differently.</p></div>'},{label:'03 / FIT',title:'Let the data choose the line.',text:'<p><strong>Ordinary least squares regression finds the slope and intercept that minimize the sum of squared vertical errors.</strong></p><p>It uses the same straight-line shape. We write <strong>ŷ = b₀ + b₁x</strong>: new labels, same roles.</p><div class="callout"><strong>Drag a point now</strong><p>The data change, so the best slope and intercept may change. A fitted line summarizes the pattern; it need not pass through every point.</p></div>'}];
+function setStage(s){dragId=null;lineDrag=null;stage=s;$('interactionHint').textContent=s===1?'Drag the teal line or MOVE handle up/down to shift it. Drag TILT up/down to rotate it. Black data points can still be moved. Click empty grid space to add a point.':'Drag a point to move it. Click an empty space inside the grid to add one. Use the data table below for precise or keyboard edits.';document.querySelectorAll('[data-step]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.step===s));const l=lessons[s];$('stageLabel').textContent=l.label;$('lessonTitle').textContent=l.title;$('lessonText').innerHTML=l.text;$('manual').hidden=s!==1;$('next').hidden=s===2;$('next').textContent=s===0?'Next: try a line →':'Next: find the best fit →';$('errors').disabled=s===0;$('squares').disabled=s===0;update();}
+function load(){$('m').min=-20;$('m').max=20;$('m').step=.1;$('b').min=-100;$('b').max=200;$('b').step=.5;serial=0;points=datasets[$('preset').value].map(([x,y])=>({x,y,id:serial++}));$('m').value=5;$('b').value=30;rows();update();}
+function position(e){const p=$('plot').createSVGPoint();p.x=e.clientX;p.y=e.clientY;const t=p.matrixTransform($('plot').getScreenCTM().inverse());return {px:t.x,py:t.y,x:clamp((t.x-bounds.left)/(bounds.right-bounds.left)*10,0,10),y:clamp((bounds.bottom-t.y)/(bounds.bottom-bounds.top)*100,0,100)};}
+$('plot').addEventListener('pointerdown',e=>{
+if(e.button!==undefined&&e.button!==0)return;
+const point=e.target.closest('[data-id]'),handle=e.target.closest('[data-line-action]');
+if(!point&&!(stage===1&&handle))return;
+e.preventDefault();moved=false;dragStart={x:e.clientX,y:e.clientY};
+if(point){dragId=+point.dataset.id;lineDrag=null;}
+else{const pos=position(e);lineDrag={kind:handle.dataset.lineAction,m:+$('m').value,b:+$('b').value,startY:pos.py,handleX:+handle.dataset.handleX||pos.x};dragId=null;}
+$('plot').setPointerCapture(e.pointerId);
+});
+$('plot').addEventListener('pointermove',e=>{
+if(dragId===null&&!lineDrag)return;
+if(Math.hypot(e.clientX-dragStart.x,e.clientY-dragStart.y)>3)moved=true;
+if(!moved)return;
+const pos=position(e);
+if(lineDrag){
+const dy=(lineDrag.startY-pos.py)/(bounds.bottom-bounds.top)*100;
+if(lineDrag.kind==='move')setManual(lineDrag.m,lineDrag.b+dy);
+else setManual(lineDrag.m+dy/Math.max(.05,lineDrag.handleX),lineDrag.b);
+update();return;
+}
+const p=points.find(p=>p.id===dragId);
+if(p){p.x=Math.round(pos.x*10)/10;p.y=Math.round(pos.y*10)/10;update();}
+});
+function finishDrag(e){
+const active=dragId!==null||lineDrag!==null;
+if($('plot').hasPointerCapture(e.pointerId))$('plot').releasePointerCapture(e.pointerId);
+dragId=null;lineDrag=null;if(active)rows();return active;
+}
+$('plot').addEventListener('pointerup',e=>{
+if(finishDrag(e))return;
+if(e.button!==undefined&&e.button!==0)return;
+const p=position(e);
+if(p.px>=bounds.left&&p.px<=bounds.right&&p.py>=bounds.top&&p.py<=bounds.bottom&&!e.target.closest('[data-id],[data-line-action]')){points.push({x:Math.round(p.x*10)/10,y:Math.round(p.y*10)/10,id:serial++});rows();update();}
+});
+$('plot').addEventListener('pointercancel',finishDrag);
+$('plot').addEventListener('lostpointercapture',()=>{dragId=null;lineDrag=null;});
+$('resetLine').onclick=()=>{setManual(5,30);update();};
+document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>setStage(+b.dataset.step));$('next').onclick=()=>setStage(Math.min(2,stage+1));['m','b','predictX','errors','squares'].forEach(id=>$(id).addEventListener('input',update));$('preset').onchange=load;$('reset').onclick=load;$('outlier').onclick=()=>{points.push({x:9,y:15,id:serial++});rows();update();};$('addRow').onclick=()=>{points.push({x:5,y:50,id:serial++});rows();update();};$('match').onclick=()=>{const l=fit();if(!l)return;$('m').min=Math.min(-20,l.m);$('m').max=Math.max(20,l.m);$('b').min=Math.min(-100,l.b);$('b').max=Math.max(200,l.b);$('m').step='any';$('b').step='any';$('m').value=l.m;$('b').value=l.b;update();};
+function calculationData(){
+const n=points.length;if(!n)return {n:0};
+const sumX=points.reduce((s,p)=>s+p.x,0),sumY=points.reduce((s,p)=>s+p.y,0),mx=sumX/n,my=sumY/n;
+let xx=0,xy=0,sst=0;points.forEach(p=>{xx+=(p.x-mx)**2;xy+=(p.x-mx)*(p.y-my);sst+=(p.y-my)**2;});
+return {n,sumX,sumY,mx,my,xx,xy,sst};
+}
+function calculationLine(){const kind=$('calcModel').value;return kind==='trial'?{m:+$('m').value,b:+$('b').value}:kind==='mean'?(points.length?{m:0,b:calculationData().my}:null):fit();}
+function errorMetrics(line){
+const d=calculationData();if(!line||!d.n)return null;
+const sse=loss(line),sae=points.reduce((s,p)=>s+Math.abs(p.y-line.b-line.m*p.x),0);
+return {sse,sae,mse:sse/d.n,rmse:Math.sqrt(sse/d.n),mae:sae/d.n,sst:d.sst,r2:d.sst>1e-10?1-sse/d.sst:null};
+}
+function calculationOverlay(parent){
+if(!$('calculations').open||!points.length)return;
+const d=calculationData();
+if($('calcShowMean').checked){node('line',{x1:sx(0),x2:sx(10),y1:sy(d.my),y2:sy(d.my),stroke:'#8b6626','stroke-width':2,'stroke-dasharray':'8 5','pointer-events':'none'},parent);node('text',{x:sx(9.85),y:sy(d.my)+(d.my>90?17:-9),'text-anchor':'end',fill:'#8b6626','font-size':13,text:'Mean score = '+fmt(d.my)},parent);}
+const i=clamp(Math.round(+$('calcStudent').value),0,points.length-1),p=points[i],line=calculationLine();
+if(line)node('line',{x1:sx(p.x),x2:sx(p.x),y1:sy(p.y),y2:sy(line.b+line.m*p.x),stroke:'#ad3a91','stroke-width':4,'stroke-dasharray':'3 3','pointer-events':'none'},parent);
+node('circle',{cx:sx(p.x),cy:sy(p.y),r:13,fill:'none',stroke:'#087e83','stroke-width':3,'pointer-events':'none'},parent);
+}
+function calcTable(id,rows){const el=$(id);el.replaceChildren();rows.forEach((values,i)=>{const tr=document.createElement('tr');if(id==='calcErrorRows'&&i===+$('calcStudent').value)tr.className='calc-selected';values.forEach(value=>{const td=document.createElement('td');td.textContent=value;tr.appendChild(td);});el.appendChild(tr);});}
+function updateCalculations(){
+const d=calculationData(),best=fit(),line=calculationLine(),met=errorMetrics(line),f=v=>fmt(v,3);
+const index=d.n?clamp(Math.round(+$('calcStudent').value),0,d.n-1):0;$('calcStudent').max=Math.max(0,d.n-1);$('calcStudent').value=index;$('calcStudent').disabled=!d.n;$('calcStudentLabel').textContent=d.n?index+1:'—';
+$('calcMeans').textContent=d.n?'n = '+d.n+'; x̄ = '+f(d.sumX)+' / '+d.n+' = '+f(d.mx)+'; ȳ = '+f(d.sumY)+' / '+d.n+' = '+f(d.my):'No students yet. Add a point to start.';
+$('calcSums').textContent=d.n?'Sxx = '+f(d.xx)+'; Sxy = '+f(d.xy):'Sxx = 0; Sxy = 0';
+calcTable('calcOlsRows',points.map((p,i)=>[i+1,f(p.x),f(p.y),f(p.x-d.mx),f(p.y-d.my),f((p.x-d.mx)**2),f((p.x-d.mx)*(p.y-d.my))]));
+calcTable('calcOlsTotal',d.n?[['Sum',f(d.sumX),f(d.sumY),f(0),f(0),f(d.xx),f(d.xy)]]:[]);
+$('calcSlope').textContent=best?f(d.xy)+' / '+f(d.xx)+' = '+f(best.m):'Undefined: need at least two distinct x values (Sxx > 0).';
+$('calcIntercept').textContent=best?f(d.my)+' − ('+f(best.m)+' × '+f(d.mx)+') = '+f(best.b):'Cannot identify a unique intercept and slope from these x values.';
+$('calcFitEquation').textContent=best?'OLS result: ŷ = '+f(best.b)+(best.m<0?' − ':' + ')+f(Math.abs(best.m))+'x. At x̄ = '+f(d.mx)+', the fitted prediction equals ȳ = '+f(d.my)+'.':'Add or move a point horizontally to obtain a unique OLS line.';
+const kind=$('calcModel').value;
+$('calcModelDescription').textContent=kind==='fit'?'These errors use the OLS best-fitting line, regardless of the lesson stage.':kind==='trial'?'These errors use your trial-line coefficients. In “Try your own line,” drag or tilt the line to watch these metrics change.':'This baseline ignores study hours and predicts the average exam score for everyone.';
+$('calcModelEquation').textContent=line?'Selected prediction: ŷ = '+f(line.b)+(line.m<0?' − ':' + ')+f(Math.abs(line.m))+'x':'No unique OLS line is available. Choose the mean-only baseline or change the data.';
+$('calcBaselineValue').textContent=d.n?'ȳ = '+f(d.my)+' points; SST = '+f(d.sst)+' points².':'No baseline without observations.';
+if(!met){$('calcWorkedError').textContent=d.n?'Choose an available line to inspect prediction errors.':'Add students to compute prediction errors.';calcTable('calcErrorRows',[]);calcTable('calcErrorTotal',[]);calcTable('calcMetrics',[['Metrics unavailable','Need observations and an available prediction line.']]);$('calcR2Meaning').textContent='R² requires observations with variation in y and a prediction line.';return;}
+const p=points[index],pred=line.b+line.m*p.x,e=p.y-pred;
+$('calcWorkedError').innerHTML='<strong>Student '+(index+1)+': one complete calculation</strong><div class="small">ŷ = '+f(line.b)+' + ('+f(line.m)+' × '+f(p.x)+') = <b>'+f(pred)+'</b><br>e = actual − predicted = '+f(p.y)+' − ('+f(pred)+') = <b>'+f(e)+'</b><br>|e| = '+f(Math.abs(e))+' points; e² = ('+f(e)+')² = <b>'+f(e*e)+'</b> points².<br>'+(met.sse>1e-10?'This student contributes '+fmt(e*e/met.sse*100,1)+'% of the total squared error.':'All squared errors are zero: the predictions match the observations.')+'</div>';
+calcTable('calcErrorRows',points.map((p,i)=>{const y=line.b+line.m*p.x,e=p.y-y;return [i+1,f(p.y),f(y),f(e),f(Math.abs(e)),f(e*e)];}));
+calcTable('calcErrorTotal',[['Sum','—','—',f(points.reduce((s,p)=>s+p.y-line.b-line.m*p.x,0)),f(met.sae),f(met.sse)]]);
+calcTable('calcMetrics',[
+['SSE · total squared mistakes','Σeᵢ² = '+f(met.sse)+' points²'],
+['MSE · average squared mistake','SSE / n = '+f(met.sse)+' / '+d.n+' = '+f(met.mse)+' points²'],
+['RMSE · error size in score units','√MSE = √'+f(met.mse)+' = '+f(met.rmse)+' points'],
+['MAE · average absolute mistake','Σ|eᵢ| / n = '+f(met.sae)+' / '+d.n+' = '+f(met.mae)+' points'],
+['R² · relative to predicting the mean',met.r2===null?'Undefined: all actual scores are equal, so SST = 0.':'1 − SSE / SST = 1 − '+f(met.sse)+' / '+f(met.sst)+' = '+f(met.r2)]
+]);
+$('calcR2Meaning').textContent=met.r2===null?'With no variation in actual scores, R² involves division by zero and is undefined. Error metrics such as RMSE can still be computed.':met.r2< -1e-10?'R² is negative: this line has '+fmt(-met.r2*100,1)+'% more squared error than predicting the mean for everyone.': 'This line reduces total squared error by '+fmt(met.r2*100,1)+'% compared with predicting the mean for everyone. R² = 1 means zero error; R² = 0 means the same SSE as the mean baseline.';
+}
+$('calculations').addEventListener('toggle',update);
+['calcModel','calcStudent','calcShowMean'].forEach(id=>$(id).addEventListener('input',update));
+
+load();setStage(0);
+</script>
+</body></html>

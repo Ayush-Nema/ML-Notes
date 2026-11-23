@@ -1,0 +1,811 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Hypothesis Testing Step by Step</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout concept: a single reading column of numbered steps; each step pairs plain explanation with one live instrument panel. */
+:root{
+  --bg:#F3F6F4; --surface:#FFFFFF; --ink:#14211D; --muted:#566962; --line:#D5DDD9; --soft:#E7EDEA;
+  --accent:#0B6B5F; --accent-ink:#FFFFFF; --accent-soft:#D3EAE4;
+  --alert:#C4491A; --alert-soft:#F6DFD2;
+  --font-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --font-body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1613; --surface:#16221E; --ink:#E5EEEA; --muted:#97ABA3; --line:#2B3B36; --soft:#1C2B26;
+    --accent:#4FC4B1; --accent-ink:#07201B; --accent-soft:#17382F;
+    --alert:#F28B50; --alert-soft:#3A2418; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1613; --surface:#16221E; --ink:#E5EEEA; --muted:#97ABA3; --line:#2B3B36; --soft:#1C2B26;
+  --accent:#4FC4B1; --accent-ink:#07201B; --accent-soft:#17382F;
+  --alert:#F28B50; --alert-soft:#3A2418; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.65;padding-inline:clamp(16px,4vw,32px);padding-block:0 64px}
+.wrap{max-width:820px;margin-inline:auto}
+h1,h2,h3{font-family:var(--font-display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,6vw,3.1rem);font-weight:700;letter-spacing:-.02em}
+h2{font-size:clamp(1.45rem,4vw,1.9rem);font-weight:700;letter-spacing:-.01em}
+h3{font-size:1.1rem;font-weight:600}
+p{margin:0}
+.stack>*+*{margin-top:1rem}
+code,.mono{font-family:var(--font-mono);font-size:.92em}
+.num{font-variant-numeric:tabular-nums}
+
+/* nav */
+nav.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:calc(-1*clamp(16px,4vw,32px));padding-inline:clamp(16px,4vw,32px)}
+nav.top .row{max-width:820px;margin-inline:auto;display:flex;gap:4px;overflow-x:auto;padding-block:8px;scrollbar-width:thin}
+nav.top a{white-space:nowrap;text-decoration:none;color:var(--muted);font-size:.85rem;font-weight:500;padding:6px 10px;border-radius:6px}
+nav.top a:hover{background:var(--soft);color:var(--ink)}
+nav.top a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* hero */
+.hero{padding-block:48px 24px}
+.eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:12px}
+.lede{font-size:1.15rem;color:var(--muted);max-width:60ch;margin-top:16px}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-top:28px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.fact .k{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.fact .v{font-family:var(--font-display);font-size:1.7rem;font-weight:700;line-height:1.2;margin-top:4px}
+.fact .v small{font-size:.9rem;font-weight:500;color:var(--muted)}
+.question{margin-top:24px;font-size:1.1rem;max-width:62ch}
+
+/* chapters */
+section.chapter{padding-block:56px 8px;scroll-margin-top:56px}
+.tag{display:inline-block;font-family:var(--font-mono);font-size:.78rem;color:var(--accent);background:var(--accent-soft);padding:3px 9px;border-radius:999px;margin-bottom:12px}
+.chapter h2{margin-bottom:16px}
+.intuition{background:var(--accent-soft);border-radius:10px;padding:14px 18px}
+.intuition .lab{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--accent);display:block;margin-bottom:4px}
+.warn{background:var(--alert-soft);border-radius:10px;padding:14px 18px}
+.warn .lab{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--alert);display:block;margin-bottom:4px}
+
+/* tables */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:480px;font-size:.95rem}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;background:var(--soft)}
+
+/* hypothesis boxes */
+.hyp{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.hyp>div{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;min-width:0}
+.hyp .sym{font-family:var(--font-display);font-size:1.5rem;font-weight:700}
+.hyp .eq{font-family:var(--font-mono);font-size:1.05rem;margin:6px 0;color:var(--accent)}
+
+/* instrument panel */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;margin-top:20px}
+.panel h3{margin-bottom:4px}
+.panel .sub{color:var(--muted);font-size:.9rem;margin-bottom:14px}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px 20px;margin-bottom:14px}
+.ctl{min-width:0}
+.ctl label,.ctl .lbl{display:flex;justify-content:space-between;gap:8px;font-size:.88rem;font-weight:500;margin-bottom:4px}
+.ctl output{font-family:var(--font-mono);color:var(--accent);font-weight:500}
+input[type=range]{width:100%;accent-color:var(--accent)}
+select{width:100%;font:inherit;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+button{font:inherit;cursor:pointer}
+.seg button,.chip{border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:7px 12px;border-radius:8px;font-size:.88rem}
+.seg button:hover,.chip:hover{border-color:var(--accent)}
+.seg button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn{background:var(--accent);color:var(--accent-ink);border:0;padding:9px 14px;border-radius:8px;font-weight:600;font-size:.9rem}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:500}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin-block:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+
+/* readouts */
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:14px}
+.ro{background:var(--bg);border-radius:8px;padding:10px 12px;min-width:0}
+.ro .k{font-size:.74rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.ro .v{font-family:var(--font-mono);font-size:1.15rem;font-weight:500;margin-top:2px;overflow-wrap:anywhere}
+.formula{font-family:var(--font-mono);font-size:.95rem;background:var(--bg);border-radius:8px;padding:12px 14px;overflow-x:auto;line-height:1.9}
+.verdict{margin-top:14px;padding:14px 16px;border-radius:10px;font-weight:500}
+.verdict.rej{background:var(--alert-soft)}
+.verdict.keep{background:var(--soft)}
+.verdict b{font-family:var(--font-display);font-size:1.1rem}
+
+/* svg charts */
+svg{display:block;width:100%;height:auto;max-width:100%}
+svg text{font-family:var(--font-body);fill:var(--muted);font-size:12px}
+svg .ax{stroke:var(--line);stroke-width:1}
+svg .curve{fill:none;stroke:var(--ink);stroke-width:2}
+svg .tailfill{fill:var(--alert);fill-opacity:.4}
+svg .okfill{fill:var(--accent);fill-opacity:.12}
+svg .bar{fill:var(--accent)}
+svg .bar.ext{fill:var(--alert)}
+svg .mk{stroke:var(--ink);stroke-width:2;stroke-dasharray:5 4}
+svg .strong{fill:var(--ink);font-weight:600}
+svg text{font-size:13px}
+svg text.rej{fill:var(--alert);font-weight:600}
+svg text.keep{fill:var(--accent);font-weight:600}
+svg .dot.ok{fill:var(--accent)}
+svg .dot.bad{fill:var(--alert)}
+svg .dot.no{fill:none;stroke:var(--muted);stroke-width:1;stroke-opacity:.55}
+
+/* sim dots */
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.85rem;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+
+/* quiz */
+.q{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-top:14px}
+.q p.qt{font-weight:600;margin-bottom:10px}
+.q .opts{display:grid;gap:8px}
+.q .opts button{text-align:left;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:10px 12px;border-radius:8px}
+.q .opts button:hover:not(:disabled){border-color:var(--accent)}
+.q .opts button.right{background:var(--accent-soft);border-color:var(--accent)}
+.q .opts button.wrong{background:var(--alert-soft);border-color:var(--alert)}
+.q .fb{margin-top:10px;font-size:.92rem;color:var(--muted)}
+footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);color:var(--muted);font-size:.88rem}
+@media (prefers-reduced-motion:no-preference){ .btn,.seg button,.chip{transition:background .15s,border-color .15s} }
+</style>
+<nav class="top" aria-label="Sections"><div class="row">
+  <a href="#story">The story</a><a href="#idea">Big idea</a><a href="#step1">1 Hypotheses</a><a href="#step2">2 Sample &amp; luck</a><a href="#step3">3 Test statistic</a><a href="#step4">4 p-value</a><a href="#step5">5 Decision</a><a href="#errors">Errors</a><a href="#pitfalls">Pitfalls</a><a href="#quiz">Quiz</a>
+</div></nav>
+
+<div class="wrap">
+
+<header class="hero" id="story">
+  <div class="eyebrow">A beginner's walkthrough</div>
+  <h1>Is the new espresso machine really faster?</h1>
+  <p class="lede">Follow one small café question through every step of a hypothesis test. Each step explains the idea in plain words and gives you something to click.</p>
+
+  <div class="facts" aria-label="The café's numbers">
+    <div class="fact"><div class="k">Old average wait</div><div class="v">5.0 <small>min</small></div></div>
+    <div class="fact"><div class="k">Typical spread (SD)</div><div class="v">1.5 <small>min</small></div></div>
+    <div class="fact"><div class="k">Customers timed</div><div class="v">36 <small>people</small></div></div>
+    <div class="fact"><div class="k">New sample average</div><div class="v">4.5 <small>min</small></div></div>
+  </div>
+
+  <p class="question">The owner of the Corner Café has years of records: with the old machine, customers waited <b>5.0 minutes on average</b>, and individual waits typically varied by about <b>1.5 minutes</b> around that. After installing a new machine, she timed 36 customers. Their average was <b>4.5 minutes</b>.</p>
+  <p class="question">Half a minute faster. Is the new machine genuinely better, or did she just happen to time a quiet afternoon? Hypothesis testing is a fair, step-by-step way to decide.</p>
+</header>
+
+<section class="chapter" id="idea">
+  <div class="tag">The big idea</div>
+  <h2>A hypothesis test works like a trial</h2>
+  <div class="stack">
+    <p>In a courtroom the defendant is presumed innocent. The jury does not need to prove innocence. It only asks whether the evidence is so strong that "innocent" becomes hard to believe. If it is, they convict. If it is not, they say "not guilty", which does not mean the defendant is proven innocent. It means the evidence fell short.</p>
+    <p>Hypothesis testing uses the same logic. We start by assuming the boring explanation (nothing changed), then check whether our data would be very surprising under that assumption.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>In court</th><th>In hypothesis testing</th><th>In the café</th></tr></thead>
+      <tbody>
+        <tr><td>Presumed innocent</td><td>Assume "no effect" (the null hypothesis)</td><td>The new machine changed nothing</td></tr>
+        <tr><td>Evidence</td><td>The sample data</td><td>36 timed customers</td></tr>
+        <tr><td>"Beyond reasonable doubt"</td><td>Significance level (α)</td><td>How surprised we must be before we're convinced</td></tr>
+        <tr><td>Guilty / not guilty</td><td>Reject / fail to reject the null</td><td>"The wait changed" / "Not enough evidence yet"</td></tr>
+      </tbody>
+    </table></div>
+    <div class="intuition"><span class="lab">Intuition</span>Why start by assuming nothing changed? Because "nothing changed" is a precise claim. It lets us calculate exactly what kinds of results luck alone would produce. "Something changed" is vague (by how much?), so we cannot calculate with it directly.</div>
+  </div>
+</section>
+
+<section class="chapter" id="step1">
+  <div class="tag">Step 1 of 5</div>
+  <h2>State two competing hypotheses</h2>
+  <div class="stack">
+    <p>First, one piece of vocabulary. The symbol <b>μ</b> (say "mew") stands for the <b>true long-run average wait</b> with the new machine, the number we would get if we could time every customer, forever. We can never see μ directly. All we get is a small sample.</p>
+    <div class="hyp">
+      <div>
+        <div class="sym">H₀ <span style="font-size:.9rem;font-weight:500;color:var(--muted)">null hypothesis</span></div>
+        <div class="eq">μ = 5.0 minutes</div>
+        <p>The new machine made no difference. The true average wait is still 5.0. Any gap in our sample is just luck.</p>
+      </div>
+      <div>
+        <div class="sym">H₁ <span style="font-size:.9rem;font-weight:500;color:var(--muted)">alternative hypothesis</span></div>
+        <div class="eq">μ ≠ 5.0 minutes</div>
+        <p>The new machine changed the average wait. This is the claim the owner hopes the data can support.</p>
+      </div>
+    </div>
+    <div class="intuition"><span class="lab">Intuition</span>H₀ always contains an equals sign and says "nothing is going on". It is the claim we try to knock down. H₁ is what we conclude only if the evidence forces us to.</div>
+    <p>Two habits worth building from day one. Write both hypotheses <b>before</b> looking at the data, so you cannot tailor them to what you see. And remember that they are claims about the <b>true average μ</b>, never about the 36 customers in the sample. We already know the sample average is 4.5. The real question is what that says about μ.</p>
+    <p>H₁ here says "different", which allows the wait to be longer or shorter. If the owner only cared about "faster", she could instead write H₁: μ &lt; 5.0. You can switch between the two in Step 5.</p>
+    <p style="color:var(--muted);font-size:.92rem">Simplification for this page: we treat the spread of 1.5 minutes as known from the café's past records, and assume waits are roughly bell-shaped. Real studies often have to estimate the spread from the sample and use a slightly different table (the t-test). The logic stays the same.</p>
+  </div>
+</section>
+
+<section class="chapter" id="step2">
+  <div class="tag">Step 2 of 5</div>
+  <h2>Collect a sample, and meet luck</h2>
+  <div class="stack">
+    <p>The owner's sample average was 4.5. If H₀ is true and the real average is still 5.0, how likely is a sample average that far off? To answer that, we need a feel for how much a sample average <b>wobbles</b> from one sample to the next purely by chance.</p>
+    <p>Below, we play out a world where H₀ is true: the true average wait is exactly 5.0 and individual waits vary with a spread of 1.5. Each click times a fresh group of customers and records their <b>average</b>. Watch what shape the pile of averages takes.</p>
+  </div>
+
+  <div class="panel">
+    <h3>Pretend the machine changed nothing</h3>
+    <p class="sub">Each bar counts samples whose average fell in that narrow slice. The orange bars are averages at least as far from 5.0 as the owner's result.</p>
+    <div class="controls">
+      <div class="ctl"><div class="lbl">Customers per sample</div>
+        <div class="seg" id="simN">
+          <button data-n="9">9</button><button data-n="36" class="on">36</button><button data-n="100">100</button>
+        </div></div>
+      <div class="ctl"><label for="obsMean2">Owner's sample average <output data-out="mean"></output></label>
+        <input type="range" id="obsMean2" min="3.5" max="6.5" step="0.05" data-bind="mean"></div>
+    </div>
+    <div class="btnrow">
+      <button class="btn" id="draw1">Time one group</button>
+      <button class="btn" id="draw100">Time 100 groups</button>
+      <button class="btn" id="draw1000">Time 1000 groups</button>
+      <button class="btn ghost" id="simReset">Start over</button>
+    </div>
+    <div id="strip" aria-label="Wait times in the latest sample"></div>
+    <div id="hist" aria-label="Histogram of sample averages"></div>
+    <div class="readouts">
+      <div class="ro"><div class="k">Groups timed</div><div class="v" id="simCount">0</div></div>
+      <div class="ro"><div class="k">Typical wobble</div><div class="v" id="simSE">0.25</div></div>
+      <div class="ro"><div class="k">As extreme as owner's</div><div class="v" id="simExt">0</div></div>
+      <div class="ro"><div class="k">Share of groups</div><div class="v" id="simShare">0%</div></div>
+      <div class="ro"><div class="k">Math predicts</div><div class="v" id="simMath">0%</div></div>
+    </div>
+  </div>
+
+  <div class="stack" style="margin-top:20px">
+    <p>Three things to notice. The averages pile up around 5.0, the true value. They spread out symmetrically in a bell shape. And switching from 9 to 36 to 100 customers per sample makes the pile <b>narrower</b>: bigger samples wobble less.</p>
+    <div class="intuition"><span class="lab">Intuition: the standard error</span>One customer might wait 2 minutes or 9. But an average over many customers smooths out the extremes, because the unusually long waits get cancelled by unusually short ones. The typical size of the wobble in a sample average is called the <b>standard error (SE)</b>, and it equals <code>σ / √n</code>, the spread of single waits divided by the square root of the sample size. With σ = 1.5 and n = 36, SE = 1.5 / 6 = <b>0.25 minutes</b>. That is the "yardstick" we use next.</div>
+    <p>Look at the share of simulated groups that landed as far from 5.0 as the owner's 4.5. Even in a world where nothing changed, that happens some of the time. That share is the heart of the next two steps.</p>
+  </div>
+</section>
+
+<section class="chapter" id="step3">
+  <div class="tag">Step 3 of 5</div>
+  <h2>Turn the difference into a test statistic</h2>
+  <div class="stack">
+    <p>The owner's average was 0.5 minutes below 5.0. Is 0.5 minutes a lot? It depends on the yardstick. A 10-minute delay is nothing for a long-haul flight and huge for a bus that comes every 5 minutes. Here the right yardstick is the standard error, the normal size of the wobble.</p>
+    <p>So we measure the gap in units of "wobbles". This number is the <b>test statistic</b>, usually called <b>z</b>:</p>
+  </div>
+
+  <div class="panel">
+    <h3>How many wobbles away is the sample?</h3>
+    <p class="sub">Slide the sample average and the sample size. The dot shows where the sample landed; the grey ticks mark whole standard errors from 5.0.</p>
+    <div class="controls">
+      <div class="ctl"><label for="obsMean3">Sample average <output data-out="mean"></output></label>
+        <input type="range" id="obsMean3" min="3.5" max="6.5" step="0.05" data-bind="mean"></div>
+      <div class="ctl"><label for="n3">Customers timed (n) <output data-out="n"></output></label>
+        <input type="range" id="n3" min="4" max="400" step="1" data-bind="n"></div>
+    </div>
+    <div id="line" aria-label="Number line showing the sample average relative to 5.0"></div>
+    <div class="formula" id="zformula"></div>
+    <div class="readouts">
+      <div class="ro"><div class="k">Difference</div><div class="v" data-out="diff"></div></div>
+      <div class="ro"><div class="k">Standard error</div><div class="v" data-out="se"></div></div>
+      <div class="ro"><div class="k">z (wobbles away)</div><div class="v" data-out="z"></div></div>
+    </div>
+    <p class="sub" style="margin-top:12px" id="zread"></p>
+  </div>
+
+  <div class="stack" style="margin-top:20px">
+    <div class="intuition"><span class="lab">Reading z</span>A z near 0 means the sample is right where H₀ says it should be. As a rough guide, a z beyond about ±2 is unusual (it happens by luck about 1 time in 20), and beyond ±3 is very unusual. The sign only tells you the direction: negative means below 5.0, which here means faster.</div>
+    <p>Try a few things. Keep the sample average at 4.5 and drag n down to 9. The same half-minute gap now equals only 1 wobble, because small samples wobble a lot. Drag n up to 150 and the same gap becomes a much stronger signal. <b>The amount of evidence depends on both the size of the gap and the size of the sample.</b></p>
+  </div>
+</section>
+<section class="chapter" id="step4">
+  <div class="tag">Step 4 of 5</div>
+  <h2>Find the p-value</h2>
+  <div class="stack">
+    <p>Now we ask the central question. <b>If H₀ were true (nothing changed), how often would luck alone produce a result at least as extreme as ours?</b> That probability is the <b>p-value</b>.</p>
+    <p>The bell curve below shows how z behaves when H₀ is true. Most of the time z lands near 0. Large positive or negative values are rare, and the rarest live in the thin "tails" on either side. The shaded area is the p-value: the share of the curve at least as far out as our z.</p>
+  </div>
+
+  <div class="panel">
+    <h3>The p-value is a shaded area</h3>
+    <p class="sub">The curve describes luck when H₀ is true. The shaded tails are the results at least as surprising as yours.</p>
+    <div class="controls">
+      <div class="ctl"><label for="obsMean4">Sample average <output data-out="mean"></output></label>
+        <input type="range" id="obsMean4" min="3.5" max="6.5" step="0.05" data-bind="mean"></div>
+      <div class="ctl"><label for="n4">Customers timed (n) <output data-out="n"></output></label>
+        <input type="range" id="n4" min="4" max="400" step="1" data-bind="n"></div>
+    </div>
+    <div id="curveP" aria-label="Bell curve with p-value area shaded"></div>
+    <div class="readouts">
+      <div class="ro"><div class="k">z</div><div class="v" data-out="z"></div></div>
+      <div class="ro"><div class="k">p-value</div><div class="v" data-out="p"></div></div>
+      <div class="ro"><div class="k">About 1 in…</div><div class="v" data-out="oneIn"></div></div>
+    </div>
+    <p class="sub" style="margin-top:12px" id="pread"></p>
+  </div>
+
+  <div class="stack" style="margin-top:20px">
+    <div class="intuition"><span class="lab">Why both tails?</span>Our H₁ says the wait <i>changed</i>. A sample average of 5.5 would have been just as convincing a sign of change as 4.5, only in the opposite direction. So "at least as extreme" counts both sides, and the p-value adds up both shaded tails.</div>
+    <div class="intuition"><span class="lab">Connect it to Step 2</span>Back in the simulation, you saw what share of the pretend groups landed as far from 5.0 as the owner's. That share is the p-value, estimated by brute force. The math in this step gives the exact answer without needing thousands of pretend groups.</div>
+    <div class="warn"><span class="lab">What the p-value is not</span>A p-value of 0.046 does <b>not</b> mean "there's a 4.6% chance the machine does nothing". It is calculated <i>assuming</i> the machine does nothing, so it cannot also be the probability of that assumption. It only measures how well the data fits the "nothing changed" story: small p means the data fits it poorly.</div>
+  </div>
+</section>
+
+<section class="chapter" id="step5">
+  <div class="tag">Step 5 of 5</div>
+  <h2>Make the decision</h2>
+  <div class="stack">
+    <p>A small p-value means our data would be surprising if nothing had changed. But how small is small enough? Before collecting data, we choose a cutoff called the <b>significance level, α</b> (alpha). It is the line in the sand for "too surprising to blame on luck".</p>
+    <p>The rule is simple:</p>
+    <ul style="margin:0;padding-left:1.2rem">
+      <li>If <b>p ≤ α</b>, reject H₀. The data is too surprising to be blamed on luck.</li>
+      <li>If <b>p &gt; α</b>, fail to reject H₀. The data is plausible under "nothing changed", so we are not convinced.</li>
+    </ul>
+    <p>The most common choice is α = 0.05. It means we accept being fooled by luck about 1 time in 20 when nothing is really going on. A stricter α (0.01) demands stronger evidence. A looser α (0.10) is easier to satisfy.</p>
+  </div>
+
+  <div class="panel">
+    <h3>Draw the line, then see what happens</h3>
+    <p class="sub">The orange zone is the "rejection region": results so extreme that, at your chosen α, we would call them too surprising for luck.</p>
+    <div class="controls">
+      <div class="ctl"><div class="lbl">Significance level α</div>
+        <div class="seg">
+          <button data-set="alpha" data-value="0.1">0.10</button><button data-set="alpha" data-value="0.05">0.05</button><button data-set="alpha" data-value="0.01">0.01</button>
+        </div></div>
+      <div class="ctl"><div class="lbl">Alternative hypothesis H₁</div>
+        <div class="seg">
+          <button data-set="tails" data-value="two">μ ≠ 5.0 (changed)</button><button data-set="tails" data-value="left">μ &lt; 5.0 (faster)</button>
+        </div></div>
+      <div class="ctl"><label for="obsMean5">Sample average <output data-out="mean"></output></label>
+        <input type="range" id="obsMean5" min="3.5" max="6.5" step="0.05" data-bind="mean"></div>
+      <div class="ctl"><label for="n5">Customers timed (n) <output data-out="n"></output></label>
+        <input type="range" id="n5" min="4" max="400" step="1" data-bind="n"></div>
+    </div>
+    <div id="curveD" aria-label="Bell curve with rejection region shaded"></div>
+    <div class="readouts">
+      <div class="ro"><div class="k">z</div><div class="v" data-out="z"></div></div>
+      <div class="ro"><div class="k">Cutoff for z</div><div class="v" data-out="crit"></div></div>
+      <div class="ro"><div class="k">p-value</div><div class="v" data-out="p"></div></div>
+      <div class="ro"><div class="k">α</div><div class="v" data-out="alpha"></div></div>
+    </div>
+    <div class="verdict" id="verdict"></div>
+    <div style="margin-top:16px">
+      <div class="lbl" style="font-size:.88rem;font-weight:500">Try other situations</div>
+      <div class="chips" id="presets">
+        <button class="chip" data-mean="4.5" data-n="36">The owner's result</button>
+        <button class="chip" data-mean="4.8" data-n="36">Smaller gap</button>
+        <button class="chip" data-mean="4.5" data-n="9">Same gap, tiny sample</button>
+        <button class="chip" data-mean="4.8" data-n="400">Small gap, big sample</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stack" style="margin-top:20px">
+    <div class="intuition"><span class="lab">One-sided or two-sided?</span>If you switch H₁ to "faster" (μ &lt; 5.0), all of α goes into the left tail only, so the cutoff is closer to 0 and a "faster" result is easier to confirm. The price is that you can no longer detect a machine that made things slower. Choose the direction honestly, <b>before</b> seeing the data, based on the question you actually care about.</div>
+    <div class="intuition"><span class="lab">Notice the owner's result</span>With the original numbers the p-value sits just under 0.05, so the verdict is a narrow "reject". Switch α to 0.01 and the same data no longer convinces us. That is why α must be fixed in advance: otherwise one could pick whichever cutoff gives the answer one wants.</div>
+    <p><b>How to word the conclusion.</b> If we reject H₀: "The data gives statistically significant evidence that the average wait has changed." If we fail to reject: "We do not have enough evidence to say the average wait has changed." We avoid saying "we proved the machine works" or "we proved it makes no difference". A test weighs evidence. It does not deliver proof.</p>
+    <p>The last preset is worth a look. A small 0.2-minute gap (12 seconds) becomes "statistically significant" once 400 customers are timed, even though few owners would care about 12 seconds. Statistical significance and practical importance are different questions.</p>
+  </div>
+</section>
+
+<section class="chapter" id="errors">
+  <div class="tag">Beyond the steps</div>
+  <h2>Tests can be wrong, in two different ways</h2>
+  <div class="stack">
+    <p>A test works from a sample, so sometimes it points the wrong way. There are exactly two kinds of mistake, depending on what is really true:</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Our decision</th><th>Reality: machine changed nothing</th><th>Reality: machine really is faster</th></tr></thead>
+      <tbody>
+        <tr><td><b>Reject H₀</b><br>"It changed"</td><td><b>Type I error</b> (false alarm). We celebrate a machine that does nothing. Chance = α.</td><td>Correct. We detected a real improvement. Chance = <b>power</b>.</td></tr>
+        <tr><td><b>Fail to reject H₀</b><br>"Not convinced"</td><td>Correct. We held back when there was nothing to find.</td><td><b>Type II error</b> (miss). We overlook a real improvement. Chance = β.</td></tr>
+      </tbody>
+    </table></div>
+    <p>Choosing α <i>is</i> choosing how many false alarms you will tolerate. A smaller α means fewer false alarms but more misses. Think of a smoke detector: make it less sensitive and it stops going off when you make toast, but it may also be slower to catch a real fire.</p>
+  </div>
+
+  <div class="panel">
+    <h3>Run 1000 pretend experiments</h3>
+    <p class="sub">Choose what is truly happening, then watch how often the test rejects H₀. Each dot is one experiment with n customers, using your α and H₁ from Step 5.</p>
+    <div class="controls">
+      <div class="ctl"><label for="trueMean">True average wait with the new machine <output data-out="trueMean"></output></label>
+        <input type="range" id="trueMean" min="4" max="5.2" step="0.1" data-bind="trueMean"></div>
+      <div class="ctl"><label for="n6">Customers per experiment (n) <output data-out="n"></output></label>
+        <input type="range" id="n6" min="4" max="400" step="1" data-bind="n"></div>
+    </div>
+    <div class="chips" style="margin-bottom:10px">
+      <button class="chip" data-true="5.0">Nothing changed (5.0)</button>
+      <button class="chip" data-true="4.8">Slightly faster (4.8)</button>
+      <button class="chip" data-true="4.5">Clearly faster (4.5)</button>
+    </div>
+    <div class="btnrow"><button class="btn" id="runExp">Run 1000 experiments</button></div>
+    <div id="dots" aria-label="1000 experiment outcomes"></div>
+    <div class="legend" id="dotLegend"></div>
+    <div class="readouts">
+      <div class="ro"><div class="k">Rejected H₀</div><div class="v" id="expRej">–</div></div>
+      <div class="ro"><div class="k">Math predicts</div><div class="v" id="expMath">–</div></div>
+      <div class="ro"><div class="k" id="expKLabel">Rate type</div><div class="v" id="expKind">–</div></div>
+    </div>
+    <p class="sub" style="margin-top:12px" id="expRead"></p>
+  </div>
+
+  <div class="stack" style="margin-top:20px">
+    <p><b>Things to try.</b> Set the truth to 5.0 and run it a few times: the rejection rate hovers near α, which are the false alarms. Now set the truth to 4.8 and watch many real improvements get missed. Then raise n and run again: more customers means more of the real improvements are caught. Collecting more data is the main way to reduce misses without causing more false alarms.</p>
+  </div>
+</section>
+
+<section class="chapter" id="pitfalls">
+  <div class="tag">Beyond the steps</div>
+  <h2>Four common misunderstandings</h2>
+  <div class="stack">
+    <div class="tablewrap"><table>
+      <thead><tr><th>Tempting belief</th><th>What is actually true</th></tr></thead>
+      <tbody>
+        <tr><td>"p = 0.03 means a 3% chance that H₀ is true."</td><td>The p-value assumes H₀ is true and measures how surprising the data would be. It says nothing directly about the chance that H₀ is true.</td></tr>
+        <tr><td>"We failed to reject H₀, so the machine makes no difference."</td><td>Failing to reject means the evidence was not strong enough. A small sample can easily miss a real effect. "Absence of evidence" is not "evidence of absence".</td></tr>
+        <tr><td>"Significant means important."</td><td>With enough data, even a trivial difference becomes significant. Always ask how big the difference is and whether it matters in practice (a 12-second faster wait may not justify a new machine).</td></tr>
+        <tr><td>"I'll keep testing until p drops below 0.05."</td><td>Run enough tests and luck will eventually hand you a small p. Decide the hypotheses, α and sample size before looking at the data.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section class="chapter" id="recap">
+  <div class="tag">Recap</div>
+  <h2>The five steps, with the café's numbers</h2>
+  <div class="stack">
+    <div class="tablewrap"><table>
+      <thead><tr><th>Step</th><th>Question it answers</th><th>Café (your current settings)</th></tr></thead>
+      <tbody>
+        <tr><td><b>1 Hypotheses</b></td><td>What are the two competing claims?</td><td id="rc1"></td></tr>
+        <tr><td><b>2 Sample</b></td><td>What did the data show, and how much luck is normal?</td><td id="rc2"></td></tr>
+        <tr><td><b>3 Test statistic</b></td><td>How many wobbles from H₀ is the sample?</td><td id="rc3"></td></tr>
+        <tr><td><b>4 p-value</b></td><td>If H₀ were true, how often would luck do this?</td><td id="rc4"></td></tr>
+        <tr><td><b>5 Decision</b></td><td>Is that too surprising for our chosen α?</td><td id="rc5"></td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section class="chapter" id="quiz">
+  <div class="tag">Check yourself</div>
+  <h2>Five quick questions</h2>
+  <div id="quizBox"></div>
+  <p id="quizScore" class="sub" style="margin-top:14px;color:var(--muted)"></p>
+</section>
+
+<footer>Every number on this page comes from the same formulas you saw above, computed in your browser. The "pretend" samples are random, so your simulations will differ slightly each run.</footer>
+
+</div>
+<script>
+(function(){
+'use strict';
+var MU0=5, SIGMA=1.5, SQ2=Math.SQRT2;
+var S={mean:4.5,n:36,alpha:0.05,tails:'two',trueMean:5.0,simN:36,sims:[],last:null};
+
+function $(s){return document.querySelector(s)}
+function $$(s){return Array.prototype.slice.call(document.querySelectorAll(s))}
+
+/* ---------- maths ---------- */
+function erfc(x){
+  var z=Math.abs(x), t=1/(1+0.5*z);
+  var r=t*Math.exp(-z*z-1.26551223+t*(1.00002368+t*(0.37409196+t*(0.09678418+t*(-0.18628806+t*(0.27886807+t*(-1.13520398+t*(1.48851587+t*(-0.82215223+t*0.17087277)))))))));
+  return x>=0?r:2-r;
+}
+function lower(z){return 0.5*erfc(-z/SQ2)}
+function upper(z){return 0.5*erfc(z/SQ2)}
+var CRIT={two:{'0.1':1.645,'0.05':1.96,'0.01':2.576},left:{'0.1':1.2816,'0.05':1.6449,'0.01':2.3263}};
+function critVal(){return CRIT[S.tails][String(S.alpha)]}
+function zOf(mean,n){return (mean-MU0)/(SIGMA/Math.sqrt(n))}
+function pOf(mean,n){var z=zOf(mean,n);return S.tails==='two'?erfc(Math.abs(z)/SQ2):lower(z)}
+function randn(){var u=0,v=0;while(u===0)u=Math.random();v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function pdf(z){return Math.exp(-z*z/2)/Math.sqrt(2*Math.PI)}
+function clamp(x,a,b){return Math.min(Math.max(x,a),b)}
+
+/* ---------- formatting ---------- */
+function fz(z){var r=Math.abs(z).toFixed(2);return (z<0&&r!=='0.00'?'−':'')+r}
+function fd(d,dp){var r=Math.abs(d).toFixed(dp);return (d<0&&parseFloat(r)!==0?'−':(d>0&&parseFloat(r)!==0?'+':''))+r}
+function fp(p){return p<0.0001?'< 0.0001':p.toFixed(4)}
+function fpct(p){var v=p*100;return (v<0.1&&v>0?'< 0.1':v.toFixed(v<10?1:0))+'%'}
+function fone(p){if(p<1e-6)return 'over a million';var v=1/p;return v<10?v.toFixed(1):Math.round(v).toLocaleString('en-US')}
+
+function calc(){
+  var se=SIGMA/Math.sqrt(S.n), z=(S.mean-MU0)/se, p=pOf(S.mean,S.n), c=critVal();
+  return {se:se,z:z,p:p,c:c,diff:S.mean-MU0,reject:p<=S.alpha};
+}
+
+/* ---------- readouts ---------- */
+function renderOuts(c){
+  var m={
+    mean:S.mean.toFixed(2)+' min', n:String(S.n), diff:fd(c.diff,2)+' min', se:c.se.toFixed(3)+' min',
+    z:fz(c.z), p:fp(c.p), oneIn:fone(c.p), alpha:S.alpha.toFixed(2),
+    crit:(S.tails==='two'?'±':'−')+c.c, trueMean:S.trueMean.toFixed(1)+' min'
+  };
+  $$('[data-out]').forEach(function(e){var k=e.getAttribute('data-out');if(m[k]!==undefined)e.textContent=m[k]});
+  $$('[data-bind]').forEach(function(e){var k=e.getAttribute('data-bind');if(String(e.value)!==String(S[k]))e.value=S[k]});
+  $$('[data-set]').forEach(function(b){
+    var k=b.getAttribute('data-set'), v=b.getAttribute('data-value');
+    b.classList.toggle('on',String(S[k])===(k==='alpha'?String(Number(v)):v));
+  });
+}
+
+/* ---------- Step 3: number line ---------- */
+function renderLine(c){
+  var W=480,H=150,X=function(m){return 24+(m-3.5)/3*432}, s='', m, k;
+  s+='<svg viewBox="0 0 '+W+' '+H+'" role="img">';
+  var lo=Math.max(3.5,5-2*c.se), hi=Math.min(6.5,5+2*c.se);
+  s+='<rect class="okfill" x="'+X(lo)+'" y="52" width="'+(X(hi)-X(lo))+'" height="38"/>';
+  s+='<line class="ax" x1="24" y1="90" x2="456" y2="90"/>';
+  for(m=3.5;m<=6.5001;m+=0.5){
+    s+='<line class="ax" x1="'+X(m)+'" y1="90" x2="'+X(m)+'" y2="95"/><text x="'+X(m)+'" y="109" text-anchor="middle">'+m.toFixed(1)+'</text>';
+  }
+  var spacing=c.se/3*432, ls=spacing>=30?1:spacing>=15?2:spacing>=6?5:10, K=Math.floor(1.5/c.se)+1;
+  for(k=-K;k<=K;k++){
+    if(k===0)continue; m=5+k*c.se; if(m<3.5||m>6.5)continue;
+    s+='<line x1="'+X(m)+'" y1="76" x2="'+X(m)+'" y2="90" style="stroke:var(--muted);stroke-width:1"/>';
+    if(k%ls===0)s+='<text x="'+X(m)+'" y="70" text-anchor="middle">'+(k<0?'−':'')+Math.abs(k)+'</text>';
+  }
+  s+='<line x1="'+X(5)+'" y1="26" x2="'+X(5)+'" y2="90" style="stroke:var(--ink);stroke-width:2"/>';
+  s+='<text class="strong" x="'+X(5)+'" y="18" text-anchor="middle">H₀ says 5.0</text>';
+  var dotColor=Math.abs(c.z)>=2?'var(--alert)':'var(--accent)';
+  s+='<line x1="'+X(5)+'" y1="90" x2="'+X(S.mean)+'" y2="90" style="stroke:'+dotColor+';stroke-width:4"/>';
+  s+='<circle cx="'+X(S.mean)+'" cy="90" r="7" style="fill:'+dotColor+'"/>';
+  s+='<text class="strong" x="'+clamp(X(S.mean),80,400)+'" y="136" text-anchor="middle">sample average '+S.mean.toFixed(2)+'</text>';
+  s+='</svg><p class="sub" style="margin:2px 0 10px">Grey numbers count standard errors away from 5.0. The shaded band is within 2 standard errors, where luck alone usually lands.</p>';
+  $('#line').innerHTML=s;
+
+  var f='z = (x̄ − μ₀) / (σ / √n)<br>';
+  f+='&nbsp;&nbsp;= ('+S.mean.toFixed(2)+' − 5.00) / (1.5 / √'+S.n+')<br>';
+  f+='&nbsp;&nbsp;= '+fd(c.diff,2).replace('+','')+' / '+c.se.toFixed(3)+'<br>';
+  f+='&nbsp;&nbsp;= <b>'+fz(c.z)+'</b>';
+  $('#zformula').innerHTML=f;
+
+  var a=Math.abs(c.z), dir=c.z<0?'below':'above', t;
+  if(a<1)t='The sample is within one wobble of 5.0, which is completely ordinary under H₀.';
+  else if(a<2)t='The sample is between 1 and 2 wobbles '+dir+' 5.0. A little unusual, but luck does this fairly often.';
+  else if(a<3)t='The sample is between 2 and 3 wobbles '+dir+' 5.0. That is unusual if nothing changed.';
+  else t='The sample is more than 3 wobbles '+dir+' 5.0. That would be very unusual if nothing changed.';
+  $('#zread').textContent=t;
+}
+
+/* ---------- Steps 4 and 5: bell curves ---------- */
+function curveSvg(mode,c){
+  var W=480,H=214,B=170,X=function(z){return 20+(z+4)/8*440},Y=function(f){return B-f/0.4*130};
+  function area(a,b){
+    a=Math.max(-4,a); b=Math.min(4,b); if(b<=a)return '';
+    var d='M'+X(a).toFixed(1)+','+B, z;
+    for(z=a;z<b;z+=0.05)d+=' L'+X(z).toFixed(1)+','+Y(pdf(z)).toFixed(1);
+    return d+' L'+X(b).toFixed(1)+','+Y(pdf(b)).toFixed(1)+' L'+X(b).toFixed(1)+','+B+' Z';
+  }
+  var s='<svg viewBox="0 0 '+W+' '+H+'" role="img">', z, d='';
+  var zc=clamp(c.z,-4,4), a=Math.abs(c.z);
+  if(mode==='p'){
+    if(S.tails==='two'){s+='<path class="tailfill" d="'+area(-4,-a)+'"/><path class="tailfill" d="'+area(a,4)+'"/>'}
+    else{s+='<path class="tailfill" d="'+area(-4,c.z)+'"/>'}
+  }else{
+    var cr=c.c;
+    if(S.tails==='two'){
+      s+='<path class="okfill" d="'+area(-cr,cr)+'"/><path class="tailfill" d="'+area(-4,-cr)+'"/><path class="tailfill" d="'+area(cr,4)+'"/>';
+      s+='<text class="rej" x="'+X((-4-cr)/2)+'" y="156" text-anchor="middle">reject H₀</text><text class="rej" x="'+X((4+cr)/2)+'" y="156" text-anchor="middle">reject H₀</text>';
+      s+='<text class="keep" x="'+X(0)+'" y="150" text-anchor="middle">not convinced</text>';
+    }else{
+      s+='<path class="okfill" d="'+area(-cr,4)+'"/><path class="tailfill" d="'+area(-4,-cr)+'"/>';
+      s+='<text class="rej" x="'+X((-4-cr)/2)+'" y="156" text-anchor="middle">reject H₀</text>';
+      s+='<text class="keep" x="'+X((4-cr)/2)+'" y="150" text-anchor="middle">not convinced</text>';
+    }
+  }
+  for(z=-4;z<=4.0001;z+=0.05)d+=(z===-4?'M':' L')+X(z).toFixed(1)+','+Y(pdf(z)).toFixed(1);
+  s+='<path class="curve" d="'+d+'"/><line class="ax" x1="20" y1="'+B+'" x2="460" y2="'+B+'"/>';
+  for(z=-3;z<=3;z++)s+='<line class="ax" x1="'+X(z)+'" y1="'+B+'" x2="'+X(z)+'" y2="'+(B+4)+'"/><text x="'+X(z)+'" y="'+(B+17)+'" text-anchor="middle">'+(z<0?'−':'')+Math.abs(z)+'</text>';
+  if(mode==='d'){
+    var cs=S.tails==='two'?[-c.c,c.c]:[-c.c];
+    cs.forEach(function(v){
+      s+='<line x1="'+X(v)+'" y1="'+Y(pdf(v))+'" x2="'+X(v)+'" y2="'+B+'" style="stroke:var(--alert);stroke-width:1.5"/>';
+      s+='<text class="rej" x="'+X(v)+'" y="'+(B+34)+'" text-anchor="middle">cutoff '+(v<0?'−':'')+Math.abs(v)+'</text>';
+    });
+  }
+  var col=mode==='d'?(c.reject?'var(--alert)':'var(--accent)'):'var(--ink)';
+  var mx=X(zc), anchor=mx<90?'start':(mx>390?'end':'middle');
+  s+='<line x1="'+mx+'" y1="30" x2="'+mx+'" y2="'+B+'" style="stroke:'+col+';stroke-width:2;stroke-dasharray:5 4"/>';
+  s+='<circle cx="'+mx+'" cy="'+B+'" r="5" style="fill:'+col+'"/>';
+  s+='<text class="strong" x="'+mx+'" y="20" text-anchor="'+anchor+'">your z = '+fz(c.z)+(Math.abs(c.z)>4?' (off the chart)':'')+'</text>';
+  return s+'</svg><p class="sub" style="margin:2px 0 0">Horizontal axis: z, the number of standard errors from 5.0 in a world where H₀ is true.</p>';
+}
+
+function renderP(c){
+  $('#curveP').innerHTML=curveSvg('p',c);
+  var t;
+  if(S.tails==='two')t='If nothing had changed, about '+fpct(c.p)+' of all samples would land at least '+Math.abs(c.z).toFixed(2)+' wobbles from 5.0 in either direction. That is roughly 1 sample in '+fone(c.p)+'.';
+  else if(c.z>0)t='The sample average is above 5.0, so it gives no support for "faster". About '+fpct(c.p)+' of samples would be this low or lower even with no change.';
+  else t='If nothing had changed, about '+fpct(c.p)+' of all samples would land this far below 5.0 or lower. That is roughly 1 sample in '+fone(c.p)+'.';
+  $('#pread').textContent=t;
+}
+
+function renderDecision(c){
+  $('#curveD').innerHTML=curveSvg('d',c);
+  var v=$('#verdict'), cmp=c.reject?'is at or below':'is above', h;
+  if(c.reject){
+    h='<b>Reject H₀.</b> The p-value ('+fp(c.p)+') '+cmp+' α ('+S.alpha.toFixed(2)+'), so a result this extreme would be too surprising if nothing had changed. ';
+    h+=S.tails==='two'?'There is statistically significant evidence that the average wait is different from 5.0 minutes ('+(c.z<0?'faster':'slower')+').':'There is statistically significant evidence that the average wait is lower than 5.0 minutes.';
+  }else{
+    h='<b>Fail to reject H₀.</b> The p-value ('+fp(c.p)+') '+cmp+' α ('+S.alpha.toFixed(2)+'), so luck alone could plausibly explain this result. We do not have enough evidence to say the average wait has changed. This does not prove that it has not.';
+  }
+  v.className='verdict '+(c.reject?'rej':'keep');
+  v.innerHTML=h;
+}
+
+/* ---------- Step 2: simulation ---------- */
+function simulate(k){
+  var i,j,n=S.simN,vals,sum,x;
+  for(i=0;i<k;i++){
+    vals=[];sum=0;
+    for(j=0;j<n;j++){x=Math.max(0.5,MU0+SIGMA*randn());vals.push(x);sum+=x}
+    S.sims.push(sum/n);
+    if(i===k-1)S.last={vals:vals,mean:sum/n};
+  }
+}
+function renderStrip(){
+  var W=480,H=72,X=function(v){return 24+v/10*432}, s='<svg viewBox="0 0 '+W+' '+H+'" role="img">', i, l=S.last;
+  s+='<line class="ax" x1="24" y1="50" x2="456" y2="50"/>';
+  for(i=0;i<=10;i+=2)s+='<line class="ax" x1="'+X(i)+'" y1="50" x2="'+X(i)+'" y2="54"/><text x="'+X(i)+'" y="67" text-anchor="middle">'+i+'</text>';
+  if(l){
+    l.vals.forEach(function(v,idx){
+      var jy=((idx*37)%23)-11;
+      s+='<circle cx="'+X(Math.min(v,10))+'" cy="'+(26+jy*0.9)+'" r="3.2" style="fill:var(--accent);fill-opacity:.55"/>';
+    });
+    s+='<line x1="'+X(l.mean)+'" y1="6" x2="'+X(l.mean)+'" y2="50" style="stroke:var(--ink);stroke-width:2"/>';
+  }
+  s+='</svg>';
+  s+='<p class="sub" style="margin:2px 0 10px">'+(l?'Latest group: each dot is one customer\'s wait (minutes). The black line is the group\'s average, '+l.mean.toFixed(2)+'.':'Click "Time one group" to start.')+'</p>';
+  $('#strip').innerHTML=s;
+}
+function renderHist(){
+  var W=480,H=200,x0=24,pw=432,nb=60,base=166,top=28,ph=base-top,i,b;
+  var counts=[],ext=[],obs=S.mean,dev=Math.abs(obs-MU0),extTotal=0,maxc=8;
+  for(i=0;i<nb;i++){counts.push(0);ext.push(0)}
+  S.sims.forEach(function(m){
+    b=clamp(Math.floor((m-3.5)/0.05),0,nb-1);
+    var isExt=S.tails==='two'?Math.abs(m-MU0)>=dev-1e-9:m<=obs+1e-9;
+    counts[b]++; if(isExt){ext[b]++;extTotal++}
+  });
+  counts.forEach(function(c){if(c>maxc)maxc=c});
+  var X=function(m){return x0+(m-3.5)/3*pw}, bw=pw/nb-0.8, s='<svg viewBox="0 0 '+W+' '+H+'" role="img">';
+  for(i=0;i<nb;i++){
+    if(!counts[i])continue;
+    var ha=counts[i]/maxc*ph, he=ext[i]/maxc*ph, bx=x0+i*pw/nb+0.4;
+    if(ha-he>0.01)s+='<rect class="bar" x="'+bx.toFixed(1)+'" y="'+(base-ha).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+(ha-he).toFixed(1)+'"/>';
+    if(he>0.01)s+='<rect class="bar ext" x="'+bx.toFixed(1)+'" y="'+(base-he).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+he.toFixed(1)+'"/>';
+  }
+  s+='<line class="ax" x1="'+x0+'" y1="'+base+'" x2="'+(x0+pw)+'" y2="'+base+'"/>';
+  for(var m=3.5;m<=6.5001;m+=0.5)s+='<line class="ax" x1="'+X(m)+'" y1="'+base+'" x2="'+X(m)+'" y2="'+(base+4)+'"/><text x="'+X(m)+'" y="'+(base+18)+'" text-anchor="middle">'+m.toFixed(1)+'</text>';
+  s+='<line x1="'+X(5)+'" y1="'+top+'" x2="'+X(5)+'" y2="'+base+'" style="stroke:var(--muted);stroke-width:1"/>';
+  s+='<text x="'+X(5)+'" y="'+(top-14)+'" text-anchor="middle">5.0</text>';
+  [obs].concat(S.tails==='two'?[2*MU0-obs]:[]).forEach(function(v,idx){
+    if(v<3.5||v>6.5)return;
+    s+='<line class="mk" x1="'+X(v)+'" y1="'+(top-6)+'" x2="'+X(v)+'" y2="'+base+'" style="stroke:var(--alert)"/>';
+    if(idx===0)s+='<text class="strong" x="'+clamp(X(v),60,420)+'" y="'+(top-16)+'" text-anchor="'+(Math.abs(X(v)-X(5))<40?(v<5?'end':'start'):'middle')+'" style="fill:var(--alert)">owner\'s '+obs.toFixed(2)+'</text>';
+  });
+  s+='<text x="'+(x0+pw)+'" y="'+(H-4)+'" text-anchor="end">average wait of a group (minutes)</text></svg>';
+  $('#hist').innerHTML=s;
+
+  var tot=S.sims.length, se=SIGMA/Math.sqrt(S.simN);
+  $('#simCount').textContent=tot.toLocaleString('en-US');
+  $('#simSE').textContent=se.toFixed(3)+' min';
+  $('#simExt').textContent=extTotal.toLocaleString('en-US');
+  $('#simShare').textContent=tot?(extTotal/tot*100).toFixed(1)+'%':'0%';
+  $('#simMath').textContent=fpct(pOf(S.mean,S.simN));
+}
+
+/* ---------- errors: 1000 pretend experiments ---------- */
+function runExp(){
+  var N=1000,se=SIGMA/Math.sqrt(S.n),c=critVal(),rej=[],cnt=0,i,z;
+  for(i=0;i<N;i++){
+    z=(S.trueMean+se*randn()-MU0)/se;
+    var r=S.tails==='two'?Math.abs(z)>=c:z<=-c;
+    rej.push(r); if(r)cnt++;
+  }
+  var noEffect=S.tails==='left'?S.trueMean>=MU0-1e-9:Math.abs(S.trueMean-MU0)<1e-9;
+  var delta=(S.trueMean-MU0)/se;
+  var exact=S.tails==='two'?lower(-c-delta)+upper(c-delta):lower(-c-delta);
+  var cols=50,sp=9.2,s='<svg viewBox="0 0 480 '+(Math.ceil(N/cols)*sp+8)+'" role="img">';
+  rej.forEach(function(r,k){
+    var cx=14+(k%cols)*sp, cy=8+Math.floor(k/cols)*sp;
+    s+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="3" class="dot '+(r?(noEffect?'bad':'ok'):'no')+'"/>';
+  });
+  $('#dots').innerHTML=s+'</svg>';
+  $('#dotLegend').innerHTML=r2(noEffect);
+  $('#expRej').textContent=cnt+' of '+N+' ('+(cnt/N*100).toFixed(1)+'%)';
+  $('#expMath').textContent=(exact*100).toFixed(1)+'%';
+  if(noEffect){
+    $('#expKLabel').textContent='False alarms (Type I)';
+    $('#expKind').textContent=(cnt/N*100).toFixed(1)+'%';
+    $('#expRead').textContent='In this world nothing is truly different, so every rejection is a false alarm (a Type I error). The rate hovers near α = '+S.alpha.toFixed(2)+', which is exactly what choosing α promises.';
+  }else{
+    $('#expKLabel').textContent='Misses (Type II)';
+    $('#expKind').textContent=((N-cnt)/N*100).toFixed(1)+'%';
+    $('#expRead').textContent='In this world the true average really differs from 5.0, so each rejection is a correct detection. The share caught ('+(cnt/N*100).toFixed(0)+'%) is the test\'s power. The other '+((N-cnt)/N*100).toFixed(0)+'% are misses (Type II errors): real changes the test failed to notice. Try raising n and run again.';
+  }
+}
+function r2(noEffect){
+  return '<span><i style="background:'+(noEffect?'var(--alert)':'var(--accent)')+'"></i>'+(noEffect?'rejected H₀ (false alarm)':'rejected H₀ (caught the real change)')+'</span><span><i style="border:1px solid var(--muted);opacity:.7"></i>'+(noEffect?'did not reject (correct)':'did not reject (a miss)')+'</span>';
+}
+
+/* ---------- recap ---------- */
+function renderRecap(c){
+  $('#rc1').textContent='H₀: μ = 5.0 versus H₁: μ '+(S.tails==='two'?'≠':'<')+' 5.0';
+  $('#rc2').textContent='Sample average '+S.mean.toFixed(2)+' min from n = '+S.n+' customers; typical wobble (SE) = '+c.se.toFixed(3)+' min';
+  $('#rc3').textContent='z = ('+S.mean.toFixed(2)+' − 5.0) / '+c.se.toFixed(3)+' = '+fz(c.z);
+  $('#rc4').textContent='p-value = '+fp(c.p);
+  $('#rc5').textContent='p '+(c.reject?'≤':'>')+' α ('+S.alpha.toFixed(2)+'), so '+(c.reject?'reject':'fail to reject')+' H₀';
+}
+
+/* ---------- render everything ---------- */
+function renderAll(){
+  var c=calc();
+  renderOuts(c); renderLine(c); renderP(c); renderDecision(c); renderHist(); renderRecap(c);
+}
+function changed(key){
+  renderAll();
+  if(key==='n'||key==='alpha'||key==='tails'||key==='trueMean')runExp();
+}
+
+/* ---------- wiring ---------- */
+$$('[data-bind]').forEach(function(e){
+  e.addEventListener('input',function(){var k=e.getAttribute('data-bind');S[k]=Number(e.value);changed(k)});
+});
+$$('[data-set]').forEach(function(b){
+  b.addEventListener('click',function(){
+    var k=b.getAttribute('data-set'),v=b.getAttribute('data-value');
+    S[k]=k==='alpha'?Number(v):v; changed(k);
+  });
+});
+$$('#presets .chip').forEach(function(b){
+  b.addEventListener('click',function(){S.mean=Number(b.getAttribute('data-mean'));S.n=Number(b.getAttribute('data-n'));changed('n')});
+});
+$$('[data-true]').forEach(function(b){
+  b.addEventListener('click',function(){S.trueMean=Number(b.getAttribute('data-true'));changed('trueMean')});
+});
+$$('#simN button').forEach(function(b){
+  b.addEventListener('click',function(){
+    S.simN=Number(b.getAttribute('data-n')); S.sims=[]; S.last=null; simulate(40);
+    $$('#simN button').forEach(function(x){x.classList.toggle('on',x===b)});
+    renderStrip(); renderHist();
+  });
+});
+[['draw1',1],['draw100',100],['draw1000',1000]].forEach(function(p){
+  $('#'+p[0]).addEventListener('click',function(){simulate(p[1]);renderStrip();renderHist()});
+});
+$('#simReset').addEventListener('click',function(){S.sims=[];S.last=null;renderStrip();renderHist()});
+$('#runExp').addEventListener('click',runExp);
+
+/* ---------- quiz ---------- */
+var QZ=[
+ {q:'A test gives p = 0.03, and the significance level was set at α = 0.05. What is the correct decision?',
+  o:['Fail to reject H₀, because 0.03 is just a small number','Reject H₀, because p is below α','Conclude that H₀ is definitely true','Conclude there is a 97% chance that H₁ is true'],a:1,
+  e:'p ≤ α means the data would be too surprising if H₀ were true, so we reject H₀. The last option is a classic misreading of the p-value.'},
+ {q:'Which statement describes the p-value?',
+  o:['The probability that H₀ is true','The probability that our test made a mistake','The probability of a result at least this extreme, if H₀ were true','The size of the effect, in minutes'],a:2,
+  e:'The p-value is calculated inside the "nothing changed" world. It measures how surprising the data would be there.'},
+ {q:'The owner times only 9 customers instead of 36 and still gets an average of 4.5 minutes. Compared with the original, the evidence against H₀ is:',
+  o:['Weaker, because the standard error grows to 0.5 and the gap is only 1 wobble','Stronger, because small samples are more reliable','The same, because the average did not change','Impossible to say'],a:0,
+  e:'SE = 1.5 / √9 = 0.5, so z = −0.5 / 0.5 = −1. Small samples wobble more, so the same gap proves less.'},
+ {q:'We fail to reject H₀. Which conclusion is justified?',
+  o:['We proved the machine makes no difference','The machine made waits longer','α was too low and should be raised until we reject','We do not have enough evidence to say the wait changed'],a:3,
+  e:'Failing to reject is a lack of evidence, not proof of "no effect". A bigger sample might find a real change.'},
+ {q:'What happens if you make α smaller, say from 0.05 to 0.01?',
+  o:['More false alarms','Fewer false alarms, but real improvements become harder to detect','Nothing, it does not affect the decision','The p-value gets smaller'],a:1,
+  e:'A stricter cutoff demands stronger evidence. That lowers the Type I error rate and raises the Type II error rate.'}
+];
+var score=0,answered=0;
+(function(){
+  var box=$('#quizBox'),html='';
+  QZ.forEach(function(q,i){
+    html+='<div class="q" id="q'+i+'"><p class="qt">'+(i+1)+'. '+q.q+'</p><div class="opts">';
+    q.o.forEach(function(o,j){html+='<button type="button" data-q="'+i+'" data-o="'+j+'">'+o+'</button>'});
+    html+='</div><div class="fb" aria-live="polite"></div></div>';
+  });
+  box.innerHTML=html;
+  $$('#quizBox .opts button').forEach(function(b){
+    b.addEventListener('click',function(){
+      var i=Number(b.getAttribute('data-q')),j=Number(b.getAttribute('data-o')),q=QZ[i],wrap=$('#q'+i);
+      var btns=wrap.querySelectorAll('button');
+      Array.prototype.forEach.call(btns,function(x,k){x.disabled=true;if(k===q.a)x.classList.add('right')});
+      if(j!==q.a)b.classList.add('wrong'); else score++;
+      answered++;
+      wrap.querySelector('.fb').textContent=(j===q.a?'Correct. ':'Not quite. ')+q.e;
+      $('#quizScore').textContent='Score so far: '+score+' of '+answered+' answered ('+QZ.length+' questions in total).';
+    });
+  });
+})();
+
+/* ---------- start in a filled, working state ---------- */
+simulate(40);
+renderStrip();
+renderAll();
+runExp();
+})();
+</script>
+
+</body></html>

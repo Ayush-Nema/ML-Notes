@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision Trees — An Interactive Beginner's Guide</title>
+<style>
+:root{
+  --bg:#f5f6fb; --card:#ffffff; --ink:#1b2234; --muted:#58627a; --line:#e1e5ef; --line2:#b9c2d8;
+  --brand:#3b5bdb; --brand-soft:#e8edff; --warn:#f59f00; --warn-soft:#fff4d6;
+  --yes:#2a9d8f; --no:#d1495b;
+  --c0:#2a9d8f; --c1:#e9a23b; --c2:#7b5ea7;
+  --radius:14px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+a{color:var(--brand)}
+main{max-width:1120px;margin:0 auto;padding:22px 16px 90px}
+#side{position:fixed;left:0;top:0;bottom:0;width:256px;background:#fff;border-right:1px solid var(--line);z-index:40;display:flex;flex-direction:column;transition:transform .22s ease;box-shadow:2px 0 12px rgba(20,30,60,.04)}
+#side .sh{display:flex;align-items:center;justify-content:space-between;padding:14px 14px 12px}
+#side .sh b{font-size:16px}
+#sideToggle,#menuBtn{font:inherit;cursor:pointer;border:1px solid var(--line2);background:#fff;color:var(--ink);border-radius:9px}
+#sideToggle{width:32px;height:32px;font-size:16px;line-height:1}
+#sideToggle:hover,#menuBtn:hover{border-color:var(--brand);color:var(--brand)}
+#side .pg{padding:0 14px 10px}
+#prog{height:5px;background:var(--line);border-radius:3px;overflow:hidden}
+#progBar{height:100%;background:var(--brand);width:0;transition:width .25s}
+#progTxt{font-size:12.5px;color:var(--muted);margin-top:5px}
+#nav{overflow-y:auto;padding:6px 8px 16px;flex:1}
+#nav a{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;text-decoration:none;color:var(--muted);font-size:14.5px;margin:1px 0}
+#nav a .n{width:26px;height:26px;border-radius:50%;background:#eef1f8;display:grid;place-items:center;font-size:12.5px;font-weight:700;flex:none;color:var(--muted)}
+#nav a:hover{background:#f3f5fc;color:var(--ink)}
+#nav a.act{background:var(--brand-soft);color:var(--brand);font-weight:600}
+#nav a.act .n{background:var(--brand);color:#fff}
+#menuBtn{position:fixed;left:12px;top:12px;z-index:35;padding:7px 13px;font-size:14px;display:none;box-shadow:0 2px 8px rgba(20,30,60,.12)}
+#wrap{margin-left:256px;transition:margin-left .22s ease}
+body.collapsed #side{transform:translateX(-100%);box-shadow:none}
+body.collapsed #wrap{margin-left:0}
+body.collapsed #menuBtn{display:block}
+body.collapsed main{padding-top:58px}
+@media(max-width:900px){#wrap{margin-left:0}main{padding-top:58px}#menuBtn{display:block}body:not(.collapsed) #menuBtn{display:none}#side{box-shadow:4px 0 24px rgba(20,30,60,.2)}}
+main section{display:none;margin-top:0}
+main section.active{display:block;animation:fadein .25s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.pager{display:flex;justify-content:space-between;gap:12px;margin-top:34px;padding-top:18px;border-top:1px solid var(--line)}
+.pager .btn{max-width:48%}
+.hero{margin:0 0 26px;padding:38px 30px;border-radius:20px;background:linear-gradient(135deg,#223a9e 0%,#3b5bdb 55%,#5f7cf0 100%);color:#fff}
+.hero h1{margin:0 0 8px;font-size:clamp(30px,5vw,46px);line-height:1.15}
+.hero p{margin:0;max-width:700px;font-size:18px;opacity:.95}
+.kicker{color:var(--brand);font-weight:700;font-size:12.5px;text-transform:uppercase;letter-spacing:.09em}
+h2{font-size:29px;line-height:1.25;margin:2px 0 6px}
+h3{font-size:19px;margin:0 0 6px}
+.lead{color:var(--muted);font-size:17px;max-width:800px;margin:4px 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin:16px 0;box-shadow:0 1px 2px rgba(20,30,60,.04)}
+.card > h3:first-child{margin-top:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+.callout{border-left:4px solid var(--brand);background:var(--brand-soft);padding:12px 16px;border-radius:0 10px 10px 0;margin:14px 0}
+.callout.warn{border-color:var(--warn);background:var(--warn-soft)}
+.callout.good{border-color:var(--yes);background:#e5f6f3}
+.callout p{margin:4px 0}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+code,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+code{background:#eef1f8;padding:1px 6px;border-radius:5px;font-size:.92em}
+pre{background:#1b2234;color:#e8ecf8;padding:14px 16px;border-radius:10px;overflow:auto;font-size:13.5px;line-height:1.55;margin:10px 0}
+.formula{background:#f1f4fc;border:1px dashed var(--line2);border-radius:10px;padding:10px 14px;margin:10px 0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;overflow-x:auto}
+.mx{background:#f8f9fe;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.mx h4{margin:0 0 6px;font-size:16px;color:var(--brand)}
+.mx p{margin:6px 0}
+.mf{background:#fff;border:1px dashed var(--line2);border-radius:8px;padding:9px 10px;text-align:center;font-family:Georgia,'Times New Roman',serif;font-size:17px;overflow-x:auto;white-space:nowrap}
+.calc details{border:1px solid var(--line);border-radius:10px;padding:8px 14px;margin:8px 0;background:#fbfcff}
+.calc details[open]{background:#fff;border-color:var(--line2)}
+.calc summary{font-weight:500;color:var(--ink)}
+.calc .fb{border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin:8px 0;background:#fff}
+.calc .fb.ch{border-color:var(--brand);background:var(--brand-soft)}
+.calc .fb .formula{background:#fff;margin:6px 0 2px;line-height:1.75}
+.tbl th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
+.tbl th.sortable:hover{background:#e3e9fb}
+.sortarrow{display:inline-block;width:14px;margin-left:4px;font-size:11px;color:var(--brand)}
+.sortarrow.off{color:#b4bdd3}
+.treewrap{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:16px;align-items:start}
+.rowpanel{position:sticky;top:12px;border:1px solid var(--line);border-radius:12px;background:#fbfcff;padding:10px 12px;max-height:calc(100vh - 24px);overflow:auto}
+.rowpanel .tbl{font-size:12px;margin-top:6px}
+.rowpanel .tbl th,.rowpanel .tbl td{padding:3px 6px}
+.rowpanel .tbl th.sp{background:var(--brand-soft);color:var(--brand)}
+.tbox.sel{outline:3px solid rgba(245,159,0,.55);outline-offset:2px}
+@media(max-width:1100px){.treewrap{grid-template-columns:1fr}.rowpanel{top:auto;bottom:8px;max-height:42vh;background:#fff;box-shadow:0 -4px 18px rgba(20,30,60,.16)}}
+.sb{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.sb .stat{padding:6px 4px;border-radius:9px}
+.sb .stat b{font-size:19px;line-height:1.25}
+.sb .stat span{font-size:11px}
+.hp details{border:1px solid var(--line);border-radius:10px;padding:8px 14px;margin:8px 0;background:#fbfcff}
+.hp details[open]{background:#fff;border-color:var(--line2)}
+.hp summary{font-weight:500;color:var(--ink)}
+.hp h5{margin:12px 0 2px;font-size:12.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--brand)}
+.hp p{margin:4px 0}
+.ud{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
+.ud>div{border-radius:10px;padding:8px 12px;font-size:14.5px;line-height:1.5}
+.ud .up{background:#eaf3ff;border:1px solid #cfe1f7}
+.ud .down{background:#fff5e0;border:1px solid #f1deb0}
+@media(max-width:760px){.ud{grid-template-columns:1fr}}
+.btn{font:inherit;font-size:14px;border:1px solid var(--line2);background:#fff;color:var(--ink);padding:7px 14px;border-radius:9px;cursor:pointer;transition:.12s}
+.btn:hover{border-color:var(--brand);color:var(--brand)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.primary:hover{background:#2f4bc2;color:#fff}
+.btn.sm{padding:4px 10px;font-size:13px}
+.chip{font:inherit;font-size:13.5px;border:1px solid var(--line2);background:#fff;padding:5px 12px;border-radius:999px;cursor:pointer}
+.chip.act{background:var(--warn-soft);border-color:var(--warn);font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px 22px;background:#f8f9fe;border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.controls label{display:block;font-size:13.5px;font-weight:600;margin-bottom:3px}
+.controls select,.controls input[type=range]{width:100%}
+select{font:inherit;font-size:14px;padding:6px 8px;border-radius:8px;border:1px solid var(--line2);background:#fff}
+input[type=range]{accent-color:var(--brand)}
+.val{color:var(--brand);font-weight:700}
+.scroll{overflow-x:auto}
+table.tbl{border-collapse:collapse;font-size:14px;width:100%}
+.tbl th,.tbl td{border:1px solid var(--line);padding:5px 9px;text-align:center}
+.tbl th{background:#f1f4fc}
+.tbl tr.hl td{background:#fff3bf}
+.yes{color:var(--yes);font-weight:700}.no{color:var(--no);font-weight:700}
+.stat{background:#f8f9fe;border:1px solid var(--line);border-radius:12px;padding:12px 14px;text-align:center}
+.stat b{display:block;font-size:26px;line-height:1.2}
+.stat span{font-size:13px;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13.5px;margin:6px 0}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+details{margin:12px 0}
+details summary{cursor:pointer;font-weight:600;color:var(--brand)}
+.steps{counter-reset:s;list-style:none;padding:0;margin:10px 0}
+.steps li{counter-increment:s;position:relative;padding:8px 0 8px 46px;margin:4px 0}
+.steps li::before{content:counter(s);position:absolute;left:0;top:6px;width:32px;height:32px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;display:grid;place-items:center}
+/* SVG tree */
+svg text{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.tn rect{fill:#fff;stroke:var(--line2);stroke-width:1.5}
+.tn.leaf rect{fill:#eaf7f5}
+.tn.on rect{stroke:var(--brand);stroke-width:3.2}
+.tn.hl rect{fill:#fff3bf;stroke:var(--warn);stroke-width:3.2}
+.tn text{font-size:12px;fill:var(--ink)}
+.tn text.b{font-weight:700;font-size:13px}
+.tn text.s{fill:#3d4760;font-size:11.5px}
+.te{fill:none;stroke:var(--line2);stroke-width:2}
+.te.on{stroke:var(--brand);stroke-width:3.6}
+.te.hl{stroke:var(--warn);stroke-width:4}
+.tl{font-size:11.5px;fill:var(--muted);font-weight:600}
+.dl{font-size:11px;fill:#9aa4bd}.dl.hl{fill:#c27c00;font-weight:700}
+/* toy tree (HTML) */
+.ttree{overflow-x:auto;padding:8px 0 14px}
+.tnode{display:flex;flex-direction:column;align-items:center}
+.tbox{border:2px solid var(--line2);background:#fff;border-radius:12px;padding:8px 10px;min-width:170px;max-width:260px;text-align:center;font-size:13.5px;line-height:1.4}
+.tbox.leaf{background:#f6fbfa}
+.tbox.leaf.yesL{background:#e1f5f2;border-color:var(--yes)}
+.tbox.leaf.noL{background:#fbe9ec;border-color:var(--no)}
+.tbox.open{border-color:var(--warn);background:#fffaf0}
+.tbox.onpath{box-shadow:0 0 0 4px rgba(59,91,219,.28);border-color:var(--brand)}
+.tbox .ttl{font-weight:700}
+.bar{display:flex;height:9px;border-radius:5px;overflow:hidden;background:#e8ebf3;margin:5px 0 3px}
+.bar i{display:block;height:100%}
+.kids{display:flex;justify-content:center;position:relative;padding-top:16px}
+.kids::before{content:"";position:absolute;top:0;left:50%;height:16px;border-left:2px solid var(--line2)}
+.kid{position:relative;padding:16px 7px 0;display:flex;flex-direction:column;align-items:center}
+.kid::before{content:"";position:absolute;top:0;left:0;right:0;border-top:2px solid var(--line2)}
+.kid:first-child::before{left:50%}.kid:last-child::before{right:50%}.kid:only-child::before{display:none}
+.kid::after{content:"";position:absolute;top:0;left:50%;height:16px;border-left:2px solid var(--line2)}
+.elabel{background:var(--brand-soft);color:var(--brand);font-weight:700;font-size:12.5px;padding:1px 10px;border-radius:999px;margin-bottom:6px}
+.opt{display:flex;align-items:center;gap:6px;margin:4px 0;text-align:left}
+.optbtn{font:inherit;font-size:12.5px;flex:0 0 92px;border:1px solid var(--line2);background:#fff;border-radius:7px;padding:3px 4px;cursor:pointer}
+.optbtn:hover{border-color:var(--brand);background:var(--brand-soft)}
+.gbar{flex:1;height:8px;background:#e8ebf3;border-radius:4px;overflow:hidden;min-width:34px}
+.gbar i{display:block;height:100%;background:var(--brand)}
+.gval{font-size:12px;width:40px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.star{color:var(--warn);font-size:14px}
+/* quiz */
+.q{margin:14px 0;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.q:last-child{border:0}
+.q .opts{display:grid;gap:7px;margin-top:8px}
+.q button.o{font:inherit;text-align:left;border:1px solid var(--line2);background:#fff;border-radius:9px;padding:8px 12px;cursor:pointer}
+.q button.o:hover:not(:disabled){border-color:var(--brand);background:var(--brand-soft)}
+.q button.o.ok{background:#e1f5f2;border-color:var(--yes)}
+.q button.o.bad{background:#fbe9ec;border-color:var(--no)}
+.q .ex{display:none;margin-top:8px;font-size:14.5px}
+.proscons h3{display:flex;align-items:center;gap:8px}
+.pc{list-style:none;padding:0;margin:0}
+.pc li{padding:9px 0 9px 30px;position:relative;border-bottom:1px solid var(--line)}
+.pc li:last-child{border:0}
+.pc.p li::before{content:"✓";position:absolute;left:4px;top:8px;color:var(--yes);font-weight:800}
+.pc.c li::before{content:"!";position:absolute;left:5px;top:8px;color:#fff;background:var(--no);width:18px;height:18px;border-radius:50%;text-align:center;line-height:18px;font-size:12px;font-weight:800}
+canvas{max-width:100%;display:block;border-radius:10px;border:1px solid var(--line);background:#fff}
+footer{margin-top:60px;color:var(--muted);font-size:13.5px;text-align:center}
+</style>
+</head>
+<body>
+<aside id="side">
+  <div class="sh"><b>🌳 Decision Trees</b><button id="sideToggle" title="Collapse menu" aria-label="Collapse menu">«</button></div>
+  <div class="pg"><div id="prog"><div id="progBar"></div></div><div id="progTxt"></div></div>
+  <nav id="nav">
+    <a href="#idea"><span class="n">1</span>Big idea</a>
+    <a href="#purity"><span class="n">2</span>Purity</a>
+    <a href="#toy"><span class="n">3</span>Toy example</a>
+    <a href="#algo"><span class="n">4</span>Algorithm</a>
+    <a href="#iris"><span class="n">5</span>Iris lab</a>
+    <a href="#evaluate"><span class="n">6</span>Evaluate</a>
+    <a href="#overfit"><span class="n">7</span>Overfitting</a>
+    <a href="#regression"><span class="n">8</span>Regression</a>
+    <a href="#proscons"><span class="n">9</span>Pros &amp; cons</a>
+    <a href="#quiz"><span class="n">10</span>Quiz</a>
+    <a href="#recap"><span class="n">11</span>Recap</a>
+  </nav>
+</aside>
+<button id="menuBtn" aria-label="Open menu">☰ Menu</button>
+<div id="wrap">
+
+<main>
+<!-- ============ 1. BIG IDEA ============ -->
+<section id="idea">
+<div class="hero">
+  <h1>Decision Trees</h1>
+  <p>A hands-on, click-everything guide for first-time machine-learning learners. We start with a game of 20 Questions and finish by training, testing and breaking a real tree.</p>
+</div>
+  <div class="kicker">Part 1</div>
+  <h2>The big idea: 20 Questions with data</h2>
+  <p class="lead">A decision tree is a flowchart of yes/no questions that ends in a prediction. The twist in machine learning: <b>we don't write the questions ourselves — the algorithm discovers the best ones from examples.</b></p>
+
+  <div class="card">
+    <h3>🍎 Try it: guess the fruit</h3>
+    <p class="muted small" style="margin-top:0">Think of a banana, lemon, orange or apple and answer the questions honestly. Watch the path light up.</p>
+    <div id="walkPanel" class="row" style="min-height:44px"></div>
+    <div class="scroll" id="fruitTree"></div>
+    <p class="small" style="margin:10px 0 6px"><b>Learn the vocabulary</b> — click a term to highlight it in the tree:</p>
+    <div class="row" id="roleChips"></div>
+    <div class="callout" id="roleExplain" style="margin-bottom:0"><p>Click a term above 👆</p></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>🧾 A tree is just if/else code</h3>
+<pre>if color == "yellow":
+    if shape == "long and curved":
+        return "Banana"
+    else:
+        return "Lemon"
+else:
+    if skin == "bumpy":
+        return "Orange"
+    else:
+        return "Apple"</pre>
+      <p class="small muted">Programmers write rules like this by hand. A decision-tree <i>learner</i> builds them automatically from a table of labelled examples.</p>
+    </div>
+    <div class="card">
+      <h3>🎯 Two flavours of tree</h3>
+      <p><b>Classification tree</b> — predicts a <i>category</i> (spam / not spam, species of flower, will the customer churn?).</p>
+      <p><b>Regression tree</b> — predicts a <i>number</i> (house price, tomorrow's temperature). We visit this in Part 8.</p>
+      <p class="small muted">Most of this guide uses classification — the ideas carry over almost unchanged.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- ============ 2. PURITY ============ -->
+<section id="purity">
+  <div class="kicker">Part 2</div>
+  <h2>How does a tree pick a question? Purity!</h2>
+  <p class="lead">A good question splits a mixed-up group into groups that are <b>purer</b> (more of one class). To compare questions we need a number that says how mixed a group is — that number is called <b>impurity</b>.</p>
+
+  <div class="card">
+    <h3>📐 The math, with plain-English meaning</h3>
+    <p class="muted small" style="margin-top:0"><b>Notation.</b> A node holds <i>N</i> training examples spread over <i>K</i> classes. Class <i>k</i> has <i>n<sub>k</sub></i> examples, so its share of the node is <i>p<sub>k</sub></i> = <i>n<sub>k</sub></i> / <i>N</i>. A split sends the examples into child nodes <i>j</i> = 1…<i>m</i>, where child <i>j</i> holds <i>N<sub>j</sub></i> examples. <b>Σ</b> means “add up over all classes (or all children)”.</p>
+    <div class="grid3">
+      <div class="mx">
+        <h4>Gini index</h4>
+        <div class="mf">G = 1 − Σ<sub>k</sub> p<sub>k</sub><sup>2</sup></div>
+        <p><b>Meaning:</b> the chance that two examples picked at random from the node belong to <i>different</i> classes. Pure node → 0. More mixing → bigger.</p>
+        <p class="small muted"><b>Range:</b> 0 to 1 − 1/K (0.5 for two classes).<br><b>Example:</b> 9 Yes / 5 No → 1 − (0.643² + 0.357²) = <b>0.459</b></p>
+      </div>
+      <div class="mx">
+        <h4>Entropy</h4>
+        <div class="mf">H = − Σ<sub>k</sub> p<sub>k</sub> · log<sub>2</sub>( p<sub>k</sub> )</div>
+        <p><b>Meaning:</b> the average “surprise”, measured in bits — roughly how many yes/no questions you would need to ask to learn the class of a random example. Pure node → 0 bits.</p>
+        <p class="small muted"><b>Range:</b> 0 to log<sub>2</sub>K (1 bit for two classes). By convention 0·log<sub>2</sub>0 = 0.<br><b>Example:</b> 9 Yes / 5 No → <b>0.940</b></p>
+      </div>
+      <div class="mx">
+        <h4>Information gain</h4>
+        <div class="mf">IG = I(parent) − Σ<sub>j</sub> ( N<sub>j</sub> / N ) · I(child<sub>j</sub>)</div>
+        <p><b>Meaning:</b> how much impurity (uncertainty) the question removes. <i>I</i> is either Gini or entropy; the sum is the <b>weighted average</b> impurity of the children, where a bigger child counts for more.</p>
+        <p class="small muted"><b>Range:</b> never negative; 0 = question didn't help; max = I(parent) (children perfectly pure).<br><b>Example:</b> splitting the tennis data on Outlook → 0.9403 − 0.6935 ≈ <b>0.247</b></p>
+      </div>
+    </div>
+    <div class="callout" style="margin-bottom:0">
+      <p><b>How they fit together:</b> (1) measure the parent's impurity with G or H, (2) measure each child's impurity, (3) take the size-weighted average of the children, (4) subtract. The tree evaluates this for every candidate question and picks the one with the <b>largest</b> gain. When <i>I</i> = entropy this is called <i>information gain</i> (ID3, C4.5); when <i>I</i> = Gini it is the <i>Gini decrease</i> used by CART (scikit-learn's default).</p>
+      <p class="small muted" style="margin-bottom:0">For regression trees, <i>I</i> becomes the variance (mean squared error) of the target values in the node: Var = (1/N) Σ (y<sub>i</sub> − ȳ)<sup>2</sup>.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🔵🟠 Experiment 1: measure messiness</h3>
+    <p class="muted small" style="margin-top:0">A node contains 20 items of class A (teal) or B (amber). Slide to change the mix.</p>
+    <div class="grid2">
+      <div>
+        <label for="impA" style="font-weight:600;font-size:14px">Number of class-A items: <span class="val" id="impAv">10</span> of 20</label>
+        <input type="range" id="impA" min="0" max="20" value="10" style="width:100%">
+        <div id="impDots"></div>
+        <div id="impVerdict" class="callout" style="margin:8px 0"></div>
+        <div class="formula" id="impGini"></div>
+        <div class="formula" id="impEnt"></div>
+      </div>
+      <div>
+        <div id="impChart"></div>
+        <p class="small muted">Both measures are <b>0 when the node is pure</b> and <b>largest at a 50/50 mix</b>. Gini peaks at 0.5, entropy at 1.0 — different scale, same idea. In practice they usually give very similar trees.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>✂️ Experiment 2: score a split</h3>
+    <p class="muted small" style="margin-top:0">A parent node has 10 A and 10 B. A question sends some items left and the rest right. How much purer do the children get?</p>
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn sm" data-sp="10,0">Perfect split</button>
+      <button class="btn sm" data-sp="8,2">Good split</button>
+      <button class="btn sm" data-sp="6,4">Weak split</button>
+      <button class="btn sm" data-sp="5,5">Useless split</button>
+    </div>
+    <div class="grid2">
+      <div>
+        <label for="spA" style="font-weight:600;font-size:14px">A items going <b>left</b>: <span class="val" id="spAv">8</span></label>
+        <input type="range" id="spA" min="0" max="10" value="8" style="width:100%">
+        <label for="spB" style="font-weight:600;font-size:14px">B items going <b>left</b>: <span class="val" id="spBv">2</span></label>
+        <input type="range" id="spB" min="0" max="10" value="2" style="width:100%">
+        <div id="spDots"></div>
+      </div>
+      <div>
+        <div id="spOut"></div>
+      </div>
+    </div>
+    <div class="callout good"><p><b>Information gain</b> = impurity of the parent − <i>weighted average</i> impurity of the children. The tree tries every possible question and <b>picks the one with the biggest gain</b>. (Weighted = a child with more items counts more.)</p></div>
+  </div>
+
+</section>
+
+<!-- ============ 3. TOY ============ -->
+<section id="toy">
+  <div class="kicker">Part 3 · Toy example</div>
+  <h2>Build a tree by hand: "Should we play tennis?"</h2>
+  <p class="lead">The classic 14-day dataset: for each day we recorded the weather and whether we played. You'll grow the tree yourself — pick a question at each impure node and see if the gain agrees with your instinct.</p>
+
+  <div class="card">
+    <h3>📋 The data <span class="muted small">(hover a tree box to highlight its rows — they also appear in the panel beside the tree)</span></h3>
+    <p class="small muted" style="margin:0 0 8px">Click a column header to sort (click again to reverse, a third time to restore the original order). Sorting by <b>Outlook</b> is a nice way to spot patterns.</p>
+    <div class="scroll"><table class="tbl" id="tennisTable"></table></div>
+    <p class="small muted">9 days we played, 5 days we didn't. Before asking anything, the best guess is "Yes" and the root entropy is <b id="rootEnt"></b>.</p>
+  </div>
+
+  <div class="card">
+    <h3>🌱 Grow the tree</h3>
+    <div class="row" style="margin-bottom:10px">
+      <button class="btn primary" id="toyAutoBtn">⚡ Auto-build full tree</button>
+      <button class="btn" id="toyResetBtn">↺ Reset</button>
+      <label class="small"><input type="checkbox" id="toyShowGain" checked> show information gain numbers</label>
+    </div>
+    <p class="small muted" style="margin-top:0">Amber boxes are still mixed. Click a feature to split on it. The bar shows the information gain — a longer bar means a bigger drop in entropy. <b>Tip:</b> untick the checkbox and guess first!</p>
+    <div class="treewrap"><div class="ttree" id="toyTree"></div><aside class="rowpanel" id="rowPanel" aria-live="polite"></aside></div>
+  </div>
+
+  <div class="card calc">
+    <h3>🧮 Step-by-step calculations</h3>
+    <p class="muted small" style="margin-top:0">Every time a node is split, the tree repeats the same four-step recipe. Open a step to see the arithmetic behind it. The steps are collapsed by default and grow as you build the tree.</p>
+    <div class="formula">① entropy of the node &nbsp;→&nbsp; ② entropy of each child &nbsp;→&nbsp; ③ size-weighted average of the children &nbsp;→&nbsp; ④ gain = ① − ③</div>
+    <div class="row" style="margin-bottom:6px"><button class="btn sm" id="calcOpen">Expand all</button><button class="btn sm" id="calcClose">Collapse all</button></div>
+    <div id="toyCalc"></div>
+  </div>
+  <div class="card">
+      <h3>🔮 Predict a new day</h3>
+      <div class="controls" style="grid-template-columns:1fr 1fr">
+        <div><label for="tw0">Outlook</label><select id="tw0"><option>Sunny</option><option>Overcast</option><option>Rain</option></select></div>
+        <div><label for="tw1">Temperature</label><select id="tw1"><option>Hot</option><option>Mild</option><option>Cool</option></select></div>
+        <div><label for="tw2">Humidity</label><select id="tw2"><option>High</option><option>Normal</option></select></div>
+        <div><label for="tw3">Wind</label><select id="tw3"><option>Weak</option><option>Strong</option></select></div>
+      </div>
+      <div id="toyPred" class="callout" style="margin-bottom:0"></div>
+  </div>
+
+  <div class="callout">
+    <p><b>What you just saw:</b> the tree picked <b>Outlook</b> at the top because it removes the most uncertainty. <b>Overcast</b> days are always "Yes" — a pure leaf right away. Temperature never even made it into the tree: once the other questions are answered, it adds nothing. That's automatic <i>feature selection</i>.</p>
+  </div>
+
+</section>
+
+<!-- ============ 4. ALGORITHM ============ -->
+<section id="algo">
+  <div class="kicker">Part 4</div>
+  <h2>The algorithm in plain English</h2>
+  <p class="lead">Every tree learner (ID3, C4.5, CART — the one in scikit-learn) follows the same recursive recipe.</p>
+
+  <div class="card">
+    <ol class="steps">
+      <li><b>Start</b> with all training examples in one node (the root).</li>
+      <li><b>Check stop rules.</b> Is the node pure? Is it too deep? Too few samples? If yes → make it a <b>leaf</b> that predicts the majority class and stop.</li>
+      <li><b>Try every candidate question</b> on every feature and compute the information gain of each.</li>
+      <li><b>Keep the best question</b> and split the examples into child nodes.</li>
+      <li><b>Repeat</b> steps 2–4 on each child (this is called <b>recursion</b>) until every branch ends in a leaf.</li>
+    </ol>
+    <div class="grid2">
+      <div class="callout"><p><b>Greedy:</b> at each node the tree picks the <i>locally</i> best question without looking ahead. Fast, but not guaranteed to find the best possible tree overall.</p></div>
+      <div class="callout warn"><p><b>Left alone, a tree keeps splitting</b> until every training example is classified perfectly — which is usually <i>memorising</i>, not learning. Stop rules (hyperparameters) hold it back. See Part 7.</p></div>
+    </div>
+    <table class="tbl small">
+      <tr><th>Stop rule</th><th>scikit-learn name</th><th>Meaning</th></tr>
+      <tr><td>Maximum depth</td><td><code>max_depth</code></td><td>never ask more than N questions in a row</td></tr>
+      <tr><td>Minimum samples to split</td><td><code>min_samples_split</code></td><td>don't split tiny nodes</td></tr>
+      <tr><td>Minimum samples per leaf</td><td><code>min_samples_leaf</code></td><td>every leaf must keep at least N examples</td></tr>
+      <tr><td>Minimum gain</td><td><code>min_impurity_decrease</code></td><td>skip questions that barely help</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h3>📏 How are questions on <i>numbers</i> chosen?</h3>
+    <p style="margin-top:0">For a numeric feature like petal length, the tree can't ask "is it 1.4? is it 1.5?…" forever. Instead it sorts the values, takes the <b>midpoint between neighbouring values</b> as a candidate threshold, and scores each with the same impurity trick: "is petal length ≤ <i>t</i>?"</p>
+    <p class="muted small">Below: all 150 Iris flowers. Pick a feature and drag the threshold. The curve shows the weighted Gini impurity for <b>every</b> candidate threshold — the tree picks the lowest point.</p>
+    <div class="controls" style="grid-template-columns:1fr 2fr">
+      <div><label for="thFeat">Feature</label><select id="thFeat"></select></div>
+      <div><label for="thSlide">Threshold: <span class="val" id="thVal"></span></label><input type="range" id="thSlide" step="0.05"></div>
+    </div>
+    <div class="scroll" id="thChart" style="margin-top:10px"></div>
+    <div id="thInfo" class="callout" style="margin-bottom:0"></div>
+  </div>
+
+  <div class="card hp">
+    <h3>⚙️ Hyperparameters in detail <span class="muted small">(the knobs in the Iris lab's control panel)</span></h3>
+    <p class="muted small" style="margin-top:0">A <b>hyperparameter</b> is a setting you choose <i>before</i> training — the tree does not learn it from data. Most of them control how complex the tree is allowed to become. Open any item to see what it does and what to expect when you move it. Quoted numbers are averages over 40 random splits of the Iris data (30% test set) from this page's own tree learner, so you can reproduce the trends in the Iris lab.</p>
+    <div class="row" style="margin-bottom:6px">
+      <button class="btn sm" id="hpOpen">Expand all</button><button class="btn sm" id="hpClose">Collapse all</button>
+      <button class="btn sm primary" data-go="4">Try them in the Iris lab →</button>
+    </div>
+
+    <details>
+      <summary><b>Cheat sheet:</b> which way is “simpler”?</summary>
+      <div class="scroll"><table class="tbl small" style="margin-top:8px">
+        <tr><th style="text-align:left">Hyperparameter</th><th>Turn it up ▲</th><th>Risk if pushed too far</th></tr>
+        <tr><td style="text-align:left"><code>max_depth</code></td><td>tree gets <b>more complex</b></td><td>overfitting</td></tr>
+        <tr><td style="text-align:left"><code>max_leaf_nodes</code></td><td>tree gets <b>more complex</b></td><td>overfitting</td></tr>
+        <tr><td style="text-align:left"><code>min_samples_leaf</code></td><td>tree gets <b>simpler</b></td><td>underfitting</td></tr>
+        <tr><td style="text-align:left"><code>min_samples_split</code></td><td>tree gets <b>simpler</b></td><td>underfitting</td></tr>
+        <tr><td style="text-align:left"><code>min_impurity_decrease</code></td><td>tree gets <b>simpler</b></td><td>underfitting</td></tr>
+        <tr><td style="text-align:left"><code>ccp_alpha</code></td><td>tree gets <b>simpler</b> (more pruning)</td><td>underfitting</td></tr>
+      </table></div>
+      <p class="small" style="margin-bottom:0"><b>Tuning recipe:</b> (1) compare training and test scores. (2) Big gap → simplify (lower depth, raise leaf size). Both scores low → allow more complexity. (3) Confirm with cross-validation (Part 6), and try several values systematically (grid search).</p>
+    </details>
+
+    <details>
+      <summary><b>Max depth</b> <code>max_depth</code> <span class="muted small">— how many questions in a row?</span></summary>
+      <h5>What it is</h5>
+      <p>A cap on the number of levels below the root. Depth 1 is a single question (a “decision stump”); depth 3 means no path asks more than 3 questions, so there are at most 2³ = 8 leaves. The right end of the slider means <i>no limit</i> (<code>None</code>): the tree keeps growing until its leaves are pure or can't be split.</p>
+      <h5>What to expect</h5>
+      <div class="ud">
+        <div class="up"><b>▲ Increase</b><br>More leaves and finer boundaries. Training accuracy climbs toward 100%. Test accuracy improves at first, then levels off or <b>drops</b> (overfitting). Once every leaf is pure the tree stops by itself, so raising the slider further changes nothing.</div>
+        <div class="down"><b>▼ Decrease</b><br>A smaller tree that is easy to explain. Go too low and it <b>underfits</b>: both training and test scores are poor because the tree can't ask enough questions.</div>
+      </div>
+      <div class="scroll"><table class="tbl small">
+        <tr><th rowspan="2" style="text-align:left">Features</th><th colspan="5">train % / test % (average number of leaves)</th></tr>
+        <tr><th>depth 1</th><th>depth 2</th><th>depth 3</th><th>depth 5</th><th>no limit</th></tr>
+        <tr><td style="text-align:left">Petal only</td><td>67 / 67 (2)</td><td>97 / 93 (3)</td><td>98 / 94 (5)</td><td>99 / 94 (7)</td><td>99 / 94 (7)</td></tr>
+        <tr><td style="text-align:left">Sepal only</td><td>63 / 63 (2)</td><td>78 / 73 (4)</td><td>82 / 75 (8)</td><td>86 / 74 (14)</td><td>95 / 70 (36)</td></tr>
+      </table></div>
+      <p class="small"><b>Reading it:</b> with petal features depth 2–3 is already enough and extra depth adds nothing. With sepal features, training accuracy keeps rising (82% → 95%) while test accuracy <i>falls</i> (75% → 70%) and the leaf count explodes from 8 to 36 — textbook overfitting.</p>
+      <p class="small" style="margin-bottom:0"><b>Rule of thumb:</b> start at 3–5 and pick the smallest depth where the test score stops improving.</p>
+    </details>
+
+    <details>
+      <summary><b>Min samples per leaf</b> <code>min_samples_leaf</code> <span class="muted small">— how small may a leaf be?</span></summary>
+      <h5>What it is</h5>
+      <p>A split is only allowed if <b>both</b> children keep at least <i>N</i> training examples. A node therefore needs at least 2N examples before it can split at all. This stops the tree from carving a leaf around one or two unusual flowers (outliers and noise).</p>
+      <h5>What to expect</h5>
+      <div class="ud">
+        <div class="up"><b>▲ Increase</b><br>Fewer, bigger leaves and smoother, simpler boundaries. Training accuracy <b>drops</b>; test accuracy usually stays about the same (or improves a little on noisy data). Too high and the tree <b>underfits</b>.</div>
+        <div class="down"><b>▼ Decrease</b><br>At 1, every split is allowed, so the tree can isolate single examples — it <b>memorises</b> the training set, noise included.</div>
+      </div>
+      <div class="scroll"><table class="tbl small">
+        <tr><th rowspan="2" style="text-align:left">Features (no depth limit)</th><th colspan="5">train % / test % (average number of leaves)</th></tr>
+        <tr><th>N = 1</th><th>N = 2</th><th>N = 5</th><th>N = 10</th><th>N = 20</th></tr>
+        <tr><td style="text-align:left">Sepal only</td><td>95 / 70 (36)</td><td>86 / 70 (24)</td><td>81 / 70 (12)</td><td>76 / 68 (7)</td><td>75 / 70 (3)</td></tr>
+        <tr><td style="text-align:left">Petal only</td><td>99 / 94 (7)</td><td>98 / 95 (6)</td><td>97 / 94 (5)</td><td>97 / 93 (5)</td><td>97 / 93 (3)</td></tr>
+      </table></div>
+      <p class="small"><b>Reading it:</b> on sepal data, going from N = 1 to N = 5 makes the tree three times smaller while test accuracy stays at 70% — the extra leaves were only fitting noise. A simpler tree with the same test score is the better model.</p>
+      <p class="small" style="margin-bottom:0"><b>Works together with max depth:</b> a branch stops as soon as <i>either</i> limit is reached. <b>Rule of thumb:</b> 1–5 for small datasets; for large ones, about 1–5% of the rows.</p>
+    </details>
+
+    <details>
+      <summary><b>Impurity measure</b> <code>criterion</code> <span class="muted small">— Gini or entropy?</span></summary>
+      <h5>What it is</h5>
+      <p>The formula that scores how mixed a node is when comparing candidate questions (see Part 2): Gini = 1 − Σp², entropy = −Σp·log₂p. scikit-learn's options are <code>"gini"</code> (default), <code>"entropy"</code> and <code>"log_loss"</code> (same as entropy).</p>
+      <h5>What to expect</h5>
+      <p>This is <b>not</b> a complexity knob, and it rarely matters. Both measures are 0 for pure nodes and largest at a 50/50 mix, so they usually pick the same questions. Entropy punishes mixed nodes slightly harder and costs a logarithm per class, but the difference is tiny.</p>
+      <div class="scroll"><table class="tbl small">
+        <tr><th style="text-align:left">Setting</th><th>Gini (train / test)</th><th>Entropy (train / test)</th></tr>
+        <tr><td style="text-align:left">Sepal only, depth 3</td><td>82 / 75</td><td>81 / 73</td></tr>
+        <tr><td style="text-align:left">Petal only, depth 3</td><td>98 / 94</td><td>98 / 95</td></tr>
+        <tr><td style="text-align:left">All features, no limit</td><td>100 / 94</td><td>100 / 94</td></tr>
+      </table></div>
+      <p class="small" style="margin-bottom:0"><b>Reading it:</b> differences are within about 2 points — normal noise. Occasionally the two choose a different threshold when two questions almost tie. <b>Rule of thumb:</b> keep Gini and spend your tuning effort on depth and leaf size.</p>
+    </details>
+
+    <details>
+      <summary><b>Features the tree may use</b> <code>max_features</code> <span class="muted small">— which columns can it ask about?</span></summary>
+      <h5>What it is</h5>
+      <p>In the lab you choose which measurements the tree may use (2 or all 4). In scikit-learn the related hyperparameter is <code>max_features</code>: how many randomly chosen features are examined at <i>each split</i> (default: all). Random Forests lean on this to make their trees different from one another.</p>
+      <h5>What to expect</h5>
+      <div class="ud">
+        <div class="up"><b>▲ More features / more candidates</b><br>More chances to find a strong question, so higher accuracy if the extra features carry information. Training is slower. Useless features are mostly ignored (sepal importance is 0% when petal features are available), but a deep tree can still latch onto one if it happens to fit noise.</div>
+        <div class="down"><b>▼ Fewer features / fewer candidates</b><br>Faster and more varied trees, but the tree may never see the best question. With only sepal measurements the best test score is about 75%, versus about 94% with petal measurements.</div>
+      </div>
+      <p class="small" style="margin-bottom:0"><b>Tip:</b> a 2-feature setting lets you draw the decision regions; with 4 features the map shows a 2-D slice.</p>
+    </details>
+
+    <details>
+      <summary><b>Test set size</b> <code>test_size</code> <span class="muted small">— not a model hyperparameter, but it changes your readings</span></summary>
+      <h5>What it is</h5>
+      <p>The share of flowers hidden from the tree and used only for grading. It does not change how the tree is built — it changes <i>which</i> flowers the tree learns from and how many it is graded on.</p>
+      <h5>What to expect</h5>
+      <div class="scroll"><table class="tbl small">
+        <tr><th style="text-align:left">Test size</th><th>Test flowers</th><th>Average test accuracy</th><th>Spread across 40 splits</th></tr>
+        <tr><td style="text-align:left">10%</td><td>15</td><td>94.8%</td><td>± 4.8 points (87–100%)</td></tr>
+        <tr><td style="text-align:left">30%</td><td>45</td><td>94.4%</td><td>± 2.8 points (89–100%)</td></tr>
+        <tr><td style="text-align:left">50%</td><td>75</td><td>94.1%</td><td>± 2.5 points (87–99%)</td></tr>
+      </table></div>
+      <p class="small" style="margin-bottom:0"><b>Reading it:</b> the average barely changes, but a small test set gives a jumpy score (with 15 flowers, one mistake costs about 6.7 points). A large test set gives a steadier score but leaves fewer flowers to learn from — a small effect on easy Iris, a bigger one on harder or smaller datasets. <b>Rule of thumb:</b> 20–30%, or use cross-validation when data is scarce.</p>
+    </details>
+
+    <details>
+      <summary><b>Random split</b> <code>random_state</code> <span class="muted small">— which flowers land in train vs test?</span></summary>
+      <h5>What it is</h5>
+      <p>The random seed that shuffles the data before splitting (and breaks ties between equally good questions). You don't tune it; you use it to check how <i>stable</i> the result is.</p>
+      <h5>What to expect</h5>
+      <p>Same settings, different split → a somewhat different tree and score. With petal features at depth 3, test accuracy ranged from <b>89% to 100%</b> across 30 seeds. The root question was always on petal length, but its threshold varied between ≤ 2.35, ≤ 2.45 and ≤ 2.60: any cut between the setosa flowers and the rest separates them equally well, so the tree takes the midpoint between whichever neighbouring training flowers it happens to see.</p>
+      <p class="small" style="margin-bottom:0"><b>Reading it:</b> the <i>structure</i> is stable, the exact numbers wiggle — this is the high variance of a single tree (Part 7). <b>Rule of thumb:</b> fix a seed for reproducible demos, and report a cross-validation average instead of one lucky split.</p>
+    </details>
+
+    <details>
+      <summary><b>Other hyperparameters</b> you'll meet in scikit-learn</summary>
+      <ul style="margin:8px 0 0;padding-left:20px">
+        <li><code>min_samples_split</code> — a node needs at least this many examples to be considered for splitting (default 2). ▲ = simpler tree; <code>min_samples_leaf</code> is usually easier to reason about.</li>
+        <li><code>min_impurity_decrease</code> — only split if the gain is at least this large. ▲ = fewer splits; a form of pre-pruning that skips questions that barely help.</li>
+        <li><code>max_leaf_nodes</code> — grow best-first until the tree has this many leaves. ▲ = more complex.</li>
+        <li><code>ccp_alpha</code> — strength of cost-complexity <i>post</i>-pruning: grow a big tree, then cut branches whose benefit is smaller than their complexity cost. ▲ = more branches removed, smaller tree.</li>
+        <li><code>class_weight</code> — <code>"balanced"</code> gives rare classes more influence on the splits. Helps with imbalanced data: rare-class recall usually rises, with possibly more false alarms.</li>
+      </ul>
+    </details>
+  </div>
+</section>
+
+<!-- ============ 5. IRIS LAB ============ -->
+<section id="iris">
+  <div class="kicker">Part 5 · Real dataset</div>
+  <h2>Iris lab: train a tree on real flowers 🌸</h2>
+  <p class="lead">In 1936 the biologist Ronald Fisher published measurements of 150 iris flowers: 50 each of <span style="color:var(--c0);font-weight:700">setosa</span>, <span style="color:#c27c00;font-weight:700">versicolor</span> and <span style="color:var(--c2);font-weight:700">virginica</span>. From four measurements (in cm) can a tree tell the species?</p>
+
+  <div class="card">
+    <h3>🔎 First, look at the data</h3>
+    <div class="scroll"><table class="tbl" id="irisMeans"></table></div>
+    <p class="small muted">Average measurements per species. Notice how <b>petal</b> numbers differ a lot between species while <b>sepal</b> numbers overlap. A tree should discover this on its own.</p>
+    <details><summary>Show a few raw rows</summary><div class="scroll"><table class="tbl" id="irisRaw"></table></div></details>
+  </div>
+
+  <div class="card">
+    <h3>🎛 Control panel <span class="muted small">(all later sections react to these settings)</span></h3>
+    <div class="controls">
+      <div><label for="labPreset">Features the tree may use</label>
+        <select id="labPreset">
+          <option value="petal">Petal length + petal width (2-D, easy to see)</option>
+          <option value="sepal">Sepal length + sepal width (2-D, harder)</option>
+          <option value="all">All 4 features</option>
+        </select></div>
+      <div><label for="labCrit">Impurity measure</label>
+        <select id="labCrit"><option value="gini">Gini</option><option value="entropy">Entropy</option></select></div>
+      <div><label for="labDepth">Max depth: <span class="val" id="labDepthV"></span></label><input type="range" id="labDepth" min="1" max="10" value="3"></div>
+      <div><label for="labLeaf">Min samples per leaf: <span class="val" id="labLeafV"></span></label><input type="range" id="labLeaf" min="1" max="20" value="1"></div>
+      <div><label for="labTest">Test set size: <span class="val" id="labTestV"></span></label><input type="range" id="labTest" min="10" max="50" step="5" value="30"></div>
+      <div><label>Random split #<span class="val" id="labSeedV"></span></label><button class="btn" id="labReseed">🎲 New random split</button></div>
+    </div>
+    <p class="small muted" style="margin-bottom:0">The data is shuffled and divided into a <b>training set</b> (the tree learns from it) and a <b>test set</b> (hidden until we grade the tree).</p>
+  </div>
+
+  <div class="grid2" style="align-items:start">
+    <div class="card">
+      <h3>🗺 Decision regions</h3>
+      <div id="scatterWrap"><canvas id="scatter"></canvas></div>
+      <div class="legend">
+        <span><i style="background:var(--c0)"></i>setosa</span><span><i style="background:var(--c1)"></i>versicolor</span><span><i style="background:var(--c2)"></i>virginica</span><span>◆ your flower — <b>drag it!</b></span>
+      </div>
+      <p class="small muted" id="scatterNote" style="margin:4px 0 0"></p>
+    </div>
+    <div>
+      <div class="card" style="padding:12px 14px">
+        <h3 style="font-size:16px;margin-bottom:8px">📊 Scoreboard</h3>
+        <div class="sb">
+          <div class="stat"><b id="mTrain">–</b><span>train acc.</span></div>
+          <div class="stat"><b id="mTest">–</b><span>test acc.</span></div>
+          <div class="stat"><b id="mLeaves">–</b><span>leaves</span></div>
+          <div class="stat"><b id="mDepth">–</b><span>depth</span></div>
+        </div>
+        <div class="small" style="font-weight:600;margin:10px 0 2px">⭐ Feature importance <span class="muted" style="font-weight:400">(share of impurity removed; unused = 0)</span></div>
+        <div id="importance"></div>
+      </div>
+      <div class="card" style="padding:12px 14px">
+        <h3 style="font-size:16px;margin-bottom:4px">🌼 Try your own flower</h3>
+        <p class="small muted" style="margin:0 0 6px">Move the sliders, or <b>drag the ◆ on the map</b> — the sliders follow. The prediction path lights up in the tree below.</p>
+        <div id="flowerSliders"></div>
+        <div id="flowerOut"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🌳 The learned tree</h3>
+    <p class="small muted" style="margin-top:0">Each box shows the question (internal nodes), its impurity, how many <b>training</b> flowers reached it, and the class counts <code>[setosa, versicolor, virginica]</code>. Colour = majority class; darker = purer. Left branch = "yes", right = "no".</p>
+    <div class="scroll" id="irisTree"></div>
+  </div>
+
+
+</section>
+
+<!-- ============ 6. EVALUATE ============ -->
+<section id="evaluate">
+  <div class="kicker">Part 6</div>
+  <h2>Is the tree any good? Evaluating it</h2>
+  <p class="lead">Training accuracy only tells us how well the tree memorised what it saw. The real question is: <b>how will it do on flowers it has never seen?</b> That's what the held-out test set is for.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>🧮 Confusion matrix <span class="muted small">(test set)</span></h3>
+      <div id="confMat" class="scroll"></div>
+      <p class="small muted">Rows = the true species, columns = what the tree predicted. The diagonal (bold) holds the correct answers; every other cell is a specific kind of mistake.</p>
+    </div>
+    <div class="card">
+      <h3>🎯 Per-class report</h3>
+      <div id="classReport" class="scroll"></div>
+      <div class="formula" style="font-size:13px">accuracy  = correct ÷ all<br>precision = of those I called X, how many really were X?<br>recall    = of all real X, how many did I find?<br>F1        = balance of precision and recall</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🔁 Cross-validation: a steadier score</h3>
+    <p style="margin-top:0">One random split can be lucky or unlucky. <b>k-fold cross-validation</b> splits the data into k parts, trains on k−1 parts, tests on the remaining one, and rotates until every part has been the test set once.</p>
+    <div class="row" style="margin-bottom:20px"><label for="cvK" class="small"><b>Folds (k):</b></label>
+      <select id="cvK"><option>3</option><option selected>5</option><option>10</option></select></div>
+    <div id="cvOut"></div>
+  </div>
+
+  <div class="callout">
+    <p><b>Rule of thumb:</b> if training accuracy ≫ test accuracy, you're overfitting. If both are low, you're underfitting (the tree is too simple). For <i>regression</i> trees we use error metrics such as MSE, MAE or R² instead of accuracy.</p>
+  </div>
+</section>
+
+<!-- ============ 7. OVERFIT ============ -->
+<section id="overfit">
+  <div class="kicker">Part 7</div>
+  <h2>Overfitting: when a tree memorises</h2>
+  <p class="lead">A deep enough tree can carve out a tiny leaf for every odd training example — noise included. It scores perfectly on training data and badly on new data.</p>
+
+  <div class="card">
+    <h3>📈 Train vs. test accuracy as the tree grows</h3>
+    <p class="small muted" style="margin-top:0">Each point is averaged over 15 random splits, using your current feature set, impurity measure, leaf size and test size. The shaded column is your current max depth.</p>
+    <div class="row" style="margin-bottom:8px">
+      <button class="btn" id="btnSepal">👉 Switch to sepal-only (overfitting shows up clearly)</button>
+      <button class="btn" id="btnPetal">Back to petal-only</button>
+    </div>
+    <div id="ofChart" class="scroll"></div>
+    <div id="ofNote" class="callout" style="margin-bottom:0"></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>🩹 How to fight overfitting</h3>
+      <ul style="padding-left:20px;margin:0">
+        <li><b>Pre-pruning</b>: stop early — <code>max_depth</code>, <code>min_samples_leaf</code>, <code>min_impurity_decrease</code>. Try the sliders in the lab.</li>
+        <li><b>Post-pruning</b>: grow a big tree, then cut off branches that don't earn their keep (<i>cost-complexity pruning</i>, <code>ccp_alpha</code> in scikit-learn).</li>
+        <li><b>More data</b> or fewer noisy features.</li>
+        <li><b>Ensembles</b>: average many trees — Random Forest, Gradient Boosting.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>🎲 Instability test</h3>
+      <p class="small muted" style="margin-top:0">Train on 8 different random splits with your current settings. Does the root question stay the same?</p>
+      <div id="stabOut" class="scroll"></div>
+    </div>
+  </div>
+  <div class="callout warn"><p><b>Big picture:</b> a single tree has <b>high variance</b> — small changes in the data can change the tree a lot. A <b>Random Forest</b> trains hundreds of trees on random subsets of rows and features and lets them vote; the mistakes average out, usually giving much better accuracy at the cost of some interpretability.</p></div>
+</section>
+
+<!-- ============ 8. REGRESSION ============ -->
+<section id="regression">
+  <div class="kicker">Part 8 · Bonus</div>
+  <h2>Regression trees: predicting numbers</h2>
+  <p class="lead">Same recipe, two changes: leaves predict the <b>average</b> of their training targets, and "impurity" becomes the <b>squared error</b> (how far values are from their group's average). The result is a staircase-shaped prediction.</p>
+
+  <div class="card">
+    <div class="controls">
+      <div><label for="rgDepth">Max depth: <span class="val" id="rgDepthV"></span></label><input type="range" id="rgDepth" min="1" max="10" value="3"></div>
+      <div><label for="rgNoise">Noise: <span class="val" id="rgNoiseV"></span></label><input type="range" id="rgNoise" min="0.1" max="0.8" step="0.05" value="0.35"></div>
+      <div><label>Data sample #<span class="val" id="rgSeedV"></span></label><button class="btn" id="rgReseed">🎲 New data</button></div>
+    </div>
+    <div class="scroll" id="rgChart" style="margin-top:10px"></div>
+    <div class="grid3" style="margin-top:6px">
+      <div class="stat"><b id="rgTrain">–</b><span>train MSE</span></div>
+      <div class="stat"><b id="rgTest">–</b><span>test MSE</span></div>
+      <div class="stat"><b id="rgLeaves">–</b><span>leaves (steps)</span></div>
+    </div>
+    <p class="small muted" style="margin-bottom:0">The hidden truth is a smooth sine wave plus noise. Depth 1–2 is too simple (<i>underfit</i>); depth 10 chases every noisy dot (<i>overfit</i>: train error → 0 while test error rises again). Notice too that a regression tree can't predict outside the range it has seen — it just repeats its last step.</p>
+  </div>
+</section>
+
+<!-- ============ 9. PROS & CONS ============ -->
+<section id="proscons">
+  <div class="kicker">Part 9</div>
+  <h2>Merits and demerits</h2>
+  <div class="grid2 proscons">
+    <div class="card" style="border-top:4px solid var(--yes)">
+      <h3>👍 Merits</h3>
+      <ul class="pc p">
+        <li><b>Easy to understand &amp; explain.</b> You can print the tree and show it to a non-technical stakeholder (a "white-box" model).</li>
+        <li><b>Little data preparation.</b> No feature scaling or normalisation; mixed numeric and categorical features are fine.</li>
+        <li><b>Captures non-linear patterns and interactions</b> (e.g. "humidity matters only if it's sunny") without you engineering them.</li>
+        <li><b>Built-in feature importance</b> and automatic feature selection.</li>
+        <li><b>Fast predictions</b> — just a handful of comparisons.</li>
+        <li><b>Handles both classification and regression</b>, including multi-class problems.</li>
+        <li><b>Robust to outliers</b> in the input features (splits depend on order, not magnitude).</li>
+      </ul>
+    </div>
+    <div class="card" style="border-top:4px solid var(--no)">
+      <h3>👎 Demerits</h3>
+      <ul class="pc c">
+        <li><b>Overfits easily</b> when grown deep — needs pruning or depth limits.</li>
+        <li><b>Unstable (high variance).</b> Small changes in the data can produce a very different tree.</li>
+        <li><b>Axis-aligned splits only.</b> A diagonal boundary becomes an ugly staircase of many splits.</li>
+        <li><b>Greedy, not optimal.</b> Choosing the best split now can miss a better tree overall.</li>
+        <li><b>Biased toward features with many distinct values</b> (e.g. an ID column can look "perfect").</li>
+        <li><b>Struggles with imbalanced classes</b> unless you re-weight them.</li>
+        <li><b>Regression trees can't extrapolate</b> and give blocky, piecewise-constant predictions.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout good"><p><b>Take-away:</b> use a single tree when <i>explainability</i> matters or as a quick baseline. When raw accuracy matters, reach for tree <i>ensembles</i> (Random Forest, XGBoost, LightGBM) — they are built from the same simple building block you just learned.</p></div>
+</section>
+
+<!-- ============ 10. QUIZ ============ -->
+<section id="quiz">
+  <div class="kicker">Part 10</div>
+  <h2>Quick self-check</h2>
+  <div class="card">
+    <div class="row" style="justify-content:space-between"><span class="muted small">Pick an answer for instant feedback.</span><span><b>Score: <span class="val" id="qScore">0</span> / <span id="qTotal"></span></b> <button class="btn sm" id="qReset">Reset</button></span></div>
+    <div id="quizBox"></div>
+  </div>
+</section>
+
+<!-- ============ 11. RECAP ============ -->
+<section id="recap">
+  <div class="kicker">Part 11</div>
+  <h2>Cheat sheet &amp; next steps</h2>
+  <div class="card">
+    <table class="tbl small" style="text-align:left">
+      <tr><th style="width:26%">Concept</th><th>In one sentence</th></tr>
+      <tr><td style="text-align:left"><b>Decision tree</b></td><td style="text-align:left">A learned flowchart of questions that ends in a prediction.</td></tr>
+      <tr><td style="text-align:left"><b>Root / internal / leaf</b></td><td style="text-align:left">First question / later questions / final answer.</td></tr>
+      <tr><td style="text-align:left"><b>Impurity (Gini, entropy)</b></td><td style="text-align:left">How mixed the classes in a node are; 0 means pure.</td></tr>
+      <tr><td style="text-align:left"><b>Information gain</b></td><td style="text-align:left">Parent impurity minus weighted child impurity — the score for a question.</td></tr>
+      <tr><td style="text-align:left"><b>Greedy recursive splitting</b></td><td style="text-align:left">Pick the best question now, then repeat inside each child.</td></tr>
+      <tr><td style="text-align:left"><b>Stop rules / pruning</b></td><td style="text-align:left">Hyperparameters that keep the tree from memorising.</td></tr>
+      <tr><td style="text-align:left"><b>Train / test split, CV</b></td><td style="text-align:left">Judge the model on data it hasn't seen.</td></tr>
+      <tr><td style="text-align:left"><b>Overfitting</b></td><td style="text-align:left">Great on training data, poor on new data.</td></tr>
+      <tr><td style="text-align:left"><b>Ensembles</b></td><td style="text-align:left">Many trees voting beat one tree.</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h3>💻 Do it in Python (scikit-learn)</h3>
+<pre>from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+
+X, y = load_iris(return_X_y=True)
+X_tr, X_te, y_tr, y_te = train_test_split(
+    X, y, test_size=0.3, stratify=y, random_state=0)
+
+model = DecisionTreeClassifier(max_depth=3, criterion="gini", random_state=0)
+model.fit(X_tr, y_tr)
+
+print("train acc:", model.score(X_tr, y_tr))
+print("test  acc:", model.score(X_te, y_te))
+plot_tree(model, filled=True)</pre>
+    <p class="small muted">The trees on this page come from a from-scratch JavaScript implementation of the same CART algorithm. Exact thresholds and scores can differ slightly from scikit-learn because of different random splits and tie-breaking between equally good questions.</p>
+    <p class="small"><b>Where to go next:</b> try <code>RandomForestClassifier</code>, tune <code>ccp_alpha</code>, and test a tree on a dataset with categorical columns (e.g. Titanic).</p>
+  </div>
+</section>
+<footer>Made for a beginner machine-learning class · works offline · single self-contained file</footer>
+</main>
+</div>
+
+<!-- =================== CORE (no DOM) =================== -->
+<script id="core">
+// ---------- tiny utilities ----------
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+function shuffle(arr,rng){const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function gauss(rng){let u=0;while(u===0)u=rng();const v=rng();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function giniFromCounts(c,n){if(n===0)return 0;let s=0;for(const k of c){const p=k/n;s+=p*p;}return 1-s;}
+function entropyFromCounts(c,n){if(n===0)return 0;let s=0;for(const k of c){if(k>0){const p=k/n;s-=p*Math.log2(p);}}return s;}
+function impurityFn(name){return name==='entropy'?entropyFromCounts:giniFromCounts;}
+
+// ---------- toy dataset (categorical, ID3-style) ----------
+const TENNIS={
+  features:['Outlook','Temperature','Humidity','Wind'],
+  values:{Outlook:['Sunny','Overcast','Rain'],Temperature:['Hot','Mild','Cool'],Humidity:['High','Normal'],Wind:['Weak','Strong']},
+  classes:['Yes','No'],
+  rows:[
+    ['Sunny','Hot','High','Weak','No'],['Sunny','Hot','High','Strong','No'],['Overcast','Hot','High','Weak','Yes'],
+    ['Rain','Mild','High','Weak','Yes'],['Rain','Cool','Normal','Weak','Yes'],['Rain','Cool','Normal','Strong','No'],
+    ['Overcast','Cool','Normal','Strong','Yes'],['Sunny','Mild','High','Weak','No'],['Sunny','Cool','Normal','Weak','Yes'],
+    ['Rain','Mild','Normal','Weak','Yes'],['Sunny','Mild','Normal','Strong','Yes'],['Overcast','Mild','High','Strong','Yes'],
+    ['Overcast','Hot','Normal','Weak','Yes'],['Rain','Mild','High','Strong','No']
+  ]
+};
+function countLabels(rows,classes){return classes.map(c=>rows.filter(r=>r[4]===c).length);}
+function gainCat(rows,fi,classes){
+  const n=rows.length,parent=entropyFromCounts(countLabels(rows,classes),n);
+  let w=0;const parts=[];
+  for(const v of TENNIS.values[TENNIS.features[fi]]){
+    const sub=rows.filter(r=>r[fi]===v);if(!sub.length)continue;
+    const cnt=countLabels(sub,classes),e=entropyFromCounts(cnt,sub.length);
+    w+=sub.length/n*e;parts.push({v,n:sub.length,counts:cnt,e});
+  }
+  return {gain:parent-w,parent,weighted:w,parts};
+}
+
+// ---------- Iris (numeric, CART-style) ----------
+const IRIS=[[5.1,3.5,1.4,0.2,0],[4.9,3.0,1.4,0.2,0],[4.7,3.2,1.3,0.2,0],[4.6,3.1,1.5,0.2,0],[5.0,3.6,1.4,0.2,0],[5.4,3.9,1.7,0.4,0],[4.6,3.4,1.4,0.3,0],[5.0,3.4,1.5,0.2,0],[4.4,2.9,1.4,0.2,0],[4.9,3.1,1.5,0.1,0],[5.4,3.7,1.5,0.2,0],[4.8,3.4,1.6,0.2,0],[4.8,3.0,1.4,0.1,0],[4.3,3.0,1.1,0.1,0],[5.8,4.0,1.2,0.2,0],[5.7,4.4,1.5,0.4,0],[5.4,3.9,1.3,0.4,0],[5.1,3.5,1.4,0.3,0],[5.7,3.8,1.7,0.3,0],[5.1,3.8,1.5,0.3,0],[5.4,3.4,1.7,0.2,0],[5.1,3.7,1.5,0.4,0],[4.6,3.6,1.0,0.2,0],[5.1,3.3,1.7,0.5,0],[4.8,3.4,1.9,0.2,0],[5.0,3.0,1.6,0.2,0],[5.0,3.4,1.6,0.4,0],[5.2,3.5,1.5,0.2,0],[5.2,3.4,1.4,0.2,0],[4.7,3.2,1.6,0.2,0],[4.8,3.1,1.6,0.2,0],[5.4,3.4,1.5,0.4,0],[5.2,4.1,1.5,0.1,0],[5.5,4.2,1.4,0.2,0],[4.9,3.1,1.5,0.2,0],[5.0,3.2,1.2,0.2,0],[5.5,3.5,1.3,0.2,0],[4.9,3.6,1.4,0.1,0],[4.4,3.0,1.3,0.2,0],[5.1,3.4,1.5,0.2,0],[5.0,3.5,1.3,0.3,0],[4.5,2.3,1.3,0.3,0],[4.4,3.2,1.3,0.2,0],[5.0,3.5,1.6,0.6,0],[5.1,3.8,1.9,0.4,0],[4.8,3.0,1.4,0.3,0],[5.1,3.8,1.6,0.2,0],[4.6,3.2,1.4,0.2,0],[5.3,3.7,1.5,0.2,0],[5.0,3.3,1.4,0.2,0],[7.0,3.2,4.7,1.4,1],[6.4,3.2,4.5,1.5,1],[6.9,3.1,4.9,1.5,1],[5.5,2.3,4.0,1.3,1],[6.5,2.8,4.6,1.5,1],[5.7,2.8,4.5,1.3,1],[6.3,3.3,4.7,1.6,1],[4.9,2.4,3.3,1.0,1],[6.6,2.9,4.6,1.3,1],[5.2,2.7,3.9,1.4,1],[5.0,2.0,3.5,1.0,1],[5.9,3.0,4.2,1.5,1],[6.0,2.2,4.0,1.0,1],[6.1,2.9,4.7,1.4,1],[5.6,2.9,3.6,1.3,1],[6.7,3.1,4.4,1.4,1],[5.6,3.0,4.5,1.5,1],[5.8,2.7,4.1,1.0,1],[6.2,2.2,4.5,1.5,1],[5.6,2.5,3.9,1.1,1],[5.9,3.2,4.8,1.8,1],[6.1,2.8,4.0,1.3,1],[6.3,2.5,4.9,1.5,1],[6.1,2.8,4.7,1.2,1],[6.4,2.9,4.3,1.3,1],[6.6,3.0,4.4,1.4,1],[6.8,2.8,4.8,1.4,1],[6.7,3.0,5.0,1.7,1],[6.0,2.9,4.5,1.5,1],[5.7,2.6,3.5,1.0,1],[5.5,2.4,3.8,1.1,1],[5.5,2.4,3.7,1.0,1],[5.8,2.7,3.9,1.2,1],[6.0,2.7,5.1,1.6,1],[5.4,3.0,4.5,1.5,1],[6.0,3.4,4.5,1.6,1],[6.7,3.1,4.7,1.5,1],[6.3,2.3,4.4,1.3,1],[5.6,3.0,4.1,1.3,1],[5.5,2.5,4.0,1.3,1],[5.5,2.6,4.4,1.2,1],[6.1,3.0,4.6,1.4,1],[5.8,2.6,4.0,1.2,1],[5.0,2.3,3.3,1.0,1],[5.6,2.7,4.2,1.3,1],[5.7,3.0,4.2,1.2,1],[5.7,2.9,4.2,1.3,1],[6.2,2.9,4.3,1.3,1],[5.1,2.5,3.0,1.1,1],[5.7,2.8,4.1,1.3,1],[6.3,3.3,6.0,2.5,2],[5.8,2.7,5.1,1.9,2],[7.1,3.0,5.9,2.1,2],[6.3,2.9,5.6,1.8,2],[6.5,3.0,5.8,2.2,2],[7.6,3.0,6.6,2.1,2],[4.9,2.5,4.5,1.7,2],[7.3,2.9,6.3,1.8,2],[6.7,2.5,5.8,1.8,2],[7.2,3.6,6.1,2.5,2],[6.5,3.2,5.1,2.0,2],[6.4,2.7,5.3,1.9,2],[6.8,3.0,5.5,2.1,2],[5.7,2.5,5.0,2.0,2],[5.8,2.8,5.1,2.4,2],[6.4,3.2,5.3,2.3,2],[6.5,3.0,5.5,1.8,2],[7.7,3.8,6.7,2.2,2],[7.7,2.6,6.9,2.3,2],[6.0,2.2,5.0,1.5,2],[6.9,3.2,5.7,2.3,2],[5.6,2.8,4.9,2.0,2],[7.7,2.8,6.7,2.0,2],[6.3,2.7,4.9,1.8,2],[6.7,3.3,5.7,2.1,2],[7.2,3.2,6.0,1.8,2],[6.2,2.8,4.8,1.8,2],[6.1,3.0,4.9,1.8,2],[6.4,2.8,5.6,2.1,2],[7.2,3.0,5.8,1.6,2],[7.4,2.8,6.1,1.9,2],[7.9,3.8,6.4,2.0,2],[6.4,2.8,5.6,2.2,2],[6.3,2.8,5.1,1.5,2],[6.1,2.6,5.6,1.4,2],[7.7,3.0,6.1,2.3,2],[6.3,3.4,5.6,2.4,2],[6.4,3.1,5.5,1.8,2],[6.0,3.0,4.8,1.8,2],[6.9,3.1,5.4,2.1,2],[6.7,3.1,5.6,2.4,2],[6.9,3.1,5.1,2.3,2],[5.8,2.7,5.1,1.9,2],[6.8,3.2,5.9,2.3,2],[6.7,3.3,5.7,2.5,2],[6.7,3.0,5.2,2.3,2],[6.3,2.5,5.0,1.9,2],[6.5,3.0,5.2,2.0,2],[6.2,3.4,5.4,2.3,2],[5.9,3.0,5.1,1.8,2]];
+const FEATS=['sepal length','sepal width','petal length','petal width'];
+const CLASSES=['setosa','versicolor','virginica'];
+
+function bestSplitNumeric(R,idx,feats,crit,K,minLeaf){
+  const n=idx.length,total=new Array(K).fill(0);
+  for(const i of idx)total[R[i][4]]++;
+  const parentImp=crit(total,n);let best=null;
+  for(const f of feats){
+    const sorted=idx.slice().sort((a,b)=>R[a][f]-R[b][f]);
+    const left=new Array(K).fill(0),right=total.slice();
+    for(let j=0;j<n-1;j++){
+      const c=R[sorted[j]][4];left[c]++;right[c]--;
+      const v=R[sorted[j]][f],v2=R[sorted[j+1]][f];
+      if(v===v2)continue;
+      const nl=j+1,nr=n-nl;
+      if(nl<minLeaf||nr<minLeaf)continue;
+      const gain=parentImp-(nl*crit(left,nl)+nr*crit(right,nr))/n;
+      if(!best||gain>best.gain+1e-12)best={f,thr:(v+v2)/2,gain};
+    }
+  }
+  return best;
+}
+function growTree(R,idx,P,depth,K){
+  K=K||3;
+  const n=idx.length,counts=new Array(K).fill(0);
+  for(const i of idx)counts[R[i][4]]++;
+  const crit=impurityFn(P.criterion),imp=crit(counts,n);
+  const node={n,counts,imp,depth,pred:counts.indexOf(Math.max(...counts)),leaf:true};
+  if(imp<1e-12||depth>=P.maxDepth||n<2*P.minLeaf)return node;
+  const s=bestSplitNumeric(R,idx,P.feats,crit,K,P.minLeaf);
+  if(!s||s.gain<=1e-12)return node;
+  const L=[],Rt=[];
+  for(const i of idx)(R[i][s.f]<=s.thr?L:Rt).push(i);
+  node.leaf=false;node.f=s.f;node.thr=s.thr;node.gain=s.gain;
+  node.left=growTree(R,L,P,depth+1,K);node.right=growTree(R,Rt,P,depth+1,K);
+  return node;
+}
+function leafOf(node,row){let n=node;while(!n.leaf)n=row[n.f]<=n.thr?n.left:n.right;return n;}
+function predict(node,row){return leafOf(node,row).pred;}
+function accuracy(tree,R,idx){let ok=0;for(const i of idx)if(predict(tree,R[i])===R[i][4])ok++;return idx.length?ok/idx.length:0;}
+function confusion(tree,R,idx,K){K=K||3;const m=Array.from({length:K},()=>new Array(K).fill(0));for(const i of idx)m[R[i][4]][predict(tree,R[i])]++;return m;}
+function countLeaves(n){return n.leaf?1:countLeaves(n.left)+countLeaves(n.right);}
+function treeDepth(n){return n.leaf?0:1+Math.max(treeDepth(n.left),treeDepth(n.right));}
+function importances(tree,nFeat){
+  const out=new Array(nFeat).fill(0);
+  (function walk(n){if(n.leaf)return;out[n.f]+=(n.n*n.imp-n.left.n*n.left.imp-n.right.n*n.right.imp);walk(n.left);walk(n.right);})(tree);
+  const s=out.reduce((a,b)=>a+b,0);return s>0?out.map(v=>v/s):out;
+}
+function stratSplit(R,testFrac,seed){
+  const rng=mulberry32(seed),train=[],test=[];
+  for(let c=0;c<3;c++){
+    const ids=[];R.forEach((r,i)=>{if(r[4]===c)ids.push(i);});
+    const sh=shuffle(ids,rng),nt=Math.round(sh.length*testFrac);
+    test.push(...sh.slice(0,nt));train.push(...sh.slice(nt));
+  }
+  return {train,test};
+}
+function crossVal(R,P,k,seed){
+  const rng=mulberry32(seed),folds=Array.from({length:k},()=>[]);
+  for(let c=0;c<3;c++){const ids=[];R.forEach((r,i)=>{if(r[4]===c)ids.push(i);});shuffle(ids,rng).forEach((id,j)=>folds[j%k].push(id));}
+  return folds.map((te,fi)=>{const tr=[].concat(...folds.filter((_,j)=>j!==fi));return accuracy(growTree(R,tr,P,0,3),R,te);});
+}
+
+// ---------- 1-D regression tree ----------
+function growReg(xs,ys,idx,maxDepth,minLeaf,depth){
+  const n=idx.length;let sum=0;for(const i of idx)sum+=ys[i];
+  const node={n,mean:sum/n,leaf:true,depth};
+  if(depth>=maxDepth||n<2*minLeaf)return node;
+  const sorted=idx.slice().sort((a,b)=>xs[a]-xs[b]);
+  let tq=0;for(const i of idx)tq+=ys[i]*ys[i];
+  let ls=0,lq=0,best=null;
+  for(let j=0;j<n-1;j++){
+    const y=ys[sorted[j]];ls+=y;lq+=y*y;
+    if(xs[sorted[j]]===xs[sorted[j+1]])continue;
+    const nl=j+1,nr=n-nl;if(nl<minLeaf||nr<minLeaf)continue;
+    const rs=sum-ls,rq=tq-lq,sse=(lq-ls*ls/nl)+(rq-rs*rs/nr);
+    if(!best||sse<best.sse-1e-12)best={sse,thr:(xs[sorted[j]]+xs[sorted[j+1]])/2};
+  }
+  if(!best)return node;
+  const L=[],R=[];for(const i of idx)(xs[i]<=best.thr?L:R).push(i);
+  node.leaf=false;node.thr=best.thr;
+  node.left=growReg(xs,ys,L,maxDepth,minLeaf,depth+1);node.right=growReg(xs,ys,R,maxDepth,minLeaf,depth+1);
+  return node;
+}
+function predictReg(n,x){while(!n.leaf)n=x<=n.thr?n.left:n.right;return n.mean;}
+function countLeavesReg(n){return n.leaf?1:countLeavesReg(n.left)+countLeavesReg(n.right);}
+</script>
+
+<!-- =================== UI =================== -->
+<script id="ui">
+const $=s=>document.querySelector(s);
+const f2=x=>x.toFixed(2),f3=x=>x.toFixed(3);
+const CC=['#2a9d8f','#e9a23b','#7b5ea7'],CRGB=[[42,157,143],[233,162,59],[123,94,167]];
+const rgba=(c,a)=>`rgba(${CRGB[c].join(',')},${a})`;
+
+/* ---------- generic SVG tree renderer ---------- */
+function layoutTree(root,kids){
+  let leafX=0;const nodes=[];
+  (function pos(n,d){n._d=d;const ks=kids(n);
+    if(!ks.length){n._x=leafX++;}else{ks.forEach(k=>pos(k,d+1));n._x=(kids(n)[0]._x+ks[ks.length-1]._x)/2;}
+    nodes.push(n);})(root,0);
+  return {nodes,leaves:leafX,depth:Math.max(...nodes.map(n=>n._d))};
+}
+function treeSVG(root,o){
+  const L=layoutTree(root,o.kids),bw=o.bw,bh=o.bh,gx=o.gx,gy=o.gy,pad=14,left=o.showDepth?56:0;
+  const W=left+pad*2+(L.leaves-1)*(bw+gx)+bw,H=pad*2+L.depth*(bh+gy)+bh;
+  const X=n=>left+pad+n._x*(bw+gx)+bw/2,Y=n=>pad+n._d*(bh+gy);
+  let edges='',boxes='',labs='',dl='';
+  L.nodes.forEach(n=>{
+    o.kids(n).forEach((k,i)=>{
+      const x1=X(n),y1=Y(n)+bh,x2=X(k),y2=Y(k),my=(y1+y2)/2;
+      edges+=`<path class="te ${o.edgeCls?o.edgeCls(n,k):''}" d="M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}"/>`;
+      const lab=o.edgeLabel?o.edgeLabel(n,k,i):'';
+      if(lab)labs+=`<text class="tl" x="${(x1+x2)/2+(i===0?-6:6)}" y="${my+4}" text-anchor="${i===0?'end':'start'}">${lab}</text>`;
+    });
+    const lines=o.lines(n),lh=15,top=Y(n),fill=o.fill?o.fill(n):null;
+    boxes+=`<g class="tn ${o.cls?o.cls(n):''}"><rect x="${X(n)-bw/2}" y="${top}" width="${bw}" height="${bh}" rx="9"${fill?` style="fill:${fill}"`:''}/>`;
+    let ty=top+(bh-lines.length*lh)/2+lh-4;
+    lines.forEach(l=>{const t=typeof l==='string'?{t:l}:l;boxes+=`<text x="${X(n)}" y="${ty}" text-anchor="middle" class="${t.b?'b':''} ${t.s?'s':''}">${t.t}</text>`;ty+=lh;});
+    boxes+='</g>';
+  });
+  if(o.showDepth)for(let d=0;d<=L.depth;d++)dl+=`<text class="dl ${o.hlDepth?'hl':''}" x="6" y="${pad+d*(bh+gy)+bh/2+4}">depth ${d}</text>`;
+  const sz=o.fit?`style="max-width:100%;height:auto" width="${W}"`:`width="${W}" height="${H}"`;
+  return `<svg viewBox="0 0 ${W} ${H}" ${sz} role="img" aria-label="${o.label||'decision tree'}">${dl}${edges}${labs}${boxes}</svg>`;
+}
+
+/* ====================== PART 1: fruit walker ====================== */
+const FRUIT={q:'Is it yellow?',role:'root',kids:[
+  {edge:'Yes',q:'Is it long and curved?',role:'decision',kids:[{edge:'Yes',leaf:'Banana 🍌',role:'leaf'},{edge:'No',leaf:'Lemon 🍋',role:'leaf'}]},
+  {edge:'No',q:'Is the skin bumpy?',role:'decision',kids:[{edge:'Yes',leaf:'Orange 🍊',role:'leaf'},{edge:'No',leaf:'Apple 🍎',role:'leaf'}]}]};
+const ROLE_TEXT={
+  root:['Root node','The very first question. It sees all of the data. Here: “Is it yellow?”'],
+  decision:['Decision (internal) node','Asks a question about one feature and sends each example down the matching branch.'],
+  branch:['Branch','One possible answer to a question (Yes/No for categories, or “≤ value” / “> value” for numbers).'],
+  leaf:['Leaf (terminal) node','No more questions. Holds the final prediction — the class (or number) for everything that lands here.'],
+  depth:['Depth','How many questions in a row you might have to answer. This tree has depth 2; the more depth, the more complex the model.']
+};
+const walk={path:[FRUIT],role:null};
+function renderFruit(){
+  const cur=walk.path[walk.path.length-1];
+  $('#fruitTree').innerHTML=treeSVG(FRUIT,{
+    kids:n=>n.kids||[],bw:140,bh:50,gx:26,gy:58,showDepth:true,hlDepth:walk.role==='depth',fit:true,label:'fruit decision tree',
+    lines:n=>[{t:n.leaf||n.q,b:1}],
+    cls:n=>`${n.leaf?'leaf':''} ${walk.path.includes(n)?'on':''} ${(walk.role&&n.role===walk.role)?'hl':''}`,
+    edgeCls:(p,k)=>`${walk.path.includes(k)?'on':''} ${walk.role==='branch'?'hl':''}`,
+    edgeLabel:(p,k)=>k.edge});
+  const w=$('#walkPanel');
+  if(cur.leaf){w.innerHTML=`<span style="font-size:18px">🎉 I think it's a <b>${cur.leaf}</b>!</span> <button class="btn sm" id="walkRestart">↺ Play again</button>`;}
+  else{w.innerHTML=`<span style="font-size:18px"><b>${cur.q}</b></span> <button class="btn primary sm" data-ans="Yes">Yes</button> <button class="btn sm" data-ans="No">No</button> ${walk.path.length>1?'<button class="btn sm" id="walkRestart">↺ Restart</button>':''}`;}
+}
+$('#walkPanel').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.id==='walkRestart'){walk.path=[FRUIT];}
+  else if(b.dataset.ans){const cur=walk.path[walk.path.length-1];walk.path.push(cur.kids.find(k=>k.edge===b.dataset.ans));}
+  renderFruit();
+});
+function renderRoles(){
+  $('#roleChips').innerHTML=Object.keys(ROLE_TEXT).map(k=>`<button class="chip ${walk.role===k?'act':''}" data-role="${k}">${ROLE_TEXT[k][0]}</button>`).join('');
+  $('#roleExplain').innerHTML=walk.role?`<p><b>${ROLE_TEXT[walk.role][0]}</b> — ${ROLE_TEXT[walk.role][1]}</p>`:'<p>Click a term above 👆</p>';
+}
+$('#roleChips').addEventListener('click',e=>{const b=e.target.closest('.chip');if(!b)return;walk.role=walk.role===b.dataset.role?null:b.dataset.role;renderRoles();renderFruit();});
+
+/* ====================== PART 2: impurity ====================== */
+function dotsSVG(a,b,cols,r,w){
+  const items=[];for(let i=0;i<a;i++)items.push(0);for(let i=0;i<b;i++)items.push(1);
+  const rows=Math.max(1,Math.ceil(items.length/cols)),d=r*2+4;
+  const W=w||cols*d,H=rows*d+2;
+  return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="max-width:100%">`+items.map((c,i)=>`<circle cx="${(i%cols)*d+r+2}" cy="${Math.floor(i/cols)*d+r+2}" r="${r}" fill="${c?'#e9a23b':'#2a9d8f'}"/>`).join('')+'</svg>';
+}
+function giniText(c){const n=c[0]+c[1];if(!n)return'(empty node)';const g=giniFromCounts(c,n);return`Gini = 1 − (${c.map(k=>f2(k/n)+'²').join(' + ')}) = <b>${f3(g)}</b>`;}
+function entText(c){const n=c[0]+c[1];if(!n)return'(empty node)';const e=entropyFromCounts(c,n);const t=c.filter(k=>k>0).map(k=>`${f2(k/n)}·log₂(${f2(k/n)})`).join(' + ');return`Entropy = −(${t}) = <b>${f3(e)}</b>`;}
+function renderImp(){
+  const a=+$('#impA').value,b=20-a;$('#impAv').textContent=a;
+  $('#impDots').innerHTML=dotsSVG(a,b,10,13);
+  $('#impGini').innerHTML=giniText([a,b]);$('#impEnt').innerHTML=entText([a,b]);
+  const v=$('#impVerdict');
+  if(a===0||b===0){v.className='callout good';v.innerHTML='<b>Pure node ✅</b> — only one class. Nothing left to split; this would become a leaf.';}
+  else if(a===10){v.className='callout warn';v.innerHTML='<b>Maximally mixed</b> — a coin flip. This is the messiest a 2-class node can be.';}
+  else{v.className='callout';v.innerHTML='<b>Partly mixed</b> — the bigger the majority, the lower the impurity.';}
+  // chart
+  const W=360,H=250,m={l:42,r:14,t:16,b:40},pw=W-m.l-m.r,ph=H-m.t-m.b;
+  const X=p=>m.l+p*pw,Y=v=>m.t+(1-v)*ph;
+  let g='',e='';
+  for(let i=0;i<=100;i++){const p=i/100,c=[p,1-p];g+=(i?'L':'M')+X(p)+','+Y(giniFromCounts(c,1));e+=(i?'L':'M')+X(p)+','+Y(entropyFromCounts(c,1));}
+  const p=a/20,gv=giniFromCounts([a,b],20),ev=entropyFromCounts([a,b],20);
+  let ticks='';for(let t=0;t<=1;t+=.25)ticks+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(t)}" y2="${Y(t)}" stroke="#e8ebf3"/><text x="${m.l-6}" y="${Y(t)+4}" font-size="11" text-anchor="end" fill="#58627a">${t}</text><text x="${X(t)}" y="${H-m.b+16}" font-size="11" text-anchor="middle" fill="#58627a">${t}</text>`;
+  $('#impChart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px">${ticks}
+    <path d="${e}" fill="none" stroke="#3b5bdb" stroke-width="2.5"/><path d="${g}" fill="none" stroke="#d1495b" stroke-width="2.5"/>
+    <line x1="${X(p)}" x2="${X(p)}" y1="${m.t}" y2="${H-m.b}" stroke="#9aa4bd" stroke-dasharray="4 3"/>
+    <circle cx="${X(p)}" cy="${Y(ev)}" r="5.5" fill="#3b5bdb" stroke="#fff" stroke-width="2"/><circle cx="${X(p)}" cy="${Y(gv)}" r="5.5" fill="#d1495b" stroke="#fff" stroke-width="2"/>
+    <text x="${W/2}" y="${H-4}" font-size="12" text-anchor="middle" fill="#58627a">fraction of class A in the node</text>
+    <text x="${m.l+8}" y="${m.t+12}" font-size="12" fill="#3b5bdb" font-weight="700">entropy</text><text x="${m.l+8}" y="${m.t+28}" font-size="12" fill="#d1495b" font-weight="700">Gini</text></svg>`;
+}
+function renderSplit(){
+  const la=+$('#spA').value,lb=+$('#spB').value,ra=10-la,rb=10-lb;
+  $('#spAv').textContent=la;$('#spBv').textContent=lb;
+  const nl=la+lb,nr=ra+rb;
+  const P=[10,10];
+  const gP=giniFromCounts(P,20),eP=entropyFromCounts(P,20);
+  const gL=giniFromCounts([la,lb],nl),gR=giniFromCounts([ra,rb],nr),eL=entropyFromCounts([la,lb],nl),eR=entropyFromCounts([ra,rb],nr);
+  const gW=(nl*gL+nr*gR)/20,eW=(nl*eL+nr*eR)/20,gG=gP-gW,eG=eP-eW;
+  $('#spDots').innerHTML=`<div class="row" style="align-items:flex-start;margin-top:10px;gap:14px">
+    <div><div class="small muted">Left (${nl})</div>${nl?dotsSVG(la,lb,5,9):'<span class="small muted">empty</span>'}</div>
+    <div><div class="small muted">Right (${nr})</div>${nr?dotsSVG(ra,rb,5,9):'<span class="small muted">empty</span>'}</div></div>`;
+  const row=(n,c,g,e)=>`<tr><td style="text-align:left">${n}</td><td>${c}</td><td>${f3(g)}</td><td>${f3(e)}</td></tr>`;
+  let msg='';
+  if(!nl||!nr)msg='<div class="callout warn" style="margin-bottom:0"><p>Everything went to one side — that\'s not a split at all, so the gain is 0.</p></div>';
+  else if(gG>0.49)msg='<div class="callout good" style="margin-bottom:0"><p>🎯 Perfect: both children are pure — the maximum possible gain.</p></div>';
+  else if(gG<0.0005)msg='<div class="callout warn" style="margin-bottom:0"><p>No purification: the children are just as mixed as the parent.</p></div>';
+  $('#spOut').innerHTML=`<table class="tbl"><tr><th style="text-align:left">Node</th><th>A / B</th><th>Gini</th><th>Entropy</th></tr>
+    ${row('Parent',`10 / 10`,gP,eP)}${row('Left',`${la} / ${lb}`,gL,eL)}${row('Right',`${ra} / ${rb}`,gR,eR)}
+    <tr><td style="text-align:left"><b>Weighted children</b></td><td class="small">(${nl}/20)·left + (${nr}/20)·right</td><td><b>${f3(gW)}</b></td><td><b>${f3(eW)}</b></td></tr>
+    <tr style="background:var(--brand-soft)"><td style="text-align:left"><b>Information gain</b></td><td class="small">parent − weighted</td><td><b>${f3(gG)}</b></td><td><b>${f3(eG)}</b></td></tr></table>
+    <div class="bar" style="height:12px;margin-top:10px"><i style="width:${Math.max(0,gG/gP*100)}%;background:var(--brand)"></i></div>
+    <div class="small muted" style="margin-bottom:8px">Gini gain as a share of the maximum possible (${f3(gP)})</div>${msg}`;
+}
+$('#impA').addEventListener('input',renderImp);
+$('#spA').addEventListener('input',renderSplit);$('#spB').addEventListener('input',renderSplit);
+document.querySelectorAll('[data-sp]').forEach(b=>b.addEventListener('click',()=>{const[a,c]=b.dataset.sp.split(',');$('#spA').value=a;$('#spB').value=c;renderSplit();}));
+
+/* ====================== PART 3: tennis toy ====================== */
+let toyId=0,toyRoot,toyMap={},toyPath=new Set();
+const classesT=TENNIS.classes;
+function toyNew(rows,used){return{id:++toyId,rows,used:used||[],split:null,kids:null};}
+function toyAvail(n){return TENNIS.features.filter(f=>!n.used.includes(f));}
+function toyPure(n){const c=countLabels(n.rows,classesT);return c.some(k=>k===n.rows.length);}
+function toyOpen(n){return !n.split&&!toyPure(n)&&toyAvail(n).length>0;}
+function toyGain(n,f){return gainCat(n.rows,TENNIS.features.indexOf(f),classesT);}
+function toyBest(n){let b=null;for(const f of toyAvail(n)){const g=toyGain(n,f).gain;if(!b||g>b.g+1e-12)b={f,g};}return b;}
+function toySplit(n,f){
+  const fi=TENNIS.features.indexOf(f);n.split=f;
+  n.kids=TENNIS.values[f].map(v=>({value:v,node:toyNew(n.rows.filter(r=>r[fi]===v),n.used.concat(f))})).filter(k=>k.node.rows.length);
+}
+function toyAuto(n){
+  if(toyOpen(n)){const b=toyBest(n);if(b&&b.g>1e-12)toySplit(n,b.f);}
+  if(n.kids)n.kids.forEach(k=>toyAuto(k.node));
+}
+function toyReset(){toyId=0;toyOpenSet.clear();toySel=null;toyRoot=toyNew(TENNIS.rows.slice(),[]);renderToy();}
+function toyNodeHTML(n){
+  toyMap[n.id]=n;
+  const cnt=countLabels(n.rows,classesT),tot=n.rows.length,ent=entropyFromCounts(cnt,tot),pure=toyPure(n);
+  const maj=cnt[0]>=cnt[1]?'Yes':'No';
+  const kind=n.split?'split':(!toyOpen(n)?'leaf':'open');
+  const ids=n.rows.map(r=>TENNIS.rows.indexOf(r)+1).join(',');
+  let cls=`tbox ${kind} ${toyPath.has(n.id)?'onpath':''} ${toySel===n.id?'sel':''}`;
+  if(kind==='leaf')cls+=maj==='Yes'?' yesL':' noL';
+  let head=kind==='split'?`Split on <span class="ttl">${n.split}</span>`:kind==='leaf'?`Leaf → Play: <span class="ttl ${maj==='Yes'?'yes':'no'}">${maj}</span>`:'<span class="ttl">Still mixed — choose a question</span>';
+  let h=`<div class="${cls}" data-ids="${ids}" data-nid="${n.id}"><div>${head}</div>
+    <div class="bar"><i style="width:${cnt[0]/tot*100}%;background:var(--yes)"></i><i style="width:${cnt[1]/tot*100}%;background:var(--no)"></i></div>
+    <div class="small"><span class="yes">${cnt[0]} Yes</span> · <span class="no">${cnt[1]} No</span> · entropy ${f3(ent)}</div>`;
+  if(kind==='leaf'&&!pure)h+='<div class="small muted">no questions left → majority vote</div>';
+  if(kind==='open'){
+    const show=$('#toyShowGain').checked,best=toyBest(n);
+    h+='<div style="margin-top:6px">';
+    for(const f of toyAvail(n)){
+      const g=toyGain(n,f).gain;
+      h+=`<div class="opt"><button class="optbtn" data-act="split" data-node="${n.id}" data-feat="${f}">${f}</button>`+
+        (show?`<div class="gbar"><i style="width:${Math.min(100,g/ent*100)}%"></i></div><span class="gval">${f3(g)}</span>`:`<span class="gval" style="flex:1;text-align:left">?</span>`)+'</div>';
+    }
+    h+=`<button class="btn sm" style="margin-top:4px" data-act="best" data-node="${n.id}">Use best split</button></div>`;
+  }
+  h+='</div>';
+  if(n.kids)h+=`<div class="kids">${n.kids.map(k=>`<div class="kid"><div class="elabel">${k.value}</div>${toyNodeHTML(k.node)}</div>`).join('')}</div>`;
+  return `<div class="tnode">${h}</div>`;
+}
+function toyWalkCompute(){
+  toyPath=new Set();
+  const sel={Outlook:$('#tw0').value,Temperature:$('#tw1').value,Humidity:$('#tw2').value,Wind:$('#tw3').value};
+  let n=toyRoot,trail=[];toyPath.add(n.id);
+  while(n.split){const kid=n.kids.find(k=>k.value===sel[n.split]);if(!kid)break;trail.push(`${n.split} = ${sel[n.split]}`);n=kid.node;toyPath.add(n.id);}
+  const cnt=countLabels(n.rows,classesT),maj=cnt[0]>=cnt[1]?'Yes':'No';
+  let t;
+  if(!trail.length&&!n.split)t=`The tree is still just a root, so the best guess is the majority: <b class="${maj==='Yes'?'yes':'no'}">${maj}</b>. Grow the tree first!`;
+  else t=`Path: ${trail.length?trail.join(' → '):'(root)'}<br>Prediction: play tennis? <b class="${maj==='Yes'?'yes':'no'}" style="font-size:18px">${maj}</b>${toyOpen(n)?' <span class="muted small">(tree not finished here — this is a majority guess; split the amber box for a better answer)</span>':''}`;
+  $('#toyPred').innerHTML=t;
+}
+function entFormula(cnt,n){
+  const t=cnt.filter(c=>c>0).map(c=>`(${c}/${n})·log₂(${c}/${n})`);
+  return t.length?`−[ ${t.join(' + ')} ]`:'0';
+}
+const toyOpenSet=new Set();
+function toySteps(){
+  const out=[],q=[{n:toyRoot,path:[]}];
+  while(q.length){
+    const {n,path}=q.shift();
+    if(n.split||toyOpen(n))out.push({n,path});
+    if(n.kids)n.kids.forEach(k=>q.push({n:k.node,path:path.concat(`${n.split} = ${k.value}`)}));
+  }
+  return out;
+}
+const f4=x=>x.toFixed(4);
+function renderToyCalc(){
+  const steps=toySteps(),show=$('#toyShowGain').checked;
+  $('#toyCalc').innerHTML=steps.map((s,i)=>{
+    const n=s.n,tot=n.rows.length,cnt=countLabels(n.rows,classesT),ent=entropyFromCounts(cnt,tot);
+    const where=s.path.length?s.path.join(' → '):'Root';
+    const waiting=toyOpen(n);
+    const title=`<b>Step ${i+1}</b> · ${where} <span class="muted">(${tot} days)</span> → `+(waiting?'<i>waiting for your choice</i>':`split on <b>${n.split}</b> <span class="muted">(gain ${f4(toyGain(n,n.split).gain)})</span>`);
+    let body=`<p class="small" style="margin:6px 0 2px">① Entropy of this node (${cnt[0]} Yes, ${cnt[1]} No):</p><div class="formula">H(node) = ${entFormula(cnt,tot)} = <b>${f4(ent)}</b></div>`;
+    if(waiting&&!show){
+      body+='<p class="small muted">Candidate calculations are hidden because “show information gain numbers” is unticked above.</p>';
+    }else{
+      const best=toyBest(n);
+      body+='<p class="small" style="margin:8px 0 0">Score every remaining question:</p>';
+      body+=toyAvail(n).map(f=>{
+        const g=toyGain(n,f),chosen=n.split===f;
+        return `<div class="fb ${chosen?'ch':''}"><b>${f}</b>${chosen?' &nbsp;✔ chosen':''}
+          <div class="formula">② ${g.parts.map(p=>`${p.v} (${p.counts[0]} Yes, ${p.counts[1]} No): H = ${entFormula(p.counts,p.n)} = ${f4(p.e)}`).join('<br>② ')}<br>③ weighted = ${g.parts.map(p=>`(${p.n}/${tot})·${f4(p.e)}`).join(' + ')} = ${f4(g.weighted)}<br>④ gain = ${f4(g.parent)} − ${f4(g.weighted)} = <b>${f4(g.gain)}</b></div></div>`;
+      }).join('');
+    }
+    return `<details data-nid="${n.id}" ${toyOpenSet.has(String(n.id))?'open':''}><summary>${title}</summary>${body}</details>`;
+  }).join('')+(steps.length?'<p class="small muted" style="margin-bottom:0">Pure nodes (entropy 0) need no calculation — they simply become leaves.</p>':'');
+}
+let toySel=null,toyLabels={};
+function toyBuildLabels(){
+  toyLabels={};
+  (function walk(n,label){
+    toyLabels[n.id]=label;
+    if(n.kids)n.kids.forEach(k=>walk(k.node,(n===toyRoot?'':label+' → ')+`${n.split} = ${k.value}`));
+  })(toyRoot,'Root (all days)');
+}
+function renderRowPanel(){
+  const n=toyMap[toySel]||toyRoot,cnt=countLabels(n.rows,classesT);
+  const feats=TENNIS.features,sp=n.split;
+  const head='<tr><th>Day</th>'+feats.map(f=>`<th class="${f===sp?'sp':''}">${f}</th>`).join('')+'<th>Play</th></tr>';
+  const rows=n.rows.map(r=>{const i=TENNIS.rows.indexOf(r);
+    return `<tr><td>D${i+1}</td>${r.slice(0,4).map((x,j)=>`<td class="${feats[j]===sp?'sp':''}">${x}</td>`).join('')}<td class="${r[4]==='Yes'?'yes':'no'}">${r[4]}</td></tr>`;}).join('');
+  $('#rowPanel').innerHTML=`<b>📋 Rows in this node</b><div class="small muted" style="margin:2px 0">${toyLabels[n.id]||'Root (all days)'}</div>
+    <div class="small"><b>${n.rows.length}</b> days: <span class="yes">${cnt[0]} Yes</span> · <span class="no">${cnt[1]} No</span></div>
+    <div class="scroll"><table class="tbl">${head}${rows}</table></div>
+    <div class="small muted" style="margin-top:6px">Hover over (or tap) any node to see which days it contains.${sp?` The split column <b>${sp}</b> is shaded.`:''}</div>`;
+}
+function selectNode(id){
+  toySel=id;
+  document.querySelectorAll('#toyTree .tbox').forEach(b=>b.classList.toggle('sel',+b.dataset.nid===id));
+  renderRowPanel();
+}
+function renderToy(){
+  toyMap={};toyBuildLabels();toyWalkCompute();
+  $('#toyTree').innerHTML=toyNodeHTML(toyRoot);
+  renderToyCalc();
+  renderRowPanel();
+}
+$('#toyTree').addEventListener('click',e=>{
+  const b=e.target.closest('button'),bx=e.target.closest('.tbox');
+  if(!b){if(bx)selectNode(+bx.dataset.nid);return;}
+  if(bx)toySel=+bx.dataset.nid;
+  const n=toyMap[b.dataset.node];if(!n)return;
+  if(b.dataset.act==='split')toySplit(n,b.dataset.feat);
+  else if(b.dataset.act==='best'){const bb=toyBest(n);toySplit(n,bb.f);}
+  renderToy();
+});
+$('#toyTree').addEventListener('mouseover',e=>{
+  const bx=e.target.closest('.tbox');
+  document.querySelectorAll('#tennisTable tr[data-id]').forEach(r=>r.classList.remove('hl'));
+  if(!bx)return;
+  if(+bx.dataset.nid!==toySel)selectNode(+bx.dataset.nid);
+  bx.dataset.ids.split(',').forEach(i=>{const r=document.querySelector(`#tennisTable tr[data-id="${i}"]`);if(r)r.classList.add('hl');});
+});
+$('#toyTree').addEventListener('mouseleave',()=>document.querySelectorAll('#tennisTable tr.hl').forEach(r=>r.classList.remove('hl')));
+$('#toyCalc').addEventListener('toggle',e=>{const d=e.target;if(d.dataset&&d.dataset.nid){if(d.open)toyOpenSet.add(d.dataset.nid);else toyOpenSet.delete(d.dataset.nid);}},true);
+$('#calcOpen').addEventListener('click',()=>document.querySelectorAll('#toyCalc details').forEach(d=>{d.open=true;toyOpenSet.add(d.dataset.nid);}));
+$('#calcClose').addEventListener('click',()=>document.querySelectorAll('#toyCalc details').forEach(d=>{d.open=false;toyOpenSet.delete(d.dataset.nid);}));
+$('#toyAutoBtn').addEventListener('click',()=>{toyAuto(toyRoot);renderToy();});
+$('#toyResetBtn').addEventListener('click',toyReset);
+$('#toyShowGain').addEventListener('change',renderToy);
+['tw0','tw1','tw2','tw3'].forEach(id=>$('#'+id).addEventListener('change',renderToy));
+const tSort={col:null,dir:0};
+function renderTennisTable(){
+  const cols=[{k:'day',t:'Day'},...TENNIS.features.map((f,i)=>({k:i,t:f})),{k:4,t:'Play tennis?'}];
+  const order=TENNIS.rows.map((_,i)=>i);
+  if(tSort.dir){
+    const num=tSort.col==='day',val=i=>num?i:TENNIS.rows[i][tSort.col];
+    order.sort((a,b)=>{const c=num?val(a)-val(b):String(val(a)).localeCompare(String(val(b)));return c?tSort.dir*c:a-b;});
+  }
+  const head='<tr>'+cols.map(c=>{
+    const on=tSort.dir&&tSort.col===c.k;
+    return `<th class="sortable" data-col="${c.k}" title="Click to sort" aria-sort="${on?(tSort.dir===1?'ascending':'descending'):'none'}">${c.t}<span class="sortarrow ${on?'':'off'}">${on?(tSort.dir===1?'▲':'▼'):'↕'}</span></th>`;
+  }).join('')+'</tr>';
+  $('#tennisTable').innerHTML=head+order.map(i=>{const r=TENNIS.rows[i];
+    return `<tr data-id="${i+1}"><td>D${i+1}</td>${r.slice(0,4).map(x=>`<td>${x}</td>`).join('')}<td class="${r[4]==='Yes'?'yes':'no'}">${r[4]}</td></tr>`;}).join('');
+}
+$('#tennisTable').addEventListener('click',e=>{
+  const th=e.target.closest('th[data-col]');if(!th)return;
+  const c=th.dataset.col==='day'?'day':+th.dataset.col;
+  if(tSort.col!==c){tSort.col=c;tSort.dir=1;}else if(tSort.dir===1){tSort.dir=-1;}else{tSort.dir=0;tSort.col=null;}
+  renderTennisTable();
+});
+function initToyStatic(){
+  renderTennisTable();
+  const cnt=countLabels(TENNIS.rows,classesT);
+  $('#rootEnt').textContent=f3(entropyFromCounts(cnt,14));
+}
+
+/* ====================== PART 4: numeric threshold finder ====================== */
+function irisThresholds(f){
+  const idx=IRIS.map((_,i)=>i),sorted=idx.slice().sort((a,b)=>IRIS[a][f]-IRIS[b][f]);
+  const total=[0,0,0];IRIS.forEach(r=>total[r[4]]++);
+  const left=[0,0,0],right=total.slice(),out=[];
+  for(let j=0;j<sorted.length-1;j++){
+    const c=IRIS[sorted[j]][4];left[c]++;right[c]--;
+    const v=IRIS[sorted[j]][f],v2=IRIS[sorted[j+1]][f];if(v===v2)continue;
+    const nl=j+1,nr=150-nl;
+    out.push({t:(v+v2)/2,w:(nl*giniFromCounts(left,nl)+nr*giniFromCounts(right,nr))/150});
+  }
+  return out;
+}
+function renderThresh(){
+  const f=+$('#thFeat').value,vals=IRIS.map(r=>r[f]),lo=Math.min(...vals),hi=Math.max(...vals);
+  const sl=$('#thSlide');
+  if(sl.dataset.f!==String(f)){sl.min=lo;sl.max=hi;sl.value=((lo+hi)/2).toFixed(2);sl.dataset.f=f;
+    const bt=irisThresholds(f).reduce((a,b)=>b.w<a.w?b:a);sl.value=bt.t>lo?String(+(bt.t-0.6).toFixed(2)):sl.value;}
+  const t=+sl.value;$('#thVal').textContent=t.toFixed(2);
+  const th=irisThresholds(f),best=th.reduce((a,b)=>b.w<a.w?b:a);
+  const L=[0,0,0],R=[0,0,0];IRIS.forEach(r=>(r[f]<=t?L:R)[r[4]]++);
+  const nl=L[0]+L[1]+L[2],nr=150-nl,cur=(nl*giniFromCounts(L,nl)+nr*giniFromCounts(R,nr))/150;
+  const W=700,H=310,m={l:50,r:16,t:14,b:30},pw=W-m.l-m.r;
+  const X=v=>m.l+(v-lo)/(hi-lo)*pw,Yc=v=>14+(1-v/0.7)*140;
+  let path='';th.forEach((p,i)=>{path+=(i?'L':'M')+X(p.t)+','+Yc(p.w);});
+  const rng=mulberry32(5);let dots='';
+  IRIS.forEach(r=>{dots+=`<circle cx="${X(r[f])+(rng()-.5)*4}" cy="${200+rng()*70}" r="3.6" fill="${CC[r[4]]}" fill-opacity=".75"/>`;});
+  let tk='';const step=(hi-lo)>5?1:0.5;for(let v=Math.ceil(lo/step)*step;v<=hi;v+=step)tk+=`<text x="${X(v)}" y="${H-10}" font-size="11" fill="#58627a" text-anchor="middle">${+v.toFixed(1)}</text>`;
+  for(let v=0;v<=0.6;v+=0.2)tk+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Yc(v)}" y2="${Yc(v)}" stroke="#e8ebf3"/><text x="${m.l-6}" y="${Yc(v)+4}" font-size="11" fill="#58627a" text-anchor="end">${v.toFixed(1)}</text>`;
+  $('#thChart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;min-width:520px">${tk}
+    <text x="12" y="90" font-size="11" fill="#58627a" transform="rotate(-90 12 90)" text-anchor="middle">weighted Gini</text>
+    <path d="${path}" fill="none" stroke="#3b5bdb" stroke-width="2.2"/>
+    <circle cx="${X(best.t)}" cy="${Yc(best.w)}" r="6" fill="#f59f00" stroke="#fff" stroke-width="2"/>
+    <text x="${X(best.t)+9}" y="${Yc(best.w)-8}" font-size="12" font-weight="700" fill="#c27c00">best: ≤ ${best.t.toFixed(2)}</text>
+    <line x1="${X(t)}" x2="${X(t)}" y1="10" y2="275" stroke="#d1495b" stroke-width="2" stroke-dasharray="5 4"/>
+    <text x="${m.l}" y="192" font-size="11.5" fill="#58627a">each dot = one flower, placed by its ${FEATS[f]} (vertical jitter only)</text>${dots}</svg>`;
+  $('#thInfo').innerHTML=`<p>Question: <b>${FEATS[f]} ≤ ${t.toFixed(2)}?</b> &nbsp;→&nbsp; yes: <b>${nl}</b> flowers [${L.join(', ')}] &nbsp;|&nbsp; no: <b>${nr}</b> flowers [${R.join(', ')}]</p>
+    <p>Weighted Gini of this split = <b>${f3(cur)}</b> &nbsp;(best possible for this feature: <b>${f3(best.w)}</b> at ${best.t.toFixed(2)}; before any split: 0.667). <span class="muted">Counts are <code>[setosa, versicolor, virginica]</code>.</span></p>`;
+}
+FEATS.forEach((f,i)=>{$('#thFeat').insertAdjacentHTML('beforeend',`<option value="${i}" ${i===2?'selected':''}>${f}</option>`);});
+$('#thFeat').addEventListener('change',renderThresh);$('#thSlide').addEventListener('input',renderThresh);
+
+/* ====================== PART 5–7: Iris lab ====================== */
+const med=i=>{const v=IRIS.map(r=>r[i]).sort((a,b)=>a-b);return v[75];};
+const lab={preset:'petal',crit:'gini',depth:3,minLeaf:1,testPct:30,seed:1,flower:[0,1,2,3].map(med),tree:null,split:null,feats:[2,3],axes:[2,3]};
+const PRESETS={petal:{feats:[2,3],axes:[2,3]},sepal:{feats:[0,1],axes:[0,1]},all:{feats:[0,1,2,3],axes:[2,3]}};
+function labParams(depthOverride){
+  return {criterion:lab.crit,maxDepth:depthOverride||(lab.depth===10?99:lab.depth),minLeaf:lab.minLeaf,feats:PRESETS[lab.preset].feats};
+}
+function markPath(tree,row){let n=tree;while(n){n._path=true;if(n.leaf)break;n=row[n.f]<=n.thr?n.left:n.right;}}
+function renderIrisTree(){
+  markPath(lab.tree,lab.flower);
+  const crit=lab.crit==='entropy'?'entropy':'gini';
+  $('#irisTree').innerHTML=treeSVG(lab.tree,{
+    kids:n=>n.leaf?[]:[n.left,n.right],bw:158,bh:86,gx:14,gy:46,label:'learned iris decision tree',
+    lines:n=>[n.leaf?{t:`class = ${CLASSES[n.pred]}`,b:1}:{t:`${FEATS[n.f]} ≤ ${f2(n.thr)}`,b:1},{t:`${crit} = ${f3(n.imp)}`,s:1},{t:`samples = ${n.n}`,s:1},{t:`[${n.counts.join(', ')}]`,s:1},n.leaf?{t:'LEAF',s:1}:{t:`→ majority: ${CLASSES[n.pred]}`,s:1}],
+    fill:n=>{const frac=Math.max(...n.counts)/n.n,t=Math.max(0,(frac-1/3)/(2/3));return rgba(n.pred,.1+.55*t);},
+    cls:n=>`${n.leaf?'leaf':''} ${n._path?'on':''}`,
+    edgeCls:(p,k)=>k._path?'on':'',
+    edgeLabel:(p,k,i)=>i===0?'yes':'no'});
+}
+function drawScatter(){
+  const cv=$('#scatter'),wrap=$('#scatterWrap');
+  const W=Math.min(Math.max(wrap.clientWidth||520,260),640),H=Math.round(W*0.8),dpr=window.devicePixelRatio||1;
+  cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+'px';cv.style.height=H+'px';
+  const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+  const m={l:44,r:12,t:12,b:40},pw=W-m.l-m.r,ph=H-m.t-m.b,[ax,ay]=lab.axes;
+  const xs=IRIS.map(r=>r[ax]),ys=IRIS.map(r=>r[ay]);
+  const x0=Math.min(...xs)-.3,x1=Math.max(...xs)+.3,y0=Math.min(...ys)-.3,y1=Math.max(...ys)+.3;
+  const px=v=>m.l+(v-x0)/(x1-x0)*pw,py=v=>m.t+(1-(v-y0)/(y1-y0))*ph;
+  {const cell=5;for(let X=0;X<pw;X+=cell)for(let Y=0;Y<ph;Y+=cell){
+    const row=lab.flower.slice();row[ax]=x0+(X+cell/2)/pw*(x1-x0);row[ay]=y0+(1-(Y+cell/2)/ph)*(y1-y0);
+    g.fillStyle=rgba(predict(lab.tree,row),.24);g.fillRect(m.l+X,m.t+Y,Math.min(cell,pw-X),Math.min(cell,ph-Y));}}
+  g.strokeStyle='#c9d1e3';g.lineWidth=1;g.strokeRect(m.l,m.t,pw,ph);
+  g.fillStyle='#58627a';g.font='11px system-ui,sans-serif';g.textAlign='center';
+  const step=(x1-x0)>5?1:0.5;
+  for(let v=Math.ceil(x0/step)*step;v<=x1;v+=step){g.fillText((+v.toFixed(1))+'',px(v),m.t+ph+14);}
+  g.textAlign='right';const stepY=(y1-y0)>5?1:0.5;
+  for(let v=Math.ceil(y0/stepY)*stepY;v<=y1;v+=stepY){g.fillText((+v.toFixed(1))+'',m.l-6,py(v)+4);}
+  g.textAlign='center';g.font='12px system-ui,sans-serif';g.fillStyle='#1b2234';
+  g.fillText(FEATS[ax]+' (cm)',m.l+pw/2,H-8);
+  g.save();g.translate(12,m.t+ph/2);g.rotate(-Math.PI/2);g.fillText(FEATS[ay]+' (cm)',0,0);g.restore();
+  const isTest=new Set(lab.split.test);
+  const draw=(i)=>{const r=IRIS[i],x=px(r[ax]),y=py(r[ay]);g.beginPath();
+    if(isTest.has(i)){const bad=predict(lab.tree,r)!==r[4];g.arc(x,y,bad?7:5.5,0,7);g.fillStyle=CC[r[4]];g.fill();g.lineWidth=bad?3:1.8;g.strokeStyle=bad?'#d1495b':'#1b2234';g.stroke();}
+    else{g.arc(x,y,4,0,7);g.fillStyle=CC[r[4]];g.fill();g.lineWidth=1;g.strokeStyle='#fff';g.stroke();}};
+  IRIS.forEach((_,i)=>{if(!isTest.has(i))draw(i);});IRIS.forEach((_,i)=>{if(isTest.has(i))draw(i);});
+  // user flower
+  const fx=px(lab.flower[ax]),fy=py(lab.flower[ay]);
+  lab.map={W,H,m,pw,ph,x0,x1,y0,y1,fx,fy};
+  g.save();g.translate(fx,fy);g.rotate(Math.PI/4);g.fillStyle='#fff';g.strokeStyle='#1b2234';g.lineWidth=2.4;g.fillRect(-7,-7,14,14);g.strokeRect(-7,-7,14,14);g.restore();
+  g.fillStyle='#1b2234';g.font='bold 11px system-ui,sans-serif';g.textAlign='left';g.fillText('your flower',fx+11,fy-9);
+}
+function renderLabMetrics(){
+  const tr=accuracy(lab.tree,IRIS,lab.split.train),te=accuracy(lab.tree,IRIS,lab.split.test);
+  $('#mTrain').textContent=(tr*100).toFixed(1)+'%';$('#mTest').textContent=(te*100).toFixed(1)+'%';
+  $('#mLeaves').textContent=countLeaves(lab.tree);$('#mDepth').textContent=treeDepth(lab.tree);
+  const imp=importances(lab.tree,4);
+  $('#importance').innerHTML=imp.map((v,i)=>`<div class="opt" style="margin:3px 0"><span style="width:92px;font-size:12.5px">${FEATS[i]}</span><div class="gbar" style="height:9px"><i style="width:${v*100}%"></i></div><span class="gval" style="width:38px">${(v*100).toFixed(0)}%</span></div>`).join('');
+  $('#scatterNote').innerHTML=lab.feats.length===2?'Shaded background = what the tree would predict at that spot. Small dots = <b>training</b> flowers; large outlined dots = <b>test</b> flowers; a <span style="color:var(--no);font-weight:700">red outline</span> is a test mistake. Notice every boundary is a straight horizontal or vertical line!':'With all 4 features the tree\'s real boundary lives in 4-D, so the shading shows a <b>2-D slice</b>: the petal axes vary while sepal length &amp; width are held at your flower\'s values (move those sliders below and watch the regions shift). Dots are projected down from 4-D, so some can sit on a "wrong" colour — they differ in the hidden dimensions. Large outlined dots are test flowers; <span style="color:var(--no);font-weight:700">red</span> = misclassified.';
+}
+function renderFlower(){
+  const box=$('#flowerSliders');
+  if(!box.dataset.built){
+    box.innerHTML=FEATS.map((f,i)=>{const v=IRIS.map(r=>r[i]),lo=Math.min(...v),hi=Math.max(...v);
+      return `<div style="display:grid;grid-template-columns:152px 1fr;gap:8px;align-items:center;margin:1px 0"><label class="small" style="font-weight:600" for="fl${i}">${f}: <span class="val" id="flv${i}"></span> cm</label><input type="range" id="fl${i}" min="${lo}" max="${hi}" step="0.1" value="${lab.flower[i]}" style="width:100%"></div>`;}).join('');
+    FEATS.forEach((_,i)=>$('#fl'+i).addEventListener('input',e=>{lab.flower[i]=+e.target.value;renderFlowerOnly();}));
+    box.dataset.built=1;
+  }
+  renderFlowerOnly(true);
+}
+function renderFlowerOnly(skipTree){
+  FEATS.forEach((_,i)=>$('#flv'+i).textContent=lab.flower[i].toFixed(1));
+  if(!skipTree){renderIrisTree();drawScatter();}
+  const leaf=leafOf(lab.tree,lab.flower),tot=leaf.n;
+  const used=lab.feats.map(i=>FEATS[i]).join(' & ');
+  $('#flowerOut').innerHTML=`<div class="callout good" style="margin:8px 0 0;padding:8px 12px"><p style="font-size:16px;margin:2px 0">Prediction: <b style="color:${CC[leaf.pred]===CC[1]?'#c27c00':CC[leaf.pred]}">${CLASSES[leaf.pred]}</b></p>
+    <p class="small">It landed in a leaf with <b>${tot}</b> training flowers: ${leaf.counts.map((c,i)=>`${c} ${CLASSES[i]}`).join(', ')} → <b>${(Math.max(...leaf.counts)/tot*100).toFixed(0)}%</b> of that leaf agree.</p>
+    <p class="small muted" style="margin-bottom:0">${lab.feats.length===4?'This tree can use all four measurements.':`This tree only looks at: ${used}. The other sliders don't change its answer.`}</p></div>`;
+}
+function renderEval(){
+  const names=CLASSES,m=confusion(lab.tree,IRIS,lab.split.test,3),tot=lab.split.test.length;
+  const mx=Math.max(1,...m.flat());
+  $('#confMat').innerHTML=`<table class="tbl"><tr><th rowspan="2">True ↓</th><th colspan="3">Predicted →</th></tr><tr>${names.map(n=>`<th>${n}</th>`).join('')}</tr>`+
+    m.map((r,i)=>`<tr><th>${names[i]}</th>${r.map((v,j)=>`<td style="background:${i===j?rgba(i,.12+.6*v/mx):(v?'rgba(209,73,91,'+(.15+.5*v/mx)+')':'#fff')};${i===j?'font-weight:800;':''}">${v}</td>`).join('')}</tr>`).join('')+'</table>';
+  const rows=names.map((n,i)=>{const tp=m[i][i],fp=m.reduce((a,r,k)=>a+(k===i?0:r[i]),0),fn=m[i].reduce((a,v,j)=>a+(j===i?0:v),0);
+    const p=tp+fp?tp/(tp+fp):0,r=tp+fn?tp/(tp+fn):0,f=p+r?2*p*r/(p+r):0;
+    return `<tr><td style="text-align:left">${n}</td><td>${f2(p)}</td><td>${f2(r)}</td><td>${f2(f)}</td><td>${tp+fn}</td></tr>`;}).join('');
+  const ok=m[0][0]+m[1][1]+m[2][2];
+  $('#classReport').innerHTML=`<table class="tbl"><tr><th style="text-align:left">Class</th><th>Precision</th><th>Recall</th><th>F1</th><th>Support</th></tr>${rows}
+    <tr style="background:var(--brand-soft)"><td style="text-align:left"><b>Accuracy</b></td><td colspan="3"><b>${ok} / ${tot} = ${(ok/tot*100).toFixed(1)}%</b></td><td>${tot}</td></tr></table>`;
+  const k=+$('#cvK').value,accs=crossVal(IRIS,labParams(),k,lab.seed),mean=accs.reduce((a,b)=>a+b,0)/k,sd=Math.sqrt(accs.reduce((a,b)=>a+(b-mean)**2,0)/k);
+  $('#cvOut').innerHTML=`<div style="display:flex;gap:6px;align-items:flex-end;height:140px;margin:0 0 8px">${accs.map((a,i)=>`<div style="flex:1;text-align:center"><div style="background:var(--brand);height:${a*90}px;border-radius:5px 5px 0 0;opacity:.85"></div><div class="small">${(a*100).toFixed(0)}%</div><div class="small muted" style="font-size:11px">fold ${i+1}</div></div>`).join('')}</div>
+    <div class="callout" style="margin-bottom:0"><p><b>Mean accuracy: ${(mean*100).toFixed(1)}% ± ${(sd*100).toFixed(1)}%</b> across ${k} folds. Compare with your single-split test accuracy of <b>${(accuracy(lab.tree,IRIS,lab.split.test)*100).toFixed(1)}%</b> — the CV number is the more trustworthy estimate.</p></div>`;
+}
+function renderOverfit(){
+  const depths=[1,2,3,4,5,6,7,8,9,10],trA=[],teA=[],S=15;
+  for(const d of depths){let a=0,b=0;for(let s=1;s<=S;s++){const sp=stratSplit(IRIS,lab.testPct/100,100+s),t=growTree(IRIS,sp.train,labParams(d===10?99:d),0,3);a+=accuracy(t,IRIS,sp.train);b+=accuracy(t,IRIS,sp.test);}trA.push(a/S);teA.push(b/S);}
+  const lo=Math.max(0,Math.floor((Math.min(...trA,...teA)-0.03)*20)/20),W=640,H=290,m={l:48,r:16,t:16,b:44},pw=W-m.l-m.r,ph=H-m.t-m.b;
+  const X=d=>m.l+(d-1)/9*pw,Y=v=>m.t+(1-(v-lo)/(1-lo))*ph;
+  const cur=lab.depth,line=a=>a.map((v,i)=>(i?'L':'M')+X(i+1)+','+Y(v)).join('');
+  let tk='';for(let v=lo;v<=1.0001;v+=0.05)tk+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="#e8ebf3"/><text x="${m.l-6}" y="${Y(v)+4}" font-size="11" fill="#58627a" text-anchor="end">${(v*100).toFixed(0)}%</text>`;
+  depths.forEach(d=>tk+=`<text x="${X(d)}" y="${H-24}" font-size="11" fill="#58627a" text-anchor="middle">${d===10?'∞':d}</text>`);
+  $('#ofChart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;min-width:480px"><rect x="${X(cur)-pw/18}" y="${m.t}" width="${pw/9}" height="${ph}" fill="#fff4d6"/>${tk}
+    <path d="${line(trA)}" fill="none" stroke="#2a9d8f" stroke-width="2.8"/><path d="${line(teA)}" fill="none" stroke="#d1495b" stroke-width="2.8"/>
+    ${trA.map((v,i)=>`<circle cx="${X(i+1)}" cy="${Y(v)}" r="4" fill="#2a9d8f"/>`).join('')}${teA.map((v,i)=>`<circle cx="${X(i+1)}" cy="${Y(v)}" r="4" fill="#d1495b"/>`).join('')}
+    <text x="${W/2}" y="${H-6}" font-size="12" text-anchor="middle" fill="#58627a">max depth (∞ = no limit)</text>
+    <text x="${W-m.r-4}" y="${m.t+14}" font-size="12.5" fill="#2a9d8f" font-weight="700" text-anchor="end">● training accuracy</text><text x="${W-m.r-4}" y="${m.t+30}" font-size="12.5" fill="#d1495b" font-weight="700" text-anchor="end">● test accuracy</text></svg>`;
+  const gap=trA[9]-teA[9],bestD=teA.indexOf(Math.max(...teA))+1;
+  $('#ofNote').className='callout'+(gap>0.08?' warn':' good');
+  $('#ofNote').innerHTML=gap>0.08?`<p><b>Overfitting visible!</b> With no depth limit the tree reaches ${(trA[9]*100).toFixed(0)}% on training data but only ${(teA[9]*100).toFixed(0)}% on test data (gap ${(gap*100).toFixed(0)} points). Test accuracy peaks around depth <b>${bestD}</b> — beyond that the tree is just memorising noise.</p>`:`<p>On this feature set the gap between train (${(trA[9]*100).toFixed(0)}%) and test (${(teA[9]*100).toFixed(0)}%) is small — the classes are well separated, so extra depth does little harm. Click <b>“Switch to sepal-only”</b> to see a case where it does.</p>`;
+  // stability
+  let rows='';
+  for(let s=1;s<=8;s++){const sp=stratSplit(IRIS,lab.testPct/100,s*7),t=growTree(IRIS,sp.train,labParams(),0,3);
+    rows+=`<tr><td>${s}</td><td style="text-align:left">${t.leaf?'(no split)':`${FEATS[t.f]} ≤ ${f2(t.thr)}`}</td><td>${countLeaves(t)}</td><td>${(accuracy(t,IRIS,sp.test)*100).toFixed(0)}%</td></tr>`;}
+  $('#stabOut').innerHTML=`<table class="tbl small"><tr><th>Split</th><th style="text-align:left">Root question</th><th>Leaves</th><th>Test acc</th></tr>${rows}</table>`;
+}
+function renderLab(){
+  lab.feats=PRESETS[lab.preset].feats;lab.axes=PRESETS[lab.preset].axes;
+  lab.split=stratSplit(IRIS,lab.testPct/100,lab.seed);
+  lab.tree=growTree(IRIS,lab.split.train,labParams(),0,3);
+  $('#labDepthV').textContent=lab.depth===10?'no limit':lab.depth;$('#labLeafV').textContent=lab.minLeaf;
+  $('#labTestV').textContent=lab.testPct+'%';$('#labSeedV').textContent=lab.seed;
+  renderIrisTree();drawScatter();renderLabMetrics();renderFlower();renderEval();renderOverfit();
+}
+$('#labPreset').addEventListener('change',e=>{lab.preset=e.target.value;renderLab();});
+$('#labCrit').addEventListener('change',e=>{lab.crit=e.target.value;renderLab();});
+$('#labDepth').addEventListener('input',e=>{lab.depth=+e.target.value;renderLab();});
+$('#labLeaf').addEventListener('input',e=>{lab.minLeaf=+e.target.value;renderLab();});
+$('#labTest').addEventListener('input',e=>{lab.testPct=+e.target.value;renderLab();});
+$('#labReseed').addEventListener('click',()=>{lab.seed++;renderLab();});
+$('#cvK').addEventListener('change',renderEval);
+$('#btnSepal').addEventListener('click',()=>{lab.preset='sepal';$('#labPreset').value='sepal';renderLab();});
+$('#btnPetal').addEventListener('click',()=>{lab.preset='petal';$('#labPreset').value='petal';renderLab();});
+(function(){
+  const cv=$('#scatter');let drag=false;
+  const pos=e=>{const r=cv.getBoundingClientRect(),M=lab.map;return{x:(e.clientX-r.left)*(M.W/(r.width||M.W)),y:(e.clientY-r.top)*(M.H/(r.height||M.H))};};
+  const near=p=>{const M=lab.map;return !!M&&Math.hypot(p.x-M.fx,p.y-M.fy)<=18;};
+  const moveTo=p=>{
+    const M=lab.map,[ax,ay]=lab.axes;
+    const vx=M.x0+(p.x-M.m.l)/M.pw*(M.x1-M.x0),vy=M.y0+(1-(p.y-M.m.t)/M.ph)*(M.y1-M.y0);
+    [[ax,vx],[ay,vy]].forEach(([f,v])=>{const s=$('#fl'+f);lab.flower[f]=Math.min(+s.max,Math.max(+s.min,Math.round(v*10)/10));s.value=lab.flower[f];});
+    renderFlowerOnly();
+  };
+  cv.addEventListener('pointerdown',e=>{
+    if(!lab.map)return;
+    if(near(pos(e))){drag=true;try{cv.setPointerCapture(e.pointerId);}catch(_){}cv.style.cursor='grabbing';e.preventDefault();}
+  });
+  cv.addEventListener('pointermove',e=>{
+    if(!lab.map)return;const p=pos(e);
+    if(drag)moveTo(p);else cv.style.cursor=near(p)?'grab':'default';
+  });
+  const end=e=>{if(drag){drag=false;try{cv.releasePointerCapture(e.pointerId);}catch(_){}cv.style.cursor='default';}};
+  cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
+  cv.addEventListener('touchstart',e=>{if(lab.map&&e.touches.length&&near(pos(e.touches[0])))e.preventDefault();},{passive:false});
+})();
+window.addEventListener('resize',()=>{if(lab.tree)drawScatter();});
+
+function initIrisStatic(){
+  const sums=[0,1,2].map(()=>[0,0,0,0]);
+  IRIS.forEach(r=>{for(let f=0;f<4;f++)sums[r[4]][f]+=r[f];});
+  $('#irisMeans').innerHTML='<tr><th>Species</th><th>n</th>'+FEATS.map(f=>`<th>${f}</th>`).join('')+'</tr>'+
+    CLASSES.map((c,i)=>`<tr><td style="text-align:left"><b style="color:${i===1?'#c27c00':CC[i]}">${c}</b></td><td>50</td>${sums[i].map(s=>`<td>${(s/50).toFixed(2)}</td>`).join('')}</tr>`).join('');
+  const pick=[0,1,50,51,100,101];
+  $('#irisRaw').innerHTML='<tr>'+FEATS.map(f=>`<th>${f}</th>`).join('')+'<th>species</th></tr>'+
+    pick.map(i=>`<tr>${IRIS[i].slice(0,4).map(v=>`<td>${v}</td>`).join('')}<td>${CLASSES[IRIS[i][4]]}</td></tr>`).join('');
+}
+
+/* ====================== PART 8: regression ====================== */
+const rg={depth:3,noise:0.35,seed:7};
+function renderReg(){
+  $('#rgDepthV').textContent=rg.depth===10?'no limit':rg.depth;$('#rgNoiseV').textContent=rg.noise.toFixed(2);$('#rgSeedV').textContent=rg.seed;
+  const rng=mulberry32(rg.seed*101+3),mk=n=>{const x=[],y=[];for(let i=0;i<n;i++){const v=rng()*10;x.push(v);y.push(Math.sin(v)+gauss(rng)*rg.noise);}return{x,y};};
+  const tr=mk(40),te=mk(40),idx=tr.x.map((_,i)=>i);
+  const tree=growReg(tr.x,tr.y,idx,rg.depth===10?99:rg.depth,1,0);
+  const mse=d=>d.x.reduce((a,x,i)=>a+(predictReg(tree,x)-d.y[i])**2,0)/d.x.length;
+  const W=700,H=310,m={l:44,r:14,t:14,b:34},pw=W-m.l-m.r,ph=H-m.t-m.b,X=v=>m.l+v/10*pw,Y=v=>m.t+(1-(v+2.5)/5)*ph;
+  let step='',truth='';for(let i=0;i<=500;i++){const x=i/50;step+=(i?'L':'M')+X(x)+','+Y(predictReg(tree,x));truth+=(i?'L':'M')+X(x)+','+Y(Math.sin(x));}
+  let tk='';for(let v=-2;v<=2;v++)tk+=`<line x1="${m.l}" x2="${W-m.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="#e8ebf3"/><text x="${m.l-6}" y="${Y(v)+4}" font-size="11" fill="#58627a" text-anchor="end">${v}</text>`;
+  for(let v=0;v<=10;v+=2)tk+=`<text x="${X(v)}" y="${H-12}" font-size="11" fill="#58627a" text-anchor="middle">${v}</text>`;
+  $('#rgChart').innerHTML=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;min-width:520px">${tk}
+    <path d="${truth}" fill="none" stroke="#9aa4bd" stroke-width="2" stroke-dasharray="6 5"/>
+    ${tr.x.map((x,i)=>`<circle cx="${X(x)}" cy="${Y(tr.y[i])}" r="4" fill="#3b5bdb" fill-opacity=".75"/>`).join('')}
+    ${te.x.map((x,i)=>`<circle cx="${X(x)}" cy="${Y(te.y[i])}" r="4" fill="none" stroke="#d1495b" stroke-width="1.6"/>`).join('')}
+    <path d="${step}" fill="none" stroke="#f08c00" stroke-width="3"/>
+    <text x="${m.l+8}" y="${m.t+14}" font-size="12" fill="#3b5bdb" font-weight="700">● training data</text><text x="${m.l+120}" y="${m.t+14}" font-size="12" fill="#d1495b" font-weight="700">○ test data</text>
+    <text x="${m.l+205}" y="${m.t+14}" font-size="12" fill="#c27c00" font-weight="700">— tree prediction</text><text x="${m.l+345}" y="${m.t+14}" font-size="12" fill="#58627a">- - hidden truth: sin(x)</text></svg>`;
+  $('#rgTrain').textContent=f3(mse(tr));$('#rgTest').textContent=f3(mse(te));$('#rgLeaves').textContent=countLeavesReg(tree);
+}
+$('#rgDepth').addEventListener('input',e=>{rg.depth=+e.target.value;renderReg();});
+$('#rgNoise').addEventListener('input',e=>{rg.noise=+e.target.value;renderReg();});
+$('#rgReseed').addEventListener('click',()=>{rg.seed++;renderReg();});
+
+/* ====================== PART 10: quiz ====================== */
+const QUIZ=[
+ {q:'In a decision tree, what is a <b>leaf node</b>?',o:['A node that asks a question about a feature','The final box that gives the prediction','The very first question at the top','The line connecting two nodes'],a:1,e:'Leaves have no further questions — they hold the answer (a class, or a number in regression).'},
+ {q:'A node holds 5 apples and 5 oranges. What is its Gini impurity?',o:['0','0.25','0.5','1'],a:2,e:'Gini = 1 − (0.5² + 0.5²) = 1 − 0.5 = 0.5, the maximum for two classes.'},
+ {q:'Information gain of a split is…',o:['The drop in impurity from parent to (weighted) children','The number of leaves created','The accuracy on the test set','The depth of the new tree'],a:0,e:'Gain = parent impurity − weighted average child impurity. The split with the largest gain wins.'},
+ {q:'A tree scores 100% on training data but 70% on test data. Most likely problem?',o:['Underfitting','Overfitting','The features need scaling','The tree is too shallow'],a:1,e:'A large train–test gap means the tree memorised training noise: overfitting.'},
+ {q:'Which preprocessing step is usually <b>not</b> needed for decision trees?',o:['Scaling features to the same range','Splitting data into train and test sets','Removing columns that leak the answer','Checking the data for labelling errors'],a:0,e:'Splits only compare values to thresholds, so feature scale doesn\'t matter. The other three still do!'},
+ {q:'Which is a common way to reduce overfitting in a single tree?',o:['Allow unlimited depth','Limit max depth or require a minimum samples per leaf','Test on the training set only','Use only one training example per class'],a:1,e:'Pre-pruning (depth / leaf-size limits) or post-pruning keeps the tree simple.'},
+ {q:'Why do practitioners often prefer a Random Forest to one tree?',o:['Averaging many trees reduces the instability (variance) of a single tree','A forest is always easier to explain','A single tree cannot do classification','Forests need no training data'],a:0,e:'Single trees change a lot with small data changes; voting across many trees smooths that out.'}
+];
+let qScore=0;
+function renderQuiz(){
+  qScore=0;$('#qScore').textContent=0;$('#qTotal').textContent=QUIZ.length;
+  $('#quizBox').innerHTML=QUIZ.map((q,i)=>`<div class="q" data-i="${i}"><div><b>${i+1}.</b> ${q.q}</div><div class="opts">${q.o.map((o,j)=>`<button class="o" data-j="${j}">${o}</button>`).join('')}</div><div class="ex callout"></div></div>`).join('');
+}
+$('#quizBox').addEventListener('click',e=>{
+  const b=e.target.closest('button.o');if(!b)return;
+  const qd=b.closest('.q'),q=QUIZ[+qd.dataset.i],j=+b.dataset.j;
+  qd.querySelectorAll('button.o').forEach((x,k)=>{x.disabled=true;if(k===q.a)x.classList.add('ok');});
+  if(j===q.a)qScore++;else b.classList.add('bad');
+  $('#qScore').textContent=qScore;
+  const ex=qd.querySelector('.ex');ex.style.display='block';ex.innerHTML=`<p>${j===q.a?'✅ Correct! ':'❌ Not quite. '}${q.e}</p>`;
+});
+$('#qReset').addEventListener('click',renderQuiz);
+
+$('#hpOpen').addEventListener('click',()=>document.querySelectorAll('.hp details').forEach(d=>d.open=true));
+$('#hpClose').addEventListener('click',()=>document.querySelectorAll('.hp details').forEach(d=>d.open=false));
+/* ====================== navigation: one section at a time ====================== */
+const secs=[...document.querySelectorAll('main section')],links=[...document.querySelectorAll('#nav a')];
+function showSection(i,updateHash){
+  if(i<0||i>=secs.length)return;
+  secs.forEach((s,k)=>s.classList.toggle('active',k===i));
+  links.forEach((a,k)=>a.classList.toggle('act',k===i));
+  $('#progBar').style.width=((i+1)/secs.length*100)+'%';
+  $('#progTxt').textContent='Part '+(i+1)+' of '+secs.length;
+  if(updateHash!==false){try{history.replaceState(null,'','#'+secs[i].id);}catch(e){}}
+  if(window.innerWidth<=900)document.body.classList.add('collapsed');
+  try{window.scrollTo(0,0);}catch(e){}
+  if(typeof lab!=='undefined'&&lab.tree)drawScatter();
+}
+function currentIdx(){return secs.findIndex(s=>s.classList.contains('active'));}
+function initNav(){
+  secs.forEach((s,i)=>{
+    const prev=i>0?`<button class="btn" data-go="${i-1}">← ${links[i-1].textContent.replace(/^\d+/,'')}</button>`:'<span></span>';
+    const next=i<secs.length-1?`<button class="btn primary" data-go="${i+1}">${links[i+1].textContent.replace(/^\d+/,'')} →</button>`:'<span></span>';
+    s.insertAdjacentHTML('beforeend',`<div class="pager">${prev}${next}</div>`);
+  });
+  $('#nav').addEventListener('click',e=>{const a=e.target.closest('a');if(!a)return;e.preventDefault();showSection(links.indexOf(a));});
+  document.querySelector('main').addEventListener('click',e=>{const b=e.target.closest('[data-go]');if(b)showSection(+b.dataset.go);});
+  $('#sideToggle').addEventListener('click',()=>{document.body.classList.add('collapsed');setTimeout(()=>{if(currentIdx()===4)drawScatter();},260);});
+  $('#menuBtn').addEventListener('click',()=>{document.body.classList.remove('collapsed');setTimeout(()=>{if(currentIdx()===4)drawScatter();},260);});
+  window.addEventListener('hashchange',()=>{const i=secs.findIndex(s=>'#'+s.id===location.hash);if(i>=0)showSection(i,false);});
+  if(window.innerWidth<=900)document.body.classList.add('collapsed');
+  const start=secs.findIndex(s=>'#'+s.id===location.hash);
+  showSection(start>=0?start:0,false);
+}
+
+/* ====================== init ====================== */
+renderRoles();renderFruit();renderImp();renderSplit();
+initToyStatic();toyReset();
+renderThresh();initIrisStatic();renderQuiz();renderReg();
+renderLab();initNav();
+</script>
+</body>
+</html>

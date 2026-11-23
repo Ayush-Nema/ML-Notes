@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One-Way ANOVA F-test: Interactive Lesson</title>
+<style>
+:root{
+  --bg:#f7f8fa; --card:#ffffff; --text:#1c2230; --muted:#5d6678; --line:#dfe3ea;
+  --accent:#2a7de1; --good:#1e8a54; --bad:#c43d3d; --soft:#eef4fd; --code:#f1f3f7;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#14171d; --card:#1c2029; --text:#e8ebf2; --muted:#9aa3b5; --line:#2e3441;
+    --accent:#5da2ff; --good:#4cc785; --bad:#ff7a7a; --soft:#1f2a3c; --code:#232834; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:1.9rem;margin:0 0 4px}
+h2{font-size:1.25rem;margin:0 0 10px}
+h3{font-size:1.02rem;margin:18px 0 6px}
+.sub{color:var(--muted);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:16px 0}
+.formula{background:var(--soft);border-left:4px solid var(--accent);padding:10px 14px;border-radius:6px;margin:10px 0;font-size:1.05rem;overflow-x:auto}
+.formula i{font-family:Georgia,"Times New Roman",serif}
+.muted{color:var(--muted)}
+.grid{display:grid;gap:12px}
+.two{grid-template-columns:1fr 1fr}
+@media(max-width:640px){.two{grid-template-columns:1fr}}
+label{font-size:.85rem;color:var(--muted);display:block;margin-bottom:3px}
+input[type=text]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);font:inherit}
+select{padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text);font:inherit}
+button{padding:7px 14px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text);font:inherit;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.gbox{border:1px solid var(--line);border-radius:10px;padding:10px;border-top-width:4px}
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{background:var(--soft)}
+.step{border-left:3px solid var(--line);padding:2px 0 2px 14px;margin:14px 0}
+.step b.n{display:inline-block;background:var(--accent);color:#fff;border-radius:50%;width:22px;height:22px;text-align:center;line-height:22px;font-size:.8rem;margin-right:6px}
+.calc{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.88rem;background:var(--code);padding:8px 10px;border-radius:6px;overflow-x:auto;white-space:pre-wrap;margin:6px 0}
+.verdict{border-radius:10px;padding:14px 16px;font-weight:600;margin-top:10px}
+.verdict.rej{background:rgba(30,138,84,.12);border:1px solid var(--good)}
+.verdict.fail{background:rgba(196,61,61,.1);border:1px solid var(--bad)}
+.err{color:var(--bad);font-weight:600}
+.big{font-size:2.1rem;font-weight:700;color:var(--accent)}
+svg{width:100%;height:auto;display:block}
+svg text{fill:var(--muted);font:12px system-ui,sans-serif}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:.85rem;color:var(--muted);margin-top:6px}
+.legend span::before{content:"";display:inline-block;width:18px;height:0;border-top:3px solid;margin-right:6px;vertical-align:middle}
+.legend .gm::before{border-top:2px dashed var(--text)}
+.legend .bt::before{border-top-color:var(--accent)}
+details{margin:8px 0}
+summary{cursor:pointer;font-weight:600}
+sub,sup{line-height:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>One-Way ANOVA &amp; the F-test</h1>
+<p class="sub">Do three or more groups have the same population mean? Edit the data below and watch every step update.</p>
+
+<div class="card">
+  <h2>1. The big idea: signal vs. noise</h2>
+  <p>ANOVA compares two kinds of variability:</p>
+  <ul>
+    <li><b>Between-group variability (signal):</b> how far the group means are from the overall (grand) mean.</li>
+    <li><b>Within-group variability (noise):</b> how spread out the values are inside each group.</li>
+  </ul>
+  <div class="formula"><i>F</i> = MSB / MSW = (between-group variance) / (within-group variance)</div>
+  <p class="muted" style="margin-bottom:0">If the group means really are equal, F should be near 1. If F is large, the means are far apart compared with the natural spread, which is evidence that at least one mean differs.</p>
+</div>
+
+<div class="card">
+  <h2>2. Hypotheses and formulas</h2>
+  <p><b>H<sub>0</sub>:</b> &mu;<sub>1</sub> = &mu;<sub>2</sub> = &hellip; = &mu;<sub>k</sub> (all group means are equal)<br>
+     <b>H<sub>1</sub>:</b> at least one mean is different</p>
+  <div class="formula">
+    SSB = &Sigma; n<sub>j</sub> (x&#772;<sub>j</sub> &minus; x&#772;)<sup>2</sup> &nbsp;&nbsp; df<sub>between</sub> = k &minus; 1<br>
+    SSW = &Sigma;&Sigma; (x<sub>ij</sub> &minus; x&#772;<sub>j</sub>)<sup>2</sup> &nbsp;&nbsp; df<sub>within</sub> = N &minus; k<br>
+    MSB = SSB / (k &minus; 1) &nbsp;&nbsp; MSW = SSW / (N &minus; k)<br>
+    <b><i>F</i> = MSB / MSW</b>
+  </div>
+  <p class="muted" style="margin-bottom:0">k = number of groups, N = total number of observations, x&#772;<sub>j</sub> = mean of group j, x&#772; = grand mean.</p>
+</div>
+
+<div class="card">
+  <h2>3. Your data</h2>
+  <p class="muted" style="margin-top:0">Type numbers separated by commas or spaces. Try changing a value and see how F reacts.</p>
+  <div class="row">
+    <span>Examples:</span>
+    <button onclick="loadPreset('teach')">Teaching methods (clear difference)</button>
+    <button onclick="loadPreset('same')">Similar groups (no difference)</button>
+    <button onclick="loadPreset('noisy')">Noisy groups</button>
+  </div>
+  <div id="inputs" class="grid two"></div>
+  <div class="row">
+    <button onclick="addGroup()">+ Add group</button>
+    <button onclick="removeGroup()">&minus; Remove group</button>
+    <span style="margin-left:auto">Significance level &alpha;:</span>
+    <select id="alpha" onchange="compute()">
+      <option value="0.10">0.10</option>
+      <option value="0.05" selected>0.05</option>
+      <option value="0.01">0.01</option>
+    </select>
+  </div>
+  <div id="msg" class="err"></div>
+</div>
+
+<div id="results" style="display:none">
+
+<div class="card">
+  <h2>4. See the signal and the noise</h2>
+  <div id="dotplot"></div>
+  <div class="legend">
+    <span class="gm">Grand mean</span>
+    <span class="bt">Thick bar = group mean; vertical line = distance to grand mean (between-group)</span>
+  </div>
+  <p class="muted" style="margin-bottom:0">Dots are individual values. The up-and-down spread of dots <i>inside</i> one color is the noise (within). The distance of each colored bar from the dashed line is the signal (between).</p>
+</div>
+
+<div class="card">
+  <h2>5. Step-by-step calculation</h2>
+  <div id="steps"></div>
+</div>
+
+<div class="card">
+  <h2>6. ANOVA table</h2>
+  <div id="atable"></div>
+</div>
+
+<div class="card">
+  <h2>7. Decision</h2>
+  <div id="decision"></div>
+  <div id="fplot" style="margin-top:12px"></div>
+  <p class="muted" style="margin-bottom:0">The curve is the F-distribution with the degrees of freedom shown above. If H<sub>0</sub> is true, F values land in the shaded right tail only &alpha; of the time.</p>
+</div>
+
+</div>
+
+<div class="card">
+  <h2>Assumptions and cautions</h2>
+  <ul style="margin-bottom:0">
+    <li>Observations are <b>independent</b>.</li>
+    <li>Each group is roughly <b>normally distributed</b>.</li>
+    <li>Groups have roughly <b>equal variances</b>.</li>
+    <li>A significant F says <i>some</i> difference exists, not <i>which</i> groups differ. Use a follow-up test (e.g., Tukey's HSD) for that.</li>
+    <li>F is never negative, and the F-distribution is right-skewed, so we only look at the upper tail.</li>
+  </ul>
+</div>
+
+</div>
+
+<script>
+/* ---------- Math: F-distribution ---------- */
+const LG=[0.99999999999980993,676.5203681218851,-1259.1392167224028,771.32342877765313,-176.61502916214059,12.507343278686905,-0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+function lgamma(z){
+  if(z<0.5) return Math.log(Math.PI/Math.sin(Math.PI*z))-lgamma(1-z);
+  z-=1; let x=LG[0];
+  for(let i=1;i<9;i++) x+=LG[i]/(z+i);
+  const t=z+7.5;
+  return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(t)-t+Math.log(x);
+}
+function betacf(a,b,x){
+  const FP=1e-300; let qab=a+b,qap=a+1,qam=a-1,c=1,d=1-qab*x/qap;
+  if(Math.abs(d)<FP)d=FP; d=1/d; let h=d;
+  for(let m=1;m<=300;m++){
+    const m2=2*m; let aa=m*(b-m)*x/((qam+m2)*(a+m2));
+    d=1+aa*d; if(Math.abs(d)<FP)d=FP; c=1+aa/c; if(Math.abs(c)<FP)c=FP; d=1/d; h*=d*c;
+    aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));
+    d=1+aa*d; if(Math.abs(d)<FP)d=FP; c=1+aa/c; if(Math.abs(c)<FP)c=FP; d=1/d;
+    const del=d*c; h*=del; if(Math.abs(del-1)<3e-14)break;
+  }
+  return h;
+}
+function ibeta(x,a,b){
+  if(x<=0)return 0; if(x>=1)return 1;
+  const bt=Math.exp(lgamma(a+b)-lgamma(a)-lgamma(b)+a*Math.log(x)+b*Math.log(1-x));
+  return x<(a+1)/(a+b+2) ? bt*betacf(a,b,x)/a : 1-bt*betacf(b,a,1-x)/b;
+}
+function pUpper(f,d1,d2){ return f<=0?1:ibeta(d2/(d2+d1*f),d2/2,d1/2); }
+function fCrit(alpha,d1,d2){
+  let lo=0,hi=1; while(pUpper(hi,d1,d2)>alpha) hi*=2;
+  for(let i=0;i<100;i++){ const mid=(lo+hi)/2; if(pUpper(mid,d1,d2)>alpha) lo=mid; else hi=mid; }
+  return (lo+hi)/2;
+}
+function fPdf(x,d1,d2){
+  if(x<=0) return 0;
+  const l=0.5*(d1*Math.log(d1*x)+d2*Math.log(d2)-(d1+d2)*Math.log(d1*x+d2))-Math.log(x)
+         -(lgamma(d1/2)+lgamma(d2/2)-lgamma((d1+d2)/2));
+  return Math.exp(l);
+}
+
+/* ---------- State ---------- */
+const COLORS=['#2a7de1','#e07a1f','#2a9d6f','#b04fc4','#d6456b'];
+const PRESETS={
+  teach:[['Method A','5, 6, 7'],['Method B','8, 9, 10'],['Method C','11, 12, 13']],
+  same:[['Group 1','8, 9, 10, 7, 11'],['Group 2','9, 8, 10, 12, 7'],['Group 3','10, 9, 8, 11, 9']],
+  noisy:[['Group 1','2, 9, 14, 5'],['Group 2','4, 12, 16, 7'],['Group 3','6, 13, 18, 8']]
+};
+let groups=PRESETS.teach.map(g=>({name:g[0],text:g[1]}));
+
+function loadPreset(k){ groups=PRESETS[k].map(g=>({name:g[0],text:g[1]})); renderInputs(); compute(); }
+function addGroup(){ if(groups.length>=5)return; const n=groups.length+1; groups.push({name:'Group '+n,text:'6, 7, 8'}); renderInputs(); compute(); }
+function removeGroup(){ if(groups.length<=2)return; groups.pop(); renderInputs(); compute(); }
+
+function renderInputs(){
+  const el=document.getElementById('inputs'); el.innerHTML='';
+  groups.forEach((g,i)=>{
+    const d=document.createElement('div'); d.className='gbox'; d.style.borderTopColor=COLORS[i];
+    d.innerHTML='<label>Group name</label><input type="text" value="'+g.name.replace(/"/g,'&quot;')+'" data-i="'+i+'" data-f="name">'+
+                '<label style="margin-top:8px">Values</label><input type="text" value="'+g.text+'" data-i="'+i+'" data-f="text">';
+    el.appendChild(d);
+  });
+  el.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',e=>{
+    groups[+e.target.dataset.i][e.target.dataset.f]=e.target.value; compute();
+  }));
+}
+
+/* ---------- Helpers ---------- */
+const parse=s=>s.split(/[\s,;]+/).filter(Boolean).map(Number).filter(isFinite);
+const fmt=x=>{ if(!isFinite(x)) return x>0?'∞':'undefined'; return String(Number(x.toFixed(4))); };
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+const sq=x=>x*x;
+const wrap=v=>v<0?'('+fmt(v)+')':fmt(v);
+const sub=(a,b)=>{ const d=a-b; return '('+fmt(a)+' − '+wrap(b)+')²'; };
+
+/* ---------- Main ---------- */
+function compute(){
+  const msg=document.getElementById('msg'), res=document.getElementById('results');
+  const data=groups.map(g=>parse(g.text));
+  const k=data.length, N=data.reduce((s,a)=>s+a.length,0);
+  if(data.some(a=>a.length===0)){ msg.textContent='Every group needs at least one number.'; res.style.display='none'; return; }
+  if(N<=k){ msg.textContent='You need more observations than groups (N must be greater than k), so that there is some within-group variation to measure.'; res.style.display='none'; return; }
+  msg.textContent=''; res.style.display='block';
+
+  const alpha=+document.getElementById('alpha').value;
+  const means=data.map(a=>a.reduce((s,x)=>s+x,0)/a.length);
+  const gm=data.flat().reduce((s,x)=>s+x,0)/N;
+  const ssb=data.reduce((s,a,j)=>s+a.length*sq(means[j]-gm),0);
+  const ssws=data.map((a,j)=>a.reduce((s,x)=>s+sq(x-means[j]),0));
+  const ssw=ssws.reduce((s,x)=>s+x,0);
+  const df1=k-1, df2=N-k, sst=ssb+ssw;
+  const msb=ssb/df1, msw=ssw/df2;
+  let F=msw===0?(msb===0?NaN:Infinity):msb/msw;
+  const crit=fCrit(alpha,df1,df2);
+  const p=isFinite(F)?pUpper(F,df1,df2):(F===Infinity?0:NaN);
+
+  /* Steps */
+  let h='';
+  h+='<div class="step"><b class="n">1</b><b>Group means and grand mean</b><div class="calc">';
+  data.forEach((a,j)=>{ h+=esc(groups[j].name)+':  x̄ = ('+a.map(fmt).join(' + ')+') / '+a.length+' = '+fmt(means[j])+'\n'; });
+  h+='Grand mean x̄ = (sum of all values) / N = '+fmt(data.flat().reduce((s,x)=>s+x,0))+' / '+N+' = '+fmt(gm)+'</div></div>';
+
+  h+='<div class="step"><b class="n">2</b><b>Between-group sum of squares (SSB)</b><div class="muted">Distance of each group mean from the grand mean, weighted by group size.</div><div class="calc">SSB = ';
+  h+=data.map((a,j)=>a.length+'·'+sub(means[j],gm)).join(' + ')+'\n    = '+data.map((a,j)=>fmt(a.length*sq(means[j]-gm))).join(' + ')+' = '+fmt(ssb)+'</div></div>';
+
+  h+='<div class="step"><b class="n">3</b><b>Within-group sum of squares (SSW)</b><div class="muted">Spread of values around their own group mean.</div><div class="calc">';
+  data.forEach((a,j)=>{ h+=esc(groups[j].name)+':  '+a.map(x=>sub(x,means[j])).join(' + ')+' = '+fmt(ssws[j])+'\n'; });
+  h+='SSW = '+ssws.map(fmt).join(' + ')+' = '+fmt(ssw)+'</div></div>';
+
+  h+='<div class="step"><b class="n">4</b><b>Mean squares (divide by degrees of freedom)</b><div class="calc">';
+  h+='df between = k − 1 = '+k+' − 1 = '+df1+'\ndf within  = N − k = '+N+' − '+k+' = '+df2+'\n';
+  h+='MSB = SSB / df between = '+fmt(ssb)+' / '+df1+' = '+fmt(msb)+'\nMSW = SSW / df within  = '+fmt(ssw)+' / '+df2+' = '+fmt(msw)+'</div></div>';
+
+  h+='<div class="step"><b class="n">5</b><b>The F statistic</b><div class="calc">F = MSB / MSW = '+fmt(msb)+' / '+fmt(msw)+' = '+fmt(F)+'</div>'+
+     '<div>F = <span class="big">'+fmt(F)+'</span></div></div>';
+  document.getElementById('steps').innerHTML=h;
+
+  /* Table */
+  document.getElementById('atable').innerHTML=
+   '<table><tr><th>Source</th><th>SS</th><th>df</th><th>MS</th><th>F</th><th>p-value</th></tr>'+
+   '<tr><td>Between groups</td><td>'+fmt(ssb)+'</td><td>'+df1+'</td><td>'+fmt(msb)+'</td><td>'+fmt(F)+'</td><td>'+(isFinite(p)?(p<0.0001?'< 0.0001':fmt(p)):'–')+'</td></tr>'+
+   '<tr><td>Within groups</td><td>'+fmt(ssw)+'</td><td>'+df2+'</td><td>'+fmt(msw)+'</td><td></td><td></td></tr>'+
+   '<tr><td><b>Total</b></td><td><b>'+fmt(sst)+'</b></td><td><b>'+(N-1)+'</b></td><td></td><td></td><td></td></tr></table>'+
+   '<p class="muted" style="margin-bottom:0">Check: SSB + SSW = SST, and df<sub>between</sub> + df<sub>within</sub> = N − 1.'+
+   (sst>0?' About <b>'+fmt(100*ssb/sst)+'%</b> of the total variation is explained by group differences (η² = SSB/SST).':'')+'</p>';
+
+  /* Decision */
+  let dec='';
+  if(isNaN(F)){ dec='<div class="err">All values are identical, so F is undefined.</div>'; }
+  else{
+    const rej=F>crit;
+    dec='<div class="calc">df = ('+df1+', '+df2+'),  α = '+alpha+'\nCritical value F<sub></sub>(α; '+df1+', '+df2+') = '+fmt(crit)+'\nObserved F = '+fmt(F)+'\np-value = '+(isFinite(p)?(p<0.0001?'< 0.0001':fmt(p)):'≈ 0')+'</div>'+
+        '<div class="verdict '+(rej?'rej':'fail')+'">'+
+        (rej?'F ('+fmt(F)+') > critical value ('+fmt(crit)+') &nbsp;→&nbsp; Reject H<sub>0</sub>.<br><span style="font-weight:400">At the '+(alpha*100)+'% level there is evidence that at least one group mean differs.</span>'
+            :'F ('+fmt(F)+') ≤ critical value ('+fmt(crit)+') &nbsp;→&nbsp; Fail to reject H<sub>0</sub>.<br><span style="font-weight:400">There is not enough evidence that the group means differ.</span>')+
+        '</div>';
+  }
+  document.getElementById('decision').innerHTML=dec;
+
+  drawDots(data,means,gm);
+  drawF(F,crit,df1,df2);
+}
+
+/* ---------- Charts ---------- */
+function drawDots(data,means,gm){
+  const W=640,H=290,m={l:48,r:16,t:16,b:44};
+  const all=data.flat(); let lo=Math.min(...all),hi=Math.max(...all);
+  if(lo===hi){lo-=1;hi+=1;} const pad=(hi-lo)*0.12; lo-=pad; hi+=pad;
+  const y=v=>m.t+(hi-v)/(hi-lo)*(H-m.t-m.b);
+  const k=data.length, step=(W-m.l-m.r)/k;
+  let s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Dot plot of groups">';
+  for(let i=0;i<=5;i++){ const v=lo+(hi-lo)*i/5, yy=y(v);
+    s+='<line x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+yy+'" y2="'+yy+'" stroke="currentColor" opacity=".12"/>'+
+       '<text x="'+(m.l-8)+'" y="'+(yy+4)+'" text-anchor="end">'+fmt(+v.toFixed(1))+'</text>'; }
+  s+='<line x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+y(gm)+'" y2="'+y(gm)+'" stroke="currentColor" stroke-width="2" stroke-dasharray="6 4" style="color:var(--text)"/>';
+  s+='<text x="'+(W-m.r)+'" y="'+(y(gm)-6)+'" text-anchor="end">grand mean = '+fmt(gm)+'</text>';
+  data.forEach((a,j)=>{
+    const cx=m.l+step*(j+0.5), col=COLORS[j];
+    s+='<line x1="'+cx+'" x2="'+cx+'" y1="'+y(gm)+'" y2="'+y(means[j])+'" stroke="'+col+'" stroke-width="3" opacity=".55"/>';
+    a.forEach((v,i)=>{ const off=(i-(a.length-1)/2)*Math.min(16,70/Math.max(1,a.length-1));
+      s+='<circle cx="'+(cx+off)+'" cy="'+y(v)+'" r="5" fill="'+col+'" opacity=".85"/>'; });
+    s+='<line x1="'+(cx-38)+'" x2="'+(cx+38)+'" y1="'+y(means[j])+'" y2="'+y(means[j])+'" stroke="'+col+'" stroke-width="4"/>';
+    s+='<text x="'+cx+'" y="'+(H-22)+'" text-anchor="middle" style="fill:'+col+';font-weight:600">'+esc(groups[j].name)+'</text>';
+    s+='<text x="'+cx+'" y="'+(H-8)+'" text-anchor="middle">mean '+fmt(means[j])+'</text>';
+  });
+  s+='</svg>';
+  document.getElementById('dotplot').innerHTML=s;
+}
+
+function drawF(F,crit,d1,d2){
+  const W=640,H=250,m={l:40,r:16,t:16,b:36};
+  const xmax=Math.max(crit*1.9, isFinite(F)?Math.min(F*1.15,crit*6):0, 4);
+  const N=300, xs=[], ys=[];
+  for(let i=1;i<=N;i++){ const x=xmax*i/N; xs.push(x); ys.push(fPdf(x,d1,d2)); }
+  const start=Math.floor(N*0.03);
+  let ymax=Math.max(...ys.slice(start)); ymax=ymax*1.08;
+  const X=x=>m.l+x/xmax*(W-m.l-m.r), Y=y=>m.t+(1-Math.min(y,ymax)/ymax)*(H-m.t-m.b);
+  let curve='',area='';
+  xs.forEach((x,i)=>{ curve+=(i?'L':'M')+X(x).toFixed(1)+' '+Y(ys[i]).toFixed(1); });
+  area='M'+X(crit).toFixed(1)+' '+Y(0).toFixed(1);
+  xs.forEach((x,i)=>{ if(x>=crit) area+='L'+X(x).toFixed(1)+' '+Y(ys[i]).toFixed(1); });
+  area+='L'+X(xmax).toFixed(1)+' '+Y(0).toFixed(1)+'Z';
+  let s='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="F distribution">';
+  s+='<line x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+Y(0)+'" y2="'+Y(0)+'" stroke="currentColor" opacity=".4"/>';
+  for(let i=0;i<=5;i++){ const v=xmax*i/5; s+='<text x="'+X(v)+'" y="'+(H-16)+'" text-anchor="middle">'+fmt(+v.toFixed(1))+'</text>'; }
+  s+='<path d="'+area+'" fill="#c43d3d" opacity=".3"/>';
+  s+='<path d="'+curve+'" fill="none" stroke="#2a7de1" stroke-width="2.5"/>';
+  s+='<line x1="'+X(crit)+'" x2="'+X(crit)+'" y1="'+Y(0)+'" y2="'+(m.t+6)+'" stroke="#c43d3d" stroke-width="1.5" stroke-dasharray="4 3"/>';
+  s+='<text x="'+(X(crit)+5)+'" y="'+(m.t+16)+'" style="fill:#c43d3d">critical '+fmt(crit)+'</text>';
+  if(isFinite(F)){
+    const fx=Math.min(F,xmax*0.995);
+    s+='<line x1="'+X(fx)+'" x2="'+X(fx)+'" y1="'+Y(0)+'" y2="'+(m.t+30)+'" stroke="#1e8a54" stroke-width="3"/>';
+    const anchor=fx>xmax*0.75?'end':'start', dx=anchor==='end'?-6:6;
+    s+='<text x="'+(X(fx)+dx)+'" y="'+(m.t+44)+'" text-anchor="'+anchor+'" style="fill:#1e8a54;font-weight:700">observed F = '+fmt(F)+(F>xmax?' →':'')+'</text>';
+  }
+  s+='<text x="'+(W/2)+'" y="'+(H-2)+'" text-anchor="middle">F value (df = '+d1+', '+d2+')</text></svg>';
+  document.getElementById('fplot').innerHTML=s;
+}
+
+renderInputs(); compute();
+</script>
+</body>
+</html>
