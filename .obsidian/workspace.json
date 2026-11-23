@@ -4,11 +4,35 @@
     "type": "split",
     "children": [
       {
-        "id": "0090431f8aa6859d",
+        "id": "c4c8a25bf20507d4",
         "type": "tabs",
         "children": [
           {
-            "id": "a1ad2d3b83f36e4d",
+            "id": "8da00ffc8e57131d",
+            "type": "leaf",
+            "state": {
+              "type": "jupyter-viewer",
+              "state": {
+                "file": "Classical ML/Artifacts/Decision_Trees_Classification_and_Regression.ipynb"
+              },
+              "icon": "lucide-file",
+              "title": "Decision_Trees_Classification_and_Regression"
+            }
+          },
+          {
+            "id": "c9b5b5cfc8558e1e",
+            "type": "leaf",
+            "state": {
+              "type": "local-html-view",
+              "state": {
+                "file": "Classical ML/Artifacts/Decision_trees.html"
+              },
+              "icon": "globe",
+              "title": "Decision_trees"
+            }
+          },
+          {
+            "id": "cb8377ef2729e3b1",
             "type": "leaf",
             "state": {
               "type": "empty",
@@ -17,7 +41,8 @@
               "title": "New tab"
             }
           }
-        ]
+        ],
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -205,20 +230,21 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "a1ad2d3b83f36e4d",
+  "active": "cb8377ef2729e3b1",
   "lastOpenFiles": [
+    "Classical ML/Artifacts/Decision_trees.html",
+    "Classical ML/Untitled.md",
+    "Classical ML/Artifacts/logistic_regression_lab.html",
+    "Classical ML/Artifacts/random_forest1.html",
+    "Classical ML/Artifacts/random_forest2.html",
+    "Classical ML/Artifacts/logistic_regression_lab2.html",
+    "Foundations of ML/Artifacts/hyperparameter-tuning.html",
+    "Foundations of ML/Artifacts/regularization.html",
+    "Classical ML/Artifacts/Decision_Trees_Classification_and_Regression.ipynb",
+    "Understanding data/Artifacts/outlier detection/Outlier_detection_and_treatment.ipynb",
+    "Understanding data/Artifacts/outlier detection/01_outliers_live_class.ipynb",
     "Understanding data/Drawing 2026-10-22 19.21.45.excalidraw.md",
     "Classical ML/Decision Tree.md",
-    "Foundations of ML/Artifacts/Bias-Variance-tradeoff.pptx",
-    "Understanding data/Artifacts/Data_Exploration_&_Profiling.ipynb",
-    "Understanding data/Artifacts/Data_cleaning.ipynb",
-    "Statistics - overview/Artifacts/F_test.html",
-    "Statistics - overview/Artifacts/F_Test_and_Chi_Square_Interactive.html",
-    "Statistics - overview/F_test.html",
-    "Statistics - overview/F_Test_and_Chi_Square_Interactive.html",
-    "Understanding data/Artifacts/Feature_engineering_diamondsDataset.ipynb",
-    "Understanding data/Artifacts/Feature_engineering_AmesHousingDataset.ipynb",
-    "Understanding data/Artifacts/Feature_Engg_Titanic_dataset.ipynb",
     "Statistics - overview/Artifacts/Conditional Probability and Bayes theorem.md",
     "Foundations of ML/Classification metrics.md",
     "Classical ML/Linear regression - Context.md",
@@ -242,7 +268,6 @@
     "Pasted Image 20261022201921_829.png",
     "Understanding data/Outlier detection and treatment.md",
     "Pasted Image 20261022202126_237.png",
-    "Understanding data/Outlier_Detection_and_Treatment.md",
-    "Statistics - overview/AB testing and ANOVA.md"
+    "Understanding data/Outlier_Detection_and_Treatment.md"
   ]
 }

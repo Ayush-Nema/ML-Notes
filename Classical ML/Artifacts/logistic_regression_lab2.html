@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From Linear Regression to Logistic Regression — An Interactive Visual Journey</title>
+<style>
+:root{
+  --bg:#f3f5fb; --card:#ffffff; --ink:#1d2433; --muted:#4f596e; --line:#d6dce8; --soft:#eef1f9;
+  --c0:#0072B2;      /* class 0  : blue, drawn as circles   */
+  --c1:#D55E00;      /* class 1  : vermilion, drawn as diamonds */
+  --reg:#00785A;     /* regression predictions */
+  --prob:#7B3FA0;    /* logistic probabilities */
+  --thr:#111111;     /* thresholds / boundaries */
+  --loss:#C0392B;    /* error / loss */
+  --grad:#8A6D00;    /* gradients / updates */
+  --data:#3a4256;    /* neutral data */
+  --accent:#3B5BDB;
+  --r:14px; --sh:0 2px 12px rgba(30,40,70,.09);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:64px}
+body{margin:0;font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+#progress{position:fixed;left:0;top:0;width:100%;height:4px;background:transparent;z-index:50}
+#progressBar{height:100%;width:0;background:var(--accent);transition:width .2s}
+header.hero{max-width:1180px;margin:auto;padding:30px 18px 10px}
+.eyebrow{margin:0;color:var(--accent);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:.8rem}
+h1{font-size:clamp(1.6rem,4.2vw,2.5rem);line-height:1.2;margin:.2em 0 .3em}
+h2{font-size:clamp(1.3rem,3vw,1.7rem);margin:0 0 .4em;line-height:1.25}
+h3{font-size:1.02rem;margin:1.1em 0 .3em;color:var(--accent);text-transform:uppercase;letter-spacing:.04em}
+.lead{max-width:880px;color:var(--muted);font-size:1.05rem}
+.hero-status{display:inline-block;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 14px;font-size:.88rem;color:var(--muted)}
+nav#toc{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line)}
+nav#toc ul{display:flex;gap:4px;list-style:none;margin:0 auto;padding:6px 12px;overflow-x:auto;max-width:1180px}
+nav#toc a{white-space:nowrap;padding:6px 11px;border-radius:999px;text-decoration:none;color:var(--ink);font-size:.86rem;display:block}
+nav#toc a:hover{background:var(--soft)}
+nav#toc a.active{background:var(--accent);color:#fff}
+main{max-width:1180px;margin:auto;padding:6px 14px 70px}
+section.mod{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:22px;margin:22px 0}
+.grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:20px;align-items:start}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media(max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:700px){.two{grid-template-columns:minmax(0,1fr)} section.mod{padding:16px}}
+p{margin:.5em 0}
+a{color:var(--accent)}
+svg.chart{width:100%;height:auto;display:block;background:#fff;border:1px solid var(--line);border-radius:10px;touch-action:pan-y}
+svg.chart text{font-family:inherit}
+.grid line{stroke:#e5e9f2;stroke-width:1}
+.axis line,.axis path{stroke:#6b7488;stroke-width:1.3}
+.axis text{font-size:12px;fill:#394156}
+.axis .title{font-size:13px;font-weight:600;fill:#1d2433}
+.legend rect{fill:#fff;fill-opacity:.9;stroke:#cfd6e4}
+.legend text{font-size:12px;fill:#1d2433}
+.note-t{font-size:12px;fill:#7a2a20}
+.chart-summary{font-size:.9rem;color:var(--muted);margin:.4em 0 0}
+.panel{background:var(--soft);border-radius:12px;padding:14px 16px}
+.ctrl{margin:.55em 0}
+.ctrl label{display:flex;justify-content:space-between;gap:8px;font-weight:600;font-size:.92rem}
+.ctrl output{font-variant-numeric:tabular-nums;color:var(--accent)}
+input[type=range]{width:100%;accent-color:var(--accent);height:28px}
+input[type=number],select{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;max-width:100%}
+button,.btn{font:inherit;font-weight:600;font-size:.92rem;padding:8px 14px;border-radius:10px;border:1px solid var(--accent);background:#fff;color:var(--accent);cursor:pointer;transition:transform .08s,background .15s}
+button:hover:not(:disabled){background:#e9eeff}
+button:active:not(:disabled){transform:scale(.97)}
+button.primary{background:var(--accent);color:#fff}
+button.primary:hover:not(:disabled){background:#2f4bc4}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.ghost{border-color:var(--line);color:var(--ink)}
+.seg{display:inline-flex;border:1px solid var(--accent);border-radius:10px;overflow:hidden;margin:0 0 10px}
+.seg button{border:0;border-radius:0;background:#fff}
+.seg button[aria-pressed=true]{background:var(--accent);color:#fff}
+:focus-visible{outline:3px solid #ffb703;outline-offset:2px}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin:.6em 0}
+.readout{font-size:.95rem}
+.calc{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88rem;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;overflow-x:auto}
+.calc div{white-space:pre-wrap;word-break:break-word;margin:.15em 0}
+.formula{display:inline-block;background:#fff;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:6px 12px;margin:.3em 0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.95rem}
+.callout{border-left:4px solid var(--grad);background:#fff9e6;padding:8px 12px;border-radius:8px;margin:.8em 0}
+.story{border-left:4px solid var(--prob);background:#f6effb;padding:8px 12px;border-radius:8px;margin:1em 0;font-weight:600}
+.badge{display:inline-block;padding:1px 9px;border-radius:999px;font-size:.8rem;font-weight:700;border:1.5px solid}
+.ok{color:#0b6b3a;border-color:#0b6b3a;background:#e6f6ec}
+.bad{color:#9b1c1c;border-color:#9b1c1c;background:#fdeaea}
+.neutral{color:#334;border-color:#889;background:#f0f2f7}
+table{border-collapse:collapse;width:100%;font-size:.88rem;font-variant-numeric:tabular-nums}
+th,td{border:1px solid var(--line);padding:4px 7px;text-align:right}
+th{background:var(--soft);text-align:center}
+td.l,th.l{text-align:left}
+.tw{overflow-x:auto;max-width:100%}
+details{margin:.7em 0;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px 12px}
+summary{cursor:pointer;font-weight:700;color:var(--accent)}
+.pipe{display:flex;flex-wrap:wrap;gap:6px;align-items:stretch;margin:.6em 0}
+.pipe .box{flex:1 1 110px;background:#fff;border:2px solid var(--line);border-radius:10px;padding:6px 8px;text-align:center;font-size:.86rem}
+.pipe .arrow{align-self:center;font-weight:800;color:var(--muted)}
+.pipe .box b{display:block;font-size:1.05rem;font-variant-numeric:tabular-nums}
+.quiz,.predict{border:2px dashed #b8c2e0;border-radius:12px;padding:10px 14px;margin:14px 0;background:#fbfcff}
+.quiz fieldset{border:0;margin:0;padding:0}
+.quiz label.opt{display:block;padding:4px 0;cursor:pointer}
+.fb{margin:.4em 0 0;font-weight:600}
+.fb.good{color:#0b6b3a}.fb.warn{color:#9b1c1c}
+.term{all:unset;cursor:pointer;border-bottom:2px dotted var(--accent);color:inherit;font-weight:600}
+.term:focus-visible{outline:3px solid #ffb703}
+.gdef{display:block;background:#eef3ff;border:1px solid #b9c7f3;border-radius:8px;padding:6px 10px;margin:6px 0;font-size:.9rem;font-weight:400}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.bar{height:10px;border-radius:6px;background:var(--loss);transition:width .15s}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+footer{max-width:1180px;margin:0 auto;padding:0 18px 40px;color:var(--muted);font-size:.85rem}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div id="progress" aria-hidden="true"><div id="progressBar"></div></div>
+<noscript><p style="padding:20px">This interactive lab needs JavaScript enabled.</p></noscript>
+
+<header class="hero">
+  <p class="eyebrow">An interactive visual journey</p>
+  <h1>From Linear Regression to Logistic Regression</h1>
+  <p class="lead">You will not memorize formulas here — you will <em>discover</em> logistic regression. Each module follows the same path: a real-life <b>intuition</b>, a <b>picture</b> you can play with, a little <b>math</b> (always optional to expand), a <b>worked example</b>, and a quick <b>check</b>. Before you move a slider, try to guess what will happen. Everything on the screen is computed live by real JavaScript — nothing is faked.</p>
+  <div class="hero-status" role="status" aria-live="polite"><span id="progText">Progress: 0 of 13 sections visited · Knowledge checks: 0 of 12 correct</span></div>
+</header>
+
+<nav id="toc" aria-label="Sections">
+<ul>
+  <li><a href="#m1">1 Prediction</a></li><li><a href="#m2">2 Linear</a></li><li><a href="#m3">3 The problem</a></li>
+  <li><a href="#m4">4 Sigmoid</a></li><li><a href="#m5">5 Logistic</a></li><li><a href="#m6">6 Threshold</a></li>
+  <li><a href="#m7">7 Loss</a></li><li><a href="#m8">8 Learning</a></li><li><a href="#m9">9 Boundary</a></li>
+  <li><a href="#m10">10 Playground</a></li><li><a href="#myths">Myths</a></li><li><a href="#glossary">Glossary</a></li><li><a href="#summary">Recap</a></li>
+</ul>
+</nav>
+
+<main>
+
+<!-- ============ MODULE 1 ============ -->
+<section class="mod" id="m1" aria-labelledby="h_m1">
+  <h2 id="h_m1">Module 1 · What is a prediction?</h2>
+  <h3>Intuition</h3>
+  <p>Imagine you are a teacher. A student tells you how many hours they studied. You could ask two different questions: <b>“How many points will they score?”</b> — the answer is a <em>number</em>. Or: <b>“Will they pass?”</b> — the answer is a <em>category</em>: yes or no.</p>
+  <p>The thing we measure and feed in (hours studied) is called a <button class="term" data-g="feature">feature</button>. The thing we want to predict (the score, or pass/fail) is the target, also called a <button class="term" data-g="label">label</button>. The model’s guess is the <em>prediction</em>.</p>
+  <h3>Try it</h3>
+  <div class="grid">
+    <div>
+      <div class="seg" role="group" aria-label="Choose what to predict">
+        <button id="m1_reg" aria-pressed="true">Predict Exam Score</button>
+        <button id="m1_cls" aria-pressed="false">Predict Pass or Fail</button>
+      </div>
+      <svg id="ch1" class="chart" viewBox="0 0 640 340" role="img" aria-label="Study hours chart"></svg>
+      <p id="sum1" class="chart-summary" aria-live="polite"></p>
+    </div>
+    <div class="panel">
+      <div data-sl="m1_x|Hours studied (x)|0|10|0.1|4"></div>
+      <div id="out1" class="readout" aria-live="polite"></div>
+    </div>
+  </div>
+  <details><summary>What’s happening mathematically?</summary>
+    <p><b>Score mode:</b> the green line is the best straight line through the dots (found by least squares, explained in Module 2). Its output can be <em>any</em> number on a continuous scale.</p>
+    <p><b>Pass/fail mode:</b> each student is either 0 (fail) or 1 (pass). A single number like “1.37 students passing” makes no sense, so instead we want the <button class="term" data-g="probability">probability</button> of passing — a number between 0 and 1. The dashed purple curve is a <em>preview</em> of a model we will build in Module 5; it was fitted to these same dots with real logistic regression.</p>
+  </details>
+  <div class="quiz" data-id="q1"></div>
+  <p class="story">We can already predict numbers with a straight line. How exactly does a line produce a prediction? Let’s look at linear regression properly.</p>
+</section>
+
+<!-- ============ MODULE 2 ============ -->
+<section class="mod" id="m2" aria-labelledby="h_m2">
+  <h2 id="h_m2">Module 2 · Linear regression first</h2>
+  <h3>Intuition</h3>
+  <p>Suppose each extra hour of study tends to add about the same number of points. That is a straight-line relationship, and a straight line is easy to write down:</p>
+  <p><span class="formula">ŷ = m·x + b</span></p>
+  <p><b>x</b> is the input (hours), <b>m</b> is the slope (points gained per hour), <b>b</b> is the intercept (the line’s value at x = 0), and <b>ŷ</b> (“y-hat”) is the predicted value.</p>
+  <div class="predict" data-p="p_slope"></div>
+  <h3>Try it</h3>
+  <div class="grid">
+    <div>
+      <svg id="ch2" class="chart" viewBox="0 0 640 340" role="img" aria-label="Linear regression chart"></svg>
+      <p id="sum2" class="chart-summary" aria-live="polite"></p>
+    </div>
+    <div class="panel">
+      <div data-sl="m2_m|Slope m (points per hour)|-5|15|0.1|8"></div>
+      <div data-sl="m2_b|Intercept b (points)|-20|60|0.1|12"></div>
+      <div data-sl="m2_x|Input x (hours)|0|10|0.1|4"></div>
+      <label><input type="checkbox" id="m2_resid" checked> Show residuals (vertical errors)</label>
+      <div class="btnrow"><button id="m2_reset">Reset</button><button id="m2_fit" class="ghost">Show least-squares fit</button></div>
+      <div id="out2" class="calc" aria-live="polite"></div>
+    </div>
+  </div>
+  <p>A <b>residual</b> is the vertical gap between an observed dot and the line: <em>observed − predicted</em>. A good model keeps those gaps small. Notice also that a line has no built-in ceiling or floor: <span id="unb2"></span></p>
+  <details><summary>What’s happening mathematically? Mean squared error</summary>
+    <p>To score a line with one number we square each residual (so over- and under-shoots both count and big misses count extra) and average them: <span class="formula">MSE = (1/N) Σ (yᵢ − ŷᵢ)²</span></p>
+    <div class="tw"><table id="mse2"></table></div>
+    <p>The <b>least-squares fit</b> button picks the m and b that make this MSE as small as possible for a straight line. (In Module 8 we will see a more general way to find best parameters: gradient descent.)</p>
+  </details>
+  <div class="quiz" data-id="q2"></div>
+  <p class="story">We have a method for predicting numbers. But what if the answer can only be <em>yes</em> or <em>no</em>?</p>
+</section>
+
+<!-- ============ MODULE 3 ============ -->
+<section class="mod" id="m3" aria-labelledby="h_m3">
+  <h2 id="h_m3">Module 3 · Why a plain line struggles with yes/no answers</h2>
+  <h3>Intuition</h3>
+  <p>Let’s try the obvious thing: code “fail” as 0 and “pass” as 1, then fit the same kind of straight line. A value like 0.7 can be read as “70% likely to pass”. But what should “1.4” or “−0.3” mean? Probabilities cannot be below 0 or above 1.</p>
+  <h3>Try it</h3>
+  <div data-sl="m3_x|Hours studied (x) you want a prediction for|0|10|0.1|4" style="max-width:560px"></div>
+  <div class="btnrow"><button id="m3_ext" class="primary" aria-pressed="false">Extend the input range</button></div>
+  <div class="two">
+    <div><b>Left: ordinary straight-line fit to the 0/1 labels</b>
+      <svg id="ch3a" class="chart" viewBox="0 0 560 330" role="img" aria-label="Linear fit to binary labels"></svg>
+      <div id="out3a" class="readout" aria-live="polite"></div></div>
+    <div><b>Right: what we want — a probability-like curve</b>
+      <svg id="ch3b" class="chart" viewBox="0 0 560 330" role="img" aria-label="Probability-like curve"></svg>
+      <div id="out3b" class="readout" aria-live="polite"></div></div>
+  </div>
+  <p id="sum3" class="chart-summary" aria-live="polite"></p>
+  <div class="callout"><b>Fair warning:</b> a straight line <em>can</em> be used for 0/1 outcomes — that is called a <b>linear probability model</b>, and it is sometimes a reasonable quick tool. The issue is that ordinary linear regression does nothing to keep predictions inside [0, 1], and any non-flat line must eventually leave that range if you go far enough (use the button above). Its error assumptions also fit 0/1 outcomes poorly.</div>
+  <p><b>Challenge:</b> can we keep the useful linear formula but squash its output into a valid probability?</p>
+  <div class="quiz" data-id="q3"></div>
+  <p class="story">Our straight line can produce numbers outside 0 and 1. Can we transform <em>any</em> score into a valid probability? We need a squashing function…</p>
+</section>
+
+<!-- ============ MODULE 4 ============ -->
+<section class="mod" id="m4" aria-labelledby="h_m4">
+  <h2 id="h_m4">Module 4 · The sigmoid: turning scores into probabilities</h2>
+  <h3>Intuition</h3>
+  <p>Think of a dimmer switch that can never be fully off or fully on. Feed it a score <b>z</b> (any real number, negative or positive). Very negative scores give “almost 0”, very positive scores give “almost 1”, and a score of exactly 0 gives the middle: 0.5. That squashing function is the <button class="term" data-g="sigmoid">sigmoid</button> (an analogy — the exact formula is below):</p>
+  <p><span class="formula">σ(z) = 1 / (1 + e^(−z))</span> &nbsp; where e ≈ 2.71828</p>
+  <div class="predict" data-p="p_z0"></div>
+  <h3>Try it</h3>
+  <div class="grid">
+    <div>
+      <svg id="ch4" class="chart" viewBox="0 0 640 360" role="img" aria-label="Sigmoid curve"></svg>
+      <p id="sum4" class="chart-summary" aria-live="polite"></p>
+    </div>
+    <div class="panel">
+      <div data-sl="m4_z|Score z|-10|10|0.01|2"></div>
+      <div class="btnrow" id="m4_presets"></div>
+      <div id="out4" class="calc" aria-live="polite"></div>
+    </div>
+  </div>
+  <h3>Four facts, checked live</h3>
+  <div class="cards" id="ins4"></div>
+  <h3>Experiment: where is the sigmoid sensitive?</h3>
+  <p>Push the score up by 1 and see how much the probability moves. Start near 0, then far away.</p>
+  <div class="grid"><div data-sl="ex4_z|Start at z|-10|9|0.1|0"></div>
+  <div><div class="btnrow"><button id="ex4_near">Near 0</button><button id="ex4_far">Far out (z = 6)</button></div></div></div>
+  <div id="ex4_out" class="readout" aria-live="polite"></div>
+  <details><summary>What’s happening mathematically?</summary>
+    <p>The slope of the sigmoid is <span class="formula">σ′(z) = σ(z)(1 − σ(z))</span>. It is largest (0.25) at z = 0 and shrinks toward 0 in the tails. That is “saturation”: far from 0, big changes in the score barely change the probability. This will matter when we talk about gradients.</p>
+    <p>Also: σ(−z) = 1 − σ(z) because e^z/(1+e^z) = 1 − 1/(1+e^z)… try the second card above with different z. For any finite z, σ(z) is strictly between 0 and 1 (never exactly equal to the endpoints mathematically; very extreme z are shown as 0.0000 or 1.0000 only because of rounding).</p>
+  </details>
+  <div class="quiz" data-id="q4"></div>
+  <p class="story">Now we have a way to turn scores into probabilities. What happens when we feed it the output of a linear model?</p>
+</section>
+
+<!-- ============ MODULE 5 ============ -->
+<section class="mod" id="m5" aria-labelledby="h_m5">
+  <h2 id="h_m5">Module 5 · Building logistic regression</h2>
+  <h3>Intuition</h3>
+  <p>Here is the whole idea, in two steps. It reuses the line from Module 2 but renames the pieces (m → <b>w</b>, “weight”):</p>
+  <p><b>Step 1 — linear score:</b> <span class="formula">z = w·x + b</span> &nbsp; <b>Step 2 — squash:</b> <span class="formula">p = σ(z) = 1 / (1 + e^(−z))</span></p>
+  <div class="pipe" id="pipe5" aria-live="polite"></div>
+  <div class="predict" data-p="p_bias"></div>
+  <h3>Try it</h3>
+  <div class="grid">
+    <div>
+      <b>Graph A — the linear score z</b>
+      <svg id="ch5a" class="chart" viewBox="0 0 640 230" role="img" aria-label="Linear score chart"></svg>
+      <b>Graph B — the probability p (same x-axis)</b>
+      <svg id="ch5b" class="chart" viewBox="0 0 640 250" role="img" aria-label="Probability chart"></svg>
+      <p id="sum5" class="chart-summary" aria-live="polite"></p>
+    </div>
+    <div class="panel">
+      <div data-sl="m5_w|Weight w|-3|3|0.1|1.5"></div>
+      <div data-sl="m5_b|Bias b|-6|6|0.1|-3"></div>
+      <div data-sl="m5_x|Input x|-6|6|0.1|2.5"></div>
+      <div data-sl="m5_t|Classification threshold|0.05|0.95|0.01|0.5"></div>
+      <div id="out5" class="calc" aria-live="polite"></div>
+    </div>
+  </div>
+  <p><b>Weight w:</b> its sign sets the direction (positive → probability rises with x; negative → falls) and its size sets the steepness. <b>Bias b:</b> the score when x = 0; changing it slides the curve sideways. <b>Threshold:</b> a separate setting that turns a probability into a class — more in Module 6.</p>
+  <div class="callout"><b>Key idea:</b> logistic regression is a <em>linear model for the log-odds</em>, followed by a nonlinear transformation into probability space.</div>
+  <details><summary>What’s happening mathematically? Odds and log-odds</summary>
+    <div id="log5"></div>
+    <p><button class="term" data-g="odds">Odds</button> = p/(1−p) (e.g. p = 0.75 → odds 3 to 1). The <button class="term" data-g="logodds">log-odds</button> (or “logit”) is ln(p/(1−p)). Solving p = σ(z) for z shows that <b>z is exactly the log-odds</b>. So the straight-line part of the model, z = wx + b, models log-odds linearly; probabilities themselves are <em>not</em> a straight line in x.</p>
+  </details>
+  <div class="quiz" data-id="q5"></div>
+  <div class="quiz" data-id="q6"></div>
+  <p class="story">A logistic model outputs a probability, not an answer. How do we turn “0.73” into a yes or no?</p>
+</section>
+
+<!-- ============ MODULE 6 ============ -->
+<section class="mod" id="m6" aria-labelledby="h_m6">
+  <h2 id="h_m6">Module 6 · From probability to a decision</h2>
+  <h3>Intuition</h3>
+  <p>A spam filter does not say “spam”; it says “92% likely spam”. Someone must choose a <button class="term" data-g="threshold">threshold</button>: <span class="formula">predict class 1 if p ≥ threshold, otherwise class 0</span>. (Equality counts as class 1.) The threshold is a <em>decision setting</em>, not a model parameter — moving it never retrains the model.</p>
+  <div class="predict" data-p="p_thr"></div>
+  <h3>Try it — 16 emails scored by a fixed model (w = 1.2, b = 0.2)</h3>
+  <div class="grid">
+    <div>
+      <svg id="ch6" class="chart" viewBox="0 0 640 300" role="img" aria-label="Probability number line"></svg>
+      <p class="chart-summary">Tip: drag the threshold line on the chart, or use the slider. Squares are actual spam, circles are actual not-spam; a dashed ring marks emails whose prediction just changed.</p>
+      <p id="sum6" class="chart-summary" aria-live="polite"></p>
+    </div>
+    <div class="panel">
+      <div data-sl="m6_t|Threshold|0.05|0.95|0.01|0.5"></div>
+      <div id="cm6" class="tw"></div>
+      <div id="met6" class="readout" aria-live="polite"></div>
+    </div>
+  </div>
+  <div class="tw" style="max-height:300px;overflow:auto"><table><thead><tr><th>#</th><th>Score x</th><th>p (spam)</th><th>Actual</th><th>Predicted</th><th>Result</th></tr></thead><tbody id="tbl6"></tbody></table></div>
+  <details open><summary>What do TP, TN, FP, FN mean?</summary>
+    <ul>
+      <li><b>True positive (TP):</b> predicted spam, really spam.</li>
+      <li><b>True negative (TN):</b> predicted not spam, really not spam.</li>
+      <li><b>False positive (FP):</b> predicted spam, but it was a good email (a false alarm).</li>
+      <li><b>False negative (FN):</b> predicted not spam, but it was spam (a miss).</li>
+    </ul>
+    <p><b>Accuracy</b> = (TP+TN)/all. <b>Precision</b> = TP/(TP+FP): of the emails we flagged, how many were really spam. <b>Recall</b> = TP/(TP+FN): of all real spam, how much we caught. <b>F1</b> = 2·P·R/(P+R). If a denominator is 0, the metric is <em>undefined</em> and we show N/A instead of a made-up number.</p>
+  </details>
+  <div class="callout">
+    <b>Teaching points.</b> 0.5 is a common default, not a law: if a false alarm (a real email lost in spam) is worse than a miss, raise the threshold; if a miss is worse, lower it. Lowering the threshold generally flags more emails as spam, so recall tends to rise while precision may fall. Also: model probabilities are <em>estimates</em>; they are not automatically well-calibrated (a “0.8” may not come true 80% of the time). These 16 emails are a tiny illustration, not a proof.
+  </div>
+  <div class="quiz" data-id="q7"></div>
+  <div class="quiz" data-id="q8"></div>
+  <p class="story">We can calculate a probability once we know w and b. But how should we choose them?</p>
+</section>
+
+<!-- ============ MODULE 7 ============ -->
+<section class="mod" id="m7" aria-labelledby="h_m7">
+  <h2 id="h_m7">Module 7 · How does logistic regression learn?</h2>
+  <h3>Intuition</h3>
+  <p>Training means finding w and b so the model’s probabilities agree with the observed labels: high p where the label is 1, low p where it is 0. To search, we need a score for “how wrong are we?” — a <button class="term" data-g="loss">loss function</button>. For one observation with label y and predicted probability p we use <button class="term" data-g="bce">binary cross-entropy</button>:</p>
+  <p><span class="formula">L = −[ y·ln(p) + (1−y)·ln(1−p) ]</span></p>
+  <p>Only one term is ever active: if y = 1 then <span class="formula">L = −ln(p)</span>; if y = 0 then <span class="formula">L = −ln(1−p)</span>.</p>
+  <h3>Try it — tune w and b by hand</h3>
+  <div class="grid">
+    <div>
+      <svg id="ch7a" class="chart" viewBox="0 0 640 320" role="img" aria-label="Dataset and logistic curve"></svg>
+      <p id="sum7" class="chart-summary" aria-live="polite"></p>
+    </div>
+    <div class="panel">
+      <div data-sl="m7_w|Weight w|-4|4|0.1|-0.5"></div>
+      <div data-sl="m7_b|Bias b|-4|4|0.1|0.5"></div>
+      <div id="out7" class="readout" aria-live="polite"></div>
+    </div>
+  </div>
+  <div class="tw"><table><thead><tr><th>x</th><th>Actual y</th><th>p = σ(wx+b)</th><th>Loss L</th></tr></thead><tbody id="tbl7"></tbody></table></div>
+  <p>Dashed red segments show the gap between the label and the predicted probability. Try to find w and b that make the <b>average loss</b> small (is a loss of exactly 0 reachable here? Not with these overlapping labels).</p>
+  <div class="predict" data-p="p_loss"></div>
+  <h3>The loss curve</h3>
+  <div class="grid">
+    <div>
+      <svg id="ch7b" class="chart" viewBox="0 0 640 320" role="img" aria-label="Cross entropy loss curve"></svg>
+    </div>
+    <div class="panel">
+      <div class="ctrl"><label for="m7_y">Actual label y</label><select id="m7_y"><option value="1">1</option><option value="0">0</option></select></div>
+      <div data-sl="m7_p|Predicted probability p|0.01|0.99|0.01|0.9"></div>
+      <div id="out7c" class="calc" aria-live="polite"></div>
+    </div>
+  </div>
+  <p>Correct and confident → tiny loss. Confident but wrong → huge loss (the curve shoots up as p approaches the wrong end). Worked examples:</p>
+  <div class="tw"><table><thead><tr><th>p</th><th>Loss if y = 1: −ln(p)</th><th>Loss if y = 0: −ln(1−p)</th></tr></thead><tbody id="ex7"></tbody></table></div>
+  <details><summary>What’s happening mathematically? Why not squared error?</summary>
+    <p>You <em>can</em> train a sigmoid model with squared error, and people do. But cross-entropy is the standard because it matches the maximum-likelihood idea (the negative log-likelihood of the labels), its loss surface for w and b is convex, and its gradient has the clean form (p − y)·x. With squared error, a confidently wrong prediction gives almost no gradient because the sigmoid is flat there. Try it (label y = 1):</p>
+    <div data-sl="se_z|Score z|-8|8|0.1|-6" style="max-width:420px"></div>
+    <div id="se_out" class="calc" aria-live="polite"></div>
+  </details>
+  <div class="quiz" data-id="q9"></div>
+  <p class="story">We can now measure how wrong the model is. We need a method for improving it automatically.</p>
+</section>
+
+<!-- ============ MODULE 8 ============ -->
+<section class="mod" id="m8" aria-labelledby="h_m8">
+  <h2 id="h_m8">Module 8 · Gradient descent: watch the model learn</h2>
+  <h3>Intuition</h3>
+  <p>Picture standing on a foggy hill, wanting to reach the valley. You feel which way the ground slopes under your feet and take a small step downhill. The <button class="term" data-g="gradient">gradient</button> is that slope, the <button class="term" data-g="lr">learning rate</button> α is your step size, and repeating this is <button class="term" data-g="gd">gradient descent</button>. (The hill is an analogy; the formulas below are the facts.)</p>
+  <div class="calc">
+    <div>zᵢ = w·xᵢ + b        pᵢ = σ(zᵢ)</div>
+    <div>J(w,b) = −(1/N) Σ [ yᵢ ln pᵢ + (1−yᵢ) ln(1−pᵢ) ]</div>
+    <div>∂J/∂w = (1/N) Σ (pᵢ − yᵢ)·xᵢ        ∂J/∂b = (1/N) Σ (pᵢ − yᵢ)</div>
+    <div>w ← w − α·∂J/∂w        b ← b − α·∂J/∂b</div>
+  </div>
+  <div class="predict" data-p="p_lr"></div>
+  <h3>Try it</h3>
+  <div class="grid">
+    <div>
+      <b>A. Data and the current probability curve</b>
+      <svg id="ch8a" class="chart" viewBox="0 0 640 300" role="img" aria-label="Training data and curve"></svg>
+      <b>B. Loss over training iterations</b>
+      <svg id="ch8b" class="chart" viewBox="0 0 640 260" role="img" aria-label="Loss history"></svg>
+      <p id="sum8" class="chart-summary" aria-live="polite"></p>
+    </div>
+    <div class="panel">
+      <div class="btnrow">
+        <button id="m8_step" class="primary">Run 1 step</button><button id="m8_10">Run 10 steps</button>
+        <button id="m8_auto">Auto-train</button><button id="m8_pause" disabled>Pause</button>
+      </div>
+      <div data-sl="m8_lr|Learning rate α|0.01|3|0.01|0.5"></div>
+      <div data-sl="m8_speed|Training speed (steps/second)|1|60|1|8"></div>
+      <div data-sl="m8_t|Decision threshold (for the boundary)|0.05|0.95|0.01|0.5"></div>
+      <hr style="border:0;border-top:1px solid var(--line)">
+      <div data-sl="m8_w0|Initial w|-4|4|0.1|-1.5"></div>
+      <div data-sl="m8_b0|Initial b|-4|4|0.1|1"></div>
+      <div class="ctrl"><label for="m8_ds">Dataset</label><select id="m8_ds"><option value="approx">Approximately separable (default)</option><option value="sep">Perfectly separable</option></select></div>
+      <div class="btnrow"><button id="m8_init" class="ghost">Initialize / reset model</button><button id="m8_resetdata" class="ghost">Reset dataset</button></div>
+      <p id="msg8" class="readout" role="status" aria-live="polite"></p>
+    </div>
+  </div>
+  <b>C. Parameters and gradients</b>
+  <div id="par8" class="cards" aria-live="polite"></div>
+  <h3>Step-by-step calculation (the state <em>before</em> the next update)</h3>
+  <div class="tw"><table><thead><tr><th>x</th><th>Actual y</th><th>z = wx+b</th><th>p = σ(z)</th><th>p − y</th><th>(p − y)·x</th><th>Loss</th></tr></thead><tbody id="tbl8"></tbody></table></div>
+  <div id="calc8" class="calc" aria-live="polite" style="margin-top:10px"></div>
+  <div class="callout"><b>Careful:</b> if the classes can be perfectly separated, the loss keeps shrinking toward 0 only by making |w| larger and larger — there is no finite “best” w. Try the “Perfectly separable” dataset and keep training. With a learning rate that is too large, the loss can bounce or rise instead of falling; loss is not guaranteed to fall at every step.</div>
+  <div class="quiz" data-id="q10"></div>
+  <p class="story">Now we know why w and b settle where they do. Let’s look at what the final model <em>decides</em> — and then train our own.</p>
+</section>
+
+<!-- ============ MODULE 9 ============ -->
+<section class="mod" id="m9" aria-labelledby="h_m9">
+  <h2 id="h_m9">Module 9 · The decision boundary</h2>
+  <h3>Intuition</h3>
+  <p>The boundary is where the model switches its answer. With threshold t, class 1 is predicted when p ≥ t, which (since σ is increasing) is the same as <span class="formula">w·x + b ≥ log( t/(1−t) )</span>. For t = 0.5 the right side is 0, so the boundary is <span class="formula">w·x + b = 0 → x = −b/w</span> (when w ≠ 0).</p>
+  <p>The probability curve is a bendy S-shape, but the boundary is <b>linear</b> in the features: a single point for one feature, a straight line for two.</p>
+  <h3>One feature</h3>
+  <div class="grid">
+    <div>
+      <svg id="ch9a" class="chart" viewBox="0 0 640 300" role="img" aria-label="One feature decision boundary"></svg>
+      <p id="sum9a" class="chart-summary" aria-live="polite"></p>
+    </div>
+    <div class="panel">
+      <div data-sl="m9_w|Weight w|-4|4|0.1|1.5"></div>
+      <div data-sl="m9_b|Bias b|-6|6|0.1|0"></div>
+      <div data-sl="m9_t|Threshold t|0.05|0.95|0.01|0.5"></div>
+      <div id="out9a" class="calc" aria-live="polite"></div>
+    </div>
+  </div>
+  <h3>Two features (optional)</h3>
+  <p>Now z = w₁x₁ + w₂x₂ + b. Shading shows P(class 1); the black line is where p equals the threshold. Try w₂ = 0 (vertical line), w₁ = 0 (horizontal line), or both 0 (no boundary at all).</p>
+  <div class="grid">
+    <div>
+      <svg id="ch9b" class="chart" viewBox="0 0 640 400" role="img" aria-label="Two feature decision boundary"></svg>
+      <p id="sum9b" class="chart-summary" aria-live="polite"></p>
+    </div>
+    <div class="panel">
+      <div data-sl="m9_w1|Weight w₁|-3|3|0.1|1"></div>
+      <div data-sl="m9_w2|Weight w₂|-3|3|0.1|1"></div>
+      <div data-sl="m9_b2|Bias b|-4|4|0.1|0"></div>
+      <div data-sl="m9_t2|Threshold t|0.05|0.95|0.01|0.5"></div>
+      <div id="out9b" class="calc" aria-live="polite"></div>
+    </div>
+  </div>
+  <div class="quiz" data-id="q11"></div>
+  <p class="story">Let’s put everything together and train our own classifier.</p>
+</section>
+
+<!-- ============ MODULE 10 ============ -->
+<section class="mod" id="m10" aria-labelledby="h_m10">
+  <h2 id="h_m10">Module 10 · The complete playground</h2>
+  <p>Pick a dataset, train, tune the threshold, and read the live metrics. <b>Solid markers are training examples</b> (the model learns from them). <b>Hollow markers are evaluation examples</b> (held out, never used to compute gradients). Datasets are generated deterministically, so “Reset” always gives the same points.</p>
+  <div class="grid">
+    <div>
+      <svg id="ch10" class="chart" viewBox="0 0 640 340" role="img" aria-label="Playground chart"></svg>
+      <p id="sum10" class="chart-summary" aria-live="polite"></p>
+      <b>Loss history (training)</b>
+      <svg id="ch10b" class="chart" viewBox="0 0 640 220" role="img" aria-label="Playground loss history"></svg>
+    </div>
+    <div class="panel">
+      <div class="ctrl"><label for="m10_ds">Dataset</label>
+        <select id="m10_ds"><option value="sep">1 · Clearly separable</option><option value="ovl">2 · Overlapping</option><option value="imb">3 · Imbalanced (few class 1)</option></select></div>
+      <div class="btnrow">
+        <button id="m10_step" class="primary">1 step</button><button id="m10_10">10 steps</button><button id="m10_100">100 steps</button>
+        <button id="m10_auto">Auto-train</button><button id="m10_pause" disabled>Pause</button>
+      </div>
+      <div data-sl="m10_lr|Learning rate α|0.01|2|0.01|0.3"></div>
+      <div data-sl="m10_speed|Training speed (steps/s)|1|60|1|10"></div>
+      <div data-sl="m10_w|Weight w (manual)|-15|15|0.1|0"></div>
+      <div data-sl="m10_b|Bias b (manual)|-15|15|0.1|0"></div>
+      <div data-sl="m10_t|Decision threshold|0.05|0.95|0.01|0.5"></div>
+      <div class="btnrow"><button id="m10_init" class="ghost">Initialize parameters (w = b = 0)</button><button id="m10_reset" class="ghost">Reset experiment</button></div>
+      <p id="msg10" class="readout" role="status" aria-live="polite"></p>
+    </div>
+  </div>
+  <h3>Edit the training data (optional)</h3>
+  <div class="btnrow" style="align-items:center">
+    <label>Class <select id="m10_addy"><option value="1">1</option><option value="0">0</option></select></label>
+    <label>x <input type="number" id="m10_addx" value="0" min="-6" max="6" step="0.1" style="width:90px"></label>
+    <button id="m10_addbtn">Add training point</button><button id="m10_undo" class="ghost">Undo last added point</button>
+    <span class="chart-summary">…or click on the chart to add a point of the chosen class at that x.</span>
+  </div>
+  <div class="grid">
+    <div id="mets10" class="tw" aria-live="polite"></div>
+    <div class="panel">
+      <div class="ctrl"><label for="m10_obs">Inspect training observation # <output id="m10_obs_o"></output></label><input type="range" id="m10_obs" min="1" max="1" step="1" value="1"></div>
+      <div id="calc10" class="calc" aria-live="polite"></div>
+    </div>
+  </div>
+  <p class="callout"><b>Training metrics are not generalization.</b> A model is always scored on data it has already seen when you look at training metrics. The hollow evaluation points give a small, noisy peek at unseen data; with so few points, treat it as a hint, not a verdict. With imbalanced data, high accuracy can hide a model that finds almost no class-1 cases.</p>
+  <h3>Guided challenges</h3>
+  <div class="cards">
+    <div class="card"><b>1 · Fit the separable data</b><p class="readout">Choose “Clearly separable”, then train. Can you classify every training point correctly?</p><div id="ch1_fb" class="readout" aria-live="polite"></div></div>
+    <div class="card"><b>2 · Trade precision for recall</b><p class="readout">Slide the threshold away from 0.5 on the overlapping or imbalanced set.</p><div id="ch2_fb" class="readout" aria-live="polite"></div></div>
+    <div class="card"><b>3 · Flip the weight sign</b><p class="readout">Set w negative with the manual slider, and explain the curve.</p><div id="ch3_fb" class="readout" aria-live="polite"></div></div>
+    <div class="card"><b>4 · Two learning rates</b>
+      <p class="readout">Train from w = b = 0 for 60 steps with each rate on the current data.</p>
+      <label>α₁ <input type="number" id="cmp_a" value="0.05" step="0.01" min="0.001" max="5" style="width:80px"></label>
+      <label>α₂ <input type="number" id="cmp_b" value="1.5" step="0.01" min="0.001" max="5" style="width:80px"></label>
+      <button id="cmp_run">Compare</button>
+      <svg id="ch10c" class="chart" viewBox="0 0 400 200" role="img" aria-label="Learning rate comparison" style="margin-top:8px"></svg>
+      <div id="ch4_fb" class="readout" aria-live="polite"></div></div>
+    <div class="card"><b>5 · A confident wrong prediction</b><p class="readout">Find the training point with the largest loss. Try making the model confidently wrong (e.g. w negative).</p><div id="ch5_fb" class="readout" aria-live="polite"></div></div>
+  </div>
+</section>
+
+<!-- ============ MYTHS ============ -->
+<section class="mod" id="myths" aria-labelledby="h_myths">
+  <h2 id="h_myths">Common misconceptions</h2>
+  <div class="cards">
+    <div class="card"><b>“Logistic regression predicts continuous values like linear regression.”</b><p>It predicts a <em>probability</em> for a binary outcome (a number in (0, 1)), which a threshold can turn into a class. Its target is categorical.</p></div>
+    <div class="card"><b>“It always outputs exactly 0 or 1.”</b><p>No — the raw output is a probability. Even σ(10) = <span id="my2"></span>, not 1. Only after applying a threshold do you get a hard 0 or 1.</p></div>
+    <div class="card"><b>“The sigmoid makes a curved decision boundary.”</b><p>The probability curve is curved, but the boundary w·x + b = c is linear in the features (a point in 1-D, a line in 2-D) for the standard model.</p></div>
+    <div class="card"><b>“0.5 is always the best threshold.”</b><p>It is a default. The best threshold depends on the costs of false positives vs false negatives and on class balance.</p></div>
+    <div class="card"><b>“Threshold and parameters are the same thing.”</b><p>Parameters (w, b) are learned by training. The threshold is chosen afterward and changing it does not retrain anything.</p></div>
+    <div class="card"><b>“Training accuracy tells us how it will do on new data.”</b><p>It only measures fit to data the model has seen. Use held-out data, and remember even that is an estimate.</p></div>
+    <div class="card" style="grid-column:1/-1"><b>“A coefficient is a fixed increase in probability.”</b>
+      <p>Actually a one-unit increase in x multiplies the <em>odds</em> by e<sup>w</sup> (holding other features fixed). The change in probability depends on where you start. Drag w and compare three starting probabilities (also: coefficients describe associations in the data, not causation):</p>
+      <div data-sl="my_w|Weight w|-3|3|0.1|0.7" style="max-width:420px"></div>
+      <div class="tw"><table id="my_tbl"></table></div></div>
+  </div>
+  <div class="quiz" data-id="q12"></div>
+</section>
+
+<!-- ============ GLOSSARY ============ -->
+<section class="mod" id="glossary" aria-labelledby="h_gl">
+  <h2 id="h_gl">Glossary</h2>
+  <dl id="gl_list"></dl>
+</section>
+
+<!-- ============ SUMMARY ============ -->
+<section class="mod" id="summary" aria-labelledby="h_sum">
+  <h2 id="h_sum">Recap</h2>
+  <div class="cards">
+    <div class="card"><b>Linear regression</b><p class="calc">x → m·x + b → a continuous number</p><p class="readout">Use when the target is a quantity (score, price, temperature).</p></div>
+    <div class="card"><b>Logistic regression</b><p class="calc">x → w·x + b → sigmoid → probability → threshold → class</p><p class="readout">Use when the target is a yes/no category and you want probabilities.</p></div>
+  </div>
+  <div class="calc" style="margin-top:12px">
+    <div>z = w·x + b            p = 1/(1 + e^(−z))            class = 1 if p ≥ t else 0</div>
+    <div>L = −[y ln p + (1−y) ln(1−p)]     ∂J/∂w = mean((p−y)·x)     ∂J/∂b = mean(p−y)     w ← w − α·∂J/∂w</div>
+  </div>
+  <h3>Compute it end to end</h3>
+  <div class="grid">
+    <div class="panel">
+      <div data-sl="sm_x|Input x|-6|6|0.1|2"></div>
+      <div data-sl="sm_w|Weight / slope|-3|3|0.1|1.2"></div>
+      <div data-sl="sm_b|Bias / intercept|-6|6|0.1|-1"></div>
+      <div data-sl="sm_t|Threshold|0.05|0.95|0.01|0.5"></div>
+    </div>
+    <div id="sm_out" class="calc" aria-live="polite"></div>
+  </div>
+  <p class="story">You started with a line, noticed it cannot give probabilities, squashed its score with a sigmoid, chose a threshold to decide, measured error with cross-entropy, and learned w and b with gradient descent. That is logistic regression.</p>
+  <p class="chart-summary">Further reading ideas: regularization, calibration, multi-class (softmax) regression, and evaluating on proper held-out data.</p>
+</section>
+
+</main>
+<footer>Self-contained lab: no network, libraries, or external files. All numbers are computed live in your browser.</footer>
+
+<script>
+(function(){
+'use strict';
+
+/* =====================================================================
+   SECTION 1 — PURE MATH (no DOM). Tested separately in Node.
+   ===================================================================== */
+// ==== MATH-START ====
+const EPS = 1e-12;
+
+/** Numerically stable sigmoid: never computes exp of a large positive number. */
+function sigmoid(z){
+  if (z >= 0) return 1 / (1 + Math.exp(-z));
+  const e = Math.exp(z);
+  return e / (1 + e);
+}
+/** softplus(z) = ln(1 + e^z), computed without overflow. */
+function softplus(z){ return Math.max(z, 0) + Math.log1p(Math.exp(-Math.abs(z))); }
+/** logit(p) = ln(p/(1-p)); the inverse of the sigmoid. */
+function logit(p){ return Math.log(p / (1 - p)); }
+function predictLogit(x, w, b){ return w * x + b; }
+function predictProbability(x, w, b){ return sigmoid(predictLogit(x, w, b)); }
+/** Class 1 when p >= threshold (equality counts as class 1). */
+function predictClass(p, threshold){ return p >= threshold ? 1 : 0; }
+/** Binary cross-entropy from the logit z: softplus(z) - y*z (stable, no log(0)). */
+function binaryCrossEntropyFromLogit(z, y){ return softplus(z) - y * z; }
+/** Binary cross-entropy from a probability (clamped away from 0 and 1). */
+function binaryCrossEntropyFromProb(p, y){
+  const q = Math.min(Math.max(p, EPS), 1 - EPS);
+  return -(y * Math.log(q) + (1 - y) * Math.log(1 - q));
+}
+/** Average BCE over the data; null when there is no data. */
+function datasetLoss(data, w, b){
+  if (!data.length) return null;
+  let s = 0;
+  for (const d of data) s += binaryCrossEntropyFromLogit(predictLogit(d.x, w, b), d.y);
+  return s / data.length;
+}
+/** Average gradients of the BCE with respect to w and b, plus per-row details. */
+function computeGradients(data, w, b){
+  const n = data.length;
+  if (!n) return { gw: 0, gb: 0, loss: null, rows: [] };
+  let gw = 0, gb = 0, ls = 0; const rows = [];
+  for (const d of data){
+    const z = predictLogit(d.x, w, b), p = sigmoid(z), err = p - d.y, l = binaryCrossEntropyFromLogit(z, d.y);
+    gw += err * d.x; gb += err; ls += l;
+    rows.push({ x: d.x, y: d.y, z, p, err, gradW: err * d.x, loss: l });
+  }
+  return { gw: gw / n, gb: gb / n, loss: ls / n, rows };
+}
+/** One batch gradient-descent update. Returns old/new parameters and losses. */
+function gradientDescentStep(data, w, b, lr){
+  const g = computeGradients(data, w, b);
+  const nw = w - lr * g.gw, nb = b - lr * g.gb;
+  return { oldW: w, oldB: b, w: nw, b: nb, gw: g.gw, gb: g.gb, lr, lossBefore: g.loss, lossAfter: datasetLoss(data, nw, nb), rows: g.rows };
+}
+function calculateConfusionMatrix(actual, predicted){
+  let tp = 0, tn = 0, fp = 0, fn = 0;
+  for (let i = 0; i < actual.length; i++){
+    if (predicted[i] === 1) { if (actual[i] === 1) tp++; else fp++; }
+    else { if (actual[i] === 1) fn++; else tn++; }
+  }
+  return { tp, tn, fp, fn };
+}
+function safeDiv(a, b){ return b === 0 ? null : a / b; }
+/** Metrics; any metric with a zero denominator is null (shown as N/A). */
+function calculateClassificationMetrics(c){
+  const n = c.tp + c.tn + c.fp + c.fn;
+  const accuracy = safeDiv(c.tp + c.tn, n);
+  const precision = safeDiv(c.tp, c.tp + c.fp);
+  const recall = safeDiv(c.tp, c.tp + c.fn);
+  const f1 = (precision === null || recall === null || precision + recall === 0) ? null : 2 * precision * recall / (precision + recall);
+  return { accuracy, precision, recall, f1, n };
+}
+/** Ordinary least squares line y = m x + b. */
+function fitLine(xs, ys){
+  const n = xs.length; let sx = 0, sy = 0;
+  for (let i = 0; i < n; i++){ sx += xs[i]; sy += ys[i]; }
+  const mx = sx / n, my = sy / n; let sxx = 0, sxy = 0;
+  for (let i = 0; i < n; i++){ sxx += (xs[i] - mx) * (xs[i] - mx); sxy += (xs[i] - mx) * (ys[i] - my); }
+  const m = sxx === 0 ? 0 : sxy / sxx;
+  return { m, b: my - m * mx };
+}
+/** Reference logistic fit by Newton's method (used only for illustrations on overlapping data). */
+function fitLogistic(data){
+  let w = 0, b = 0;
+  for (let it = 0; it < 60; it++){
+    let gw = 0, gb = 0, hww = 0, hwb = 0, hbb = 0;
+    for (const d of data){
+      const p = sigmoid(w * d.x + b), e = p - d.y, s = p * (1 - p);
+      gw += e * d.x; gb += e; hww += s * d.x * d.x; hwb += s * d.x; hbb += s;
+    }
+    const det = hww * hbb - hwb * hwb + 1e-9;
+    const dw = (hbb * gw - hwb * gb) / det, db = (-hwb * gw + hww * gb) / det;
+    w -= dw; b -= db;
+    if (Math.abs(dw) + Math.abs(db) < 1e-11) break;
+  }
+  return { w, b };
+}
+// ==== MATH-END ====
+
+/* =====================================================================
+   SECTION 2 — SMALL UTILITIES
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const fmt = (v, d = 3) => { if (v === null || v === undefined || !isFinite(v)) return 'N/A'; const s = v.toFixed(d); return /^-0(\.0+)?$/.test(s) ? s.slice(1) : s; };
+const num = (v, d = 2) => { if (!isFinite(v)) return 'N/A'; const s = String(+v.toFixed(d)); return s === '-0' ? '0' : s; };
+const sub = (v, d = 2) => v < 0 ? '(' + num(v, d) + ')' : num(v, d);
+const pct = (v, d = 1) => (v === null || !isFinite(v)) ? 'N/A' : (v * 100).toFixed(d) + '%';
+const sci = v => (v !== 0 && Math.abs(v) < 1e-3) ? v.toExponential(2) : fmt(v, 4);
+const reduceMotion = () => window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const val = id => parseFloat($(id).value);
+const syncOut = inp => { const o = $(inp.id + '_o'); if (o) o.textContent = (+inp.value).toFixed(+inp.dataset.dec); };
+function setSlider(id, v){ const i = $(id); i.value = v; syncOut(i); }
+function onInput(ids, fn){ ids.forEach(id => $(id).addEventListener('input', fn)); }
+
+/** Replace <div data-sl="id|label|min|max|step|value"> with a labelled slider + live value. */
+function buildSliders(){
+  document.querySelectorAll('[data-sl]').forEach(el => {
+    const [id, label, min, max, step, v] = el.dataset.sl.split('|');
+    el.classList.add('ctrl');
+    el.innerHTML = '<label for="' + id + '"><span>' + label + '</span><output id="' + id + '_o" for="' + id + '"></output></label>' +
+      '<input type="range" id="' + id + '" min="' + min + '" max="' + max + '" step="' + step + '" value="' + v + '">';
+    const inp = el.querySelector('input');
+    inp.dataset.dec = (step.split('.')[1] || '').length;
+    syncOut(inp);
+    inp.addEventListener('input', () => syncOut(inp));
+  });
+}
+
+/* =====================================================================
+   SECTION 3 — SVG CHART HELPERS (presentation only)
+   ===================================================================== */
+function niceTicks(lo, hi, n){
+  const span = hi - lo; if (!(span > 0)) return [lo];
+  const raw = span / n, mag = Math.pow(10, Math.floor(Math.log10(raw))), nm = raw / mag;
+  const step = (nm < 1.5 ? 1 : nm < 3 ? 2 : nm < 7 ? 5 : 10) * mag, t = [];
+  for (let v = Math.ceil(lo / step - 1e-9) * step; v <= hi + 1e-9; v += step) t.push(Math.abs(v) < 1e-12 ? 0 : +v.toFixed(10));
+  return t;
+}
+function plot(id, W, H, xr, yr, margin){
+  const m = Object.assign({ l: 56, r: 18, t: 14, b: 46 }, margin || {});
+  const pw = W - m.l - m.r, ph = H - m.t - m.b;
+  return { id, W, H, m, pw, ph, xr, yr,
+    X: v => m.l + (v - xr[0]) / (xr[1] - xr[0]) * pw,
+    Y: v => m.t + ph - (v - yr[0]) / (yr[1] - yr[0]) * ph,
+    invX: px => xr[0] + (px - m.l) / pw * (xr[1] - xr[0]) };
+}
+function axes(P, xl, yl, o){
+  o = o || {};
+  const xt = o.xticks || niceTicks(P.xr[0], P.xr[1], 6), yt = o.yticks || niceTicks(P.yr[0], P.yr[1], 5);
+  const yf = o.yfmt || (v => String(+v.toFixed(6))), xf = o.xfmt || (v => String(+v.toFixed(6)));
+  let s = '<defs><clipPath id="clip_' + P.id + '"><rect x="' + P.m.l + '" y="' + P.m.t + '" width="' + P.pw + '" height="' + P.ph + '"/></clipPath>' +
+    '<pattern id="hatch_' + P.id + '" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="#C0392B" stroke-width="2" opacity=".35"/></pattern>' +
+    '<pattern id="dots_' + P.id + '" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.3" fill="#7B3FA0" opacity=".35"/></pattern></defs>';
+  s += '<g class="grid">';
+  xt.forEach(t => { s += '<line x1="' + P.X(t) + '" y1="' + P.m.t + '" x2="' + P.X(t) + '" y2="' + (P.m.t + P.ph) + '"/>'; });
+  yt.forEach(t => { s += '<line x1="' + P.m.l + '" y1="' + P.Y(t) + '" x2="' + (P.m.l + P.pw) + '" y2="' + P.Y(t) + '"/>'; });
+  s += '</g><g class="axis"><line x1="' + P.m.l + '" y1="' + P.m.t + '" x2="' + P.m.l + '" y2="' + (P.m.t + P.ph) + '"/><line x1="' + P.m.l + '" y1="' + (P.m.t + P.ph) + '" x2="' + (P.m.l + P.pw) + '" y2="' + (P.m.t + P.ph) + '"/>';
+  xt.forEach(t => { s += '<text x="' + P.X(t) + '" y="' + (P.m.t + P.ph + 17) + '" text-anchor="middle">' + xf(t) + '</text>'; });
+  yt.forEach(t => { s += '<text x="' + (P.m.l - 7) + '" y="' + (P.Y(t) + 4) + '" text-anchor="end">' + yf(t) + '</text>'; });
+  if (xl) s += '<text class="title" x="' + (P.m.l + P.pw / 2) + '" y="' + (P.H - 8) + '" text-anchor="middle">' + xl + '</text>';
+  if (yl) s += '<text class="title" transform="translate(14 ' + (P.m.t + P.ph / 2) + ') rotate(-90)" text-anchor="middle">' + yl + '</text>';
+  return s + '</g>';
+}
+const clip = (P, inner) => '<g clip-path="url(#clip_' + P.id + ')">' + inner + '</g>';
+function path(P, f, x0, x1, n, attr){
+  let d = '', pen = false;
+  for (let i = 0; i <= n; i++){
+    const x = x0 + (x1 - x0) * i / n, y = f(x);
+    if (!isFinite(y)) { pen = false; continue; }
+    d += (pen ? 'L' : 'M') + P.X(x).toFixed(1) + ' ' + P.Y(Math.max(-1e5, Math.min(1e5, y))).toFixed(1) + ' '; pen = true;
+  }
+  return d ? '<path d="' + d + '" fill="none" ' + attr + '/>' : '';
+}
+const seg = (P, x1, y1, x2, y2, attr) => '<line x1="' + P.X(x1).toFixed(1) + '" y1="' + P.Y(y1).toFixed(1) + '" x2="' + P.X(x2).toFixed(1) + '" y2="' + P.Y(y2).toFixed(1) + '" ' + attr + '/>';
+const vline = (P, x, attr) => seg(P, x, P.yr[0], x, P.yr[1], attr);
+const hline = (P, y, attr) => seg(P, P.xr[0], y, P.xr[1], y, attr);
+const txt = (px, py, str, attr) => '<text x="' + px + '" y="' + py + '" ' + (attr || '') + '>' + str + '</text>';
+/** Data point. cls 0 = blue circle, 1 = vermilion diamond, 'n' = neutral circle. opts: hollow, title, dx, dy */
+function pt(P, x, y, cls, o){
+  o = o || {};
+  const cx = P.X(x) + (o.dx || 0), cy = P.Y(y) + (o.dy || 0);
+  const col = cls === 0 ? 'var(--c0)' : cls === 1 ? 'var(--c1)' : 'var(--data)';
+  const fill = o.hollow ? '#fff' : col, sw = o.hollow ? 2.6 : 1.5, stroke = o.hollow ? col : '#fff';
+  const t = o.title ? '<title>' + o.title + '</title>' : '';
+  if (cls === 1) { const r = 8; return '<polygon points="' + cx + ',' + (cy - r) + ' ' + (cx + r) + ',' + cy + ' ' + cx + ',' + (cy + r) + ' ' + (cx - r) + ',' + cy + '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '">' + t + '</polygon>'; }
+  return '<circle cx="' + cx + '" cy="' + cy + '" r="6.5" fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + sw + '">' + t + '</circle>';
+}
+const marker = (P, x, y, color) => '<circle cx="' + P.X(x) + '" cy="' + P.Y(Math.max(-1e5, Math.min(1e5, y))) + '" r="10" fill="none" stroke="' + color + '" stroke-width="3.5"/><circle cx="' + P.X(x) + '" cy="' + P.Y(Math.max(-1e5, Math.min(1e5, y))) + '" r="3.5" fill="' + color + '"/>';
+const ring = (P, x, y, dy) => '<circle cx="' + P.X(x) + '" cy="' + (P.Y(y) + (dy || 0)) + '" r="13" fill="none" stroke="#111" stroke-width="2" stroke-dasharray="4 3"/>';
+function legend(P, items, o){
+  o = o || {};
+  const wd = Math.max.apply(null, items.map(i => i.t.length)) * 6.4 + 52, x0 = o.right ? P.m.l + P.pw - wd - 6 : P.m.l + 10, y0 = P.m.t + 8;
+  let s = '<g class="legend"><rect x="' + (x0 - 6) + '" y="' + (y0 - 4) + '" width="' + wd + '" height="' + (items.length * 18 + 6) + '" rx="6"/>';
+  items.forEach((it, i) => {
+    const y = y0 + i * 18 + 8; let sym;
+    if (it.k === 'line') sym = '<line x1="' + x0 + '" y1="' + y + '" x2="' + (x0 + 24) + '" y2="' + y + '" stroke="' + it.c + '" stroke-width="3"/>';
+    else if (it.k === 'dash') sym = '<line x1="' + x0 + '" y1="' + y + '" x2="' + (x0 + 24) + '" y2="' + y + '" stroke="' + it.c + '" stroke-width="2.5" stroke-dasharray="5 3"/>';
+    else if (it.k === 'c1') sym = '<polygon points="' + (x0 + 12) + ',' + (y - 6) + ' ' + (x0 + 18) + ',' + y + ' ' + (x0 + 12) + ',' + (y + 6) + ' ' + (x0 + 6) + ',' + y + '" fill="var(--c1)"/>';
+    else if (it.k === 'c0') sym = '<circle cx="' + (x0 + 12) + '" cy="' + y + '" r="5" fill="var(--c0)"/>';
+    else if (it.k === 'hollow') sym = '<circle cx="' + (x0 + 12) + '" cy="' + y + '" r="5" fill="#fff" stroke="var(--data)" stroke-width="2.4"/>';
+    else sym = '<circle cx="' + (x0 + 12) + '" cy="' + y + '" r="5" fill="var(--data)"/>';
+    s += sym + '<text x="' + (x0 + 30) + '" y="' + (y + 4) + '">' + it.t + '</text>';
+  });
+  return s + '</g>';
+}
+function draw(svgId, html, label, sumId){
+  const s = $(svgId); s.innerHTML = html; if (label) s.setAttribute('aria-label', label);
+  if (sumId && $(sumId)) $(sumId).textContent = label;
+}
+const svgX = (svg, ev, W) => { const r = svg.getBoundingClientRect(); return (ev.clientX - r.left) / r.width * W; };
+
+/* =====================================================================
+   SECTION 4 — DATA
+   ===================================================================== */
+const H = [1, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 7, 8];
+const SCORE = [34, 41, 45, 48, 56, 52, 62, 58, 66, 71, 80, 88];
+const PASS = [0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1];
+const scoreData = H.map((x, i) => ({ x, y: SCORE[i] }));
+const passData = H.map((x, i) => ({ x, y: PASS[i] }));
+const scoreFit = fitLine(H, SCORE);
+const linFit = fitLine(H, PASS);
+const logFit = fitLogistic(passData);
+const D8 = {
+  approx: { x: [-3, -2, -1, -0.5, 0.5, 1, 2, 3], y: [0, 0, 0, 1, 0, 1, 1, 1] },
+  sep:    { x: [-3, -2, -1, -0.5, 0.5, 1, 2, 3], y: [0, 0, 0, 0, 1, 1, 1, 1] }
+};
+const toData = d => d.x.map((x, i) => ({ x, y: d.y[i] }));
+
+/** Small deterministic PRNG (mulberry32) so datasets are reproducible. */
+function rng(seed){ return function(){ seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function gauss(r){ let u = 0; while (u === 0) u = r(); const v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+function makeDataset(kind){
+  const r = rng(kind === 'sep' ? 11 : kind === 'ovl' ? 22 : 33);
+  const cl = v => Math.round(Math.max(-5.8, Math.min(5.8, v)) * 100) / 100;
+  const u = (a, b) => a + (b - a) * r();
+  const train = [], test = [];
+  if (kind === 'sep'){
+    for (let i = 0; i < 10; i++){ train.push({ x: cl(u(-4, -0.8)), y: 0 }); train.push({ x: cl(u(0.8, 4)), y: 1 }); }
+    for (let i = 0; i < 5; i++){ test.push({ x: cl(u(-4, -0.8)), y: 0 }); test.push({ x: cl(u(0.8, 4)), y: 1 }); }
+  } else if (kind === 'ovl'){
+    for (let i = 0; i < 14; i++){ train.push({ x: cl(-1 + 1.3 * gauss(r)), y: 0 }); train.push({ x: cl(1 + 1.3 * gauss(r)), y: 1 }); }
+    for (let i = 0; i < 8; i++){ test.push({ x: cl(-1 + 1.3 * gauss(r)), y: 0 }); test.push({ x: cl(1 + 1.3 * gauss(r)), y: 1 }); }
+  } else {
+    for (let i = 0; i < 36; i++) train.push({ x: cl(-1 + 1.1 * gauss(r)), y: 0 });
+    for (let i = 0; i < 6; i++) train.push({ x: cl(1.5 + 1.0 * gauss(r)), y: 1 });
+    for (let i = 0; i < 18; i++) test.push({ x: cl(-1 + 1.1 * gauss(r)), y: 0 });
+    for (let i = 0; i < 4; i++) test.push({ x: cl(1.5 + 1.0 * gauss(r)), y: 1 });
+  }
+  return { train, test };
+}
+
+/* =====================================================================
+   SECTION 5 — TEACHING WIDGETS: glossary, predict-first, quizzes
+   ===================================================================== */
+const G = {
+  feature: ['Feature', 'An input measurement the model uses, e.g. hours studied.'],
+  label: ['Label (target)', 'The answer we want to predict and that the training data provides, e.g. pass = 1, fail = 0.'],
+  regression: ['Regression', 'Predicting a number on a continuous scale, like an exam score.'],
+  classification: ['Classification', 'Predicting a category, like pass or fail.'],
+  logit: ['Linear score (logit)', 'The raw score z = w·x + b before squashing. In logistic regression it equals the log-odds.'],
+  sigmoid: ['Sigmoid', 'The function σ(z) = 1/(1+e^(−z)) that maps any real number to a value strictly between 0 and 1.'],
+  probability: ['Probability', 'A number from 0 to 1 saying how likely something is. A model’s probabilities are estimates and may not be perfectly calibrated.'],
+  weight: ['Weight', 'The number w that multiplies the input; it sets the direction and steepness of the relationship.'],
+  bias: ['Bias', 'The number b added to the score; it is the score when x = 0 and shifts the curve sideways.'],
+  threshold: ['Threshold', 'The cut-off that turns a probability into a class: predict 1 if p ≥ threshold. It is chosen by you, not learned by training.'],
+  boundary: ['Decision boundary', 'The set of inputs where the prediction switches from one class to the other (where p equals the threshold).'],
+  loss: ['Loss function', 'A number measuring how wrong the predictions are; training tries to make it small.'],
+  bce: ['Binary cross-entropy', 'The standard loss for yes/no models: −[y ln p + (1−y) ln(1−p)]. It is the negative log-likelihood of the labels.'],
+  gradient: ['Gradient', 'The slope of the loss with respect to each parameter: it tells which way to nudge w and b to increase the loss fastest. We step the opposite way.'],
+  gd: ['Gradient descent', 'Repeatedly updating parameters a small step against the gradient to reduce the loss.'],
+  lr: ['Learning rate', 'The step size α in gradient descent. Too small is slow; too large can overshoot and bounce.'],
+  odds: ['Odds', 'p/(1−p). A probability of 0.75 means odds of 3 to 1.'],
+  logodds: ['Log-odds', 'ln(p/(1−p)). Logistic regression models this quantity as a straight line: z = w·x + b.'],
+  epoch: ['Epoch / iteration', 'One full pass of updates. Here each batch gradient-descent step uses all the data once, so one step is one epoch.'],
+  trainEval: ['Training vs evaluation', 'Training data is used to fit w and b. Evaluation data is held out to estimate performance on new data; training metrics alone can be overly optimistic.']
+};
+const GL = ['feature','label','regression','classification','logit','sigmoid','probability','weight','bias','threshold','boundary','loss','bce','gradient','gd','lr','odds','logodds','epoch','trainEval'];
+G.regression = ['Regression', 'Predicting a number on a continuous scale, like an exam score.'];
+
+const PRED = {
+  p_slope: ['Predict first: what will happen to the line if the slope becomes negative?', 'It tilts downward: every extra hour lowers ŷ. Against this study data a negative slope fits badly, which you can see because the residuals and the MSE jump up.'],
+  p_z0: ['Predict first: what does the sigmoid output when z = 0?', 'Exactly 0.5. Since e^0 = 1, σ(0) = 1/(1+1) = 0.5: a score of 0 means “equally likely either way”.'],
+  p_bias: ['Predict first: with a positive weight, what happens to the probability curve if you increase b?', 'The curve slides left. b raises the score at every x (z = wx + b), so every input gets a higher probability, and the 50% point x = −b/w moves left. If w = 0 there is no 50% point to move: p is a constant σ(b).'],
+  p_thr: ['Predict first: if you raise the threshold, what happens to the number of emails predicted as spam?', 'It generally goes down (or stays the same): fewer emails clear the higher bar. Precision tends to rise and recall tends to fall. The model itself did not change.'],
+  p_loss: ['Predict first: what happens to the loss when a wrong prediction becomes more confident?', 'It grows, and fast. For y = 1 the loss is −ln(p): p = 0.1 gives 2.30, p = 0.01 gives 4.61, p = 0.001 gives 6.91. Confident mistakes are punished hardest.'],
+  p_lr: ['Predict first: what happens if the learning rate is too large?', 'Steps overshoot the valley. The loss can zig-zag or even rise instead of fall. Try α = 3.0 below and watch chart B.']
+};
+const QUIZ = [
+  { id: 'q1', t: 'mc', q: 'Why is predicting an exam score different from predicting pass/fail?', o: ['A score is a number on a continuous scale; pass/fail is one of two categories.', 'Pass/fail needs more data than a score.', 'A score cannot be predicted from hours studied.', 'They are the same task with different names.'], a: 0, why: 'Numbers on a continuous scale → regression. Categories → classification, where we usually predict a probability of one class.', hint: 'Think about what kinds of values the answer can take.' },
+  { id: 'q2', t: 'num', q: 'A line has slope m = 8 and intercept b = 12. What is ŷ when x = 4?', a: 44, tol: 0.01, why: 'ŷ = 8 × 4 + 12 = 32 + 12 = 44.', hint: 'Multiply the slope by x first, then add b.' },
+  { id: 'q3', t: 'tf', q: 'True or false: a straight line fitted to 0/1 labels can output values below 0 or above 1.', a: true, why: 'True. A non-flat line keeps going up or down, so far enough away it leaves [0, 1]. That is why we want a squashing function.', hint: 'Use the “Extend the input range” button and look at the left chart.' },
+  { id: 'q4', t: 'num', q: 'What is σ(0)? (Enter a decimal.)', a: 0.5, tol: 0.001, why: 'σ(0) = 1/(1 + e^0) = 1/2 = 0.5.', hint: 'e raised to the power 0 equals 1.' },
+  { id: 'q5', t: 'mc', q: 'In logistic regression with a negative weight w, what happens to the predicted probability of class 1 as x increases?', o: ['It tends to decrease.', 'It increases.', 'It stays at 0.5.', 'It jumps straight to 1.'], a: 0, why: 'z = wx + b falls as x rises when w < 0, and σ is increasing, so p falls.', hint: 'Drag w below zero in Module 5 and watch Graph B.' },
+  { id: 'q6', t: 'num', q: 'With w = 2, b = −4 and x = 3, what is the score z = w·x + b?', a: 2, tol: 0.01, why: 'z = 2 × 3 + (−4) = 2. (Then p = σ(2) ≈ 0.88.)', hint: 'Substitute the numbers, remember b is negative.' },
+  { id: 'q7', t: 'mc', q: 'You lower the threshold from 0.5 to 0.3 (same model). What generally happens?', o: ['More observations are predicted as class 1.', 'The weights change.', 'Fewer observations are predicted as class 1.', 'Nothing can change.'], a: 0, why: 'More probabilities clear a lower bar, so more are predicted positive. Recall tends to rise; precision may fall.', hint: 'Which probabilities are ≥ 0.3 but < 0.5?' },
+  { id: 'q8', t: 'tf', q: 'True or false: changing the decision threshold retrains the model.', a: false, why: 'False. The threshold is applied after the model produces probabilities; w and b are untouched.', hint: 'Which settings does gradient descent update?' },
+  { id: 'q9', t: 'mc', q: 'Here p is the predicted probability of class 1. Which prediction has the LARGEST cross-entropy loss?', o: ['Actual 1, p = 0.9', 'Actual 1, p = 0.5', 'Actual 0, p = 0.1', 'Actual 0, p = 0.9'], a: 3, why: 'Actual 0 with p = 0.9 is confidently wrong: loss = −ln(0.1) ≈ 2.30. The others are 0.105, 0.693, 0.105.', hint: 'Look for the confident prediction pointing at the wrong class.' },
+  { id: 'q10', t: 'mc', q: 'At some step ∂J/∂w is positive and α > 0. After w ← w − α·∂J/∂w, what happens to w?', o: ['It decreases.', 'It increases.', 'It stays the same.', 'It becomes zero.'], a: 0, why: 'A positive gradient means the loss rises as w rises, so we move w the other way (down).', hint: 'Substitute a positive gradient into the minus sign.' },
+  { id: 'q11', t: 'num', q: 'With w = 2, b = −6 and threshold 0.5, at what x is the decision boundary?', a: 3, tol: 0.01, why: 'Set 2x − 6 = 0 → x = −b/w = 3.', hint: 'Solve w·x + b = 0.' },
+  { id: 'q12', t: 'tf', q: 'True or false: high training accuracy proves the model will do equally well on unseen data.', a: false, why: 'False. Training accuracy measures fit to data the model has already seen; use held-out data (and even then it is only an estimate).', hint: 'Remember the hollow evaluation points in the playground.' }
+];
+const quizDone = new Set();
+function buildQuizzes(){
+  document.querySelectorAll('.quiz').forEach(el => {
+    const q = QUIZ.find(x => x.id === el.dataset.id); if (!q) return;
+    const n = QUIZ.indexOf(q) + 1; let body = '';
+    if (q.t === 'mc') body = '<fieldset><legend class="sr">Answer options</legend>' + q.o.map((o, i) => '<label class="opt"><input type="radio" name="' + q.id + '" value="' + i + '"> ' + o + '</label>').join('') + '</fieldset>';
+    else if (q.t === 'tf') body = '<fieldset><legend class="sr">True or false</legend><label class="opt"><input type="radio" name="' + q.id + '" value="true"> True</label><label class="opt"><input type="radio" name="' + q.id + '" value="false"> False</label></fieldset>';
+    else body = '<label>Your answer: <input type="number" step="any" id="' + q.id + '_n" style="width:110px"></label>';
+    el.innerHTML = '<p><b>Knowledge check ' + n + '.</b> ' + q.q + '</p>' + body + '<div class="btnrow"><button class="check">Check answer</button><button class="ghost retry" hidden>Try again</button></div><p class="fb" aria-live="polite"></p>';
+    const fb = el.querySelector('.fb'), retry = el.querySelector('.retry'), check = el.querySelector('.check');
+    check.addEventListener('click', () => {
+      let ok = null;
+      if (q.t === 'num') { const v = parseFloat($(q.id + '_n').value); if (isNaN(v)) { fb.className = 'fb warn'; fb.textContent = 'Type a number first.'; return; } ok = Math.abs(v - q.a) <= q.tol; }
+      else { const c = el.querySelector('input[type=radio]:checked'); if (!c) { fb.className = 'fb warn'; fb.textContent = 'Pick an answer first.'; return; } ok = q.t === 'mc' ? (+c.value === q.a) : ((c.value === 'true') === q.a); }
+      if (ok) { fb.className = 'fb good'; fb.textContent = '✔ Correct. ' + q.why; quizDone.add(q.id); retry.hidden = true; updateProgress(); }
+      else { fb.className = 'fb warn'; fb.textContent = '✖ Not quite. Hint: ' + q.hint; retry.hidden = false; }
+    });
+    retry.addEventListener('click', () => {
+      el.querySelectorAll('input[type=radio]').forEach(i => { i.checked = false; });
+      const ni = el.querySelector('input[type=number]'); if (ni) ni.value = '';
+      fb.textContent = ''; retry.hidden = true;
+    });
+  });
+}
+function buildPredicts(){
+  document.querySelectorAll('.predict').forEach(el => {
+    const p = PRED[el.dataset.p]; if (!p) return;
+    el.innerHTML = '<p><b>' + p[0] + '</b></p><button class="ghost" aria-expanded="false">Reveal explanation</button><p class="fb" hidden></p>';
+    const btn = el.querySelector('button'), fb = el.querySelector('.fb'); fb.textContent = p[1];
+    btn.addEventListener('click', () => { const open = fb.hidden; fb.hidden = !open; btn.setAttribute('aria-expanded', open); btn.textContent = open ? 'Hide explanation' : 'Reveal explanation'; });
+  });
+}
+function buildGlossary(){
+  document.querySelectorAll('.term').forEach(b => {
+    b.setAttribute('role', 'button'); b.setAttribute('tabindex', '0'); b.setAttribute('aria-expanded', 'false');
+    const toggle = () => {
+      const nx = b.nextElementSibling;
+      if (nx && nx.classList.contains('gdef')) { nx.remove(); b.setAttribute('aria-expanded', 'false'); return; }
+      const g = G[b.dataset.g]; if (!g) return;
+      const s = document.createElement('span'); s.className = 'gdef'; s.setAttribute('role', 'note'); s.innerHTML = '<b>' + g[0] + ':</b> ' + g[1];
+      b.after(s); b.setAttribute('aria-expanded', 'true');
+    };
+    b.addEventListener('click', toggle);
+    b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+  });
+  $('gl_list').innerHTML = GL.map(k => '<dt><b>' + G[k][0] + '</b></dt><dd style="margin:0 0 .6em 0">' + G[k][1] + '</dd>').join('');
+}
+
+/* =====================================================================
+   SECTION 6 — SHARED TRAINING STATE (used by Modules 8 and 10)
+   ===================================================================== */
+const MAXIT = 5000;
+function newModel(getData){ return { w: 0, b: 0, lr: 0.5, speed: 8, iter: 0, hist: [], last: null, running: false, raf: 0, msg: '', getData }; }
+function resetHistory(m){ const l = datasetLoss(m.getData(), m.w, m.b); m.iter = 0; m.hist = [l === null ? NaN : l]; m.last = null; }
+/** Apply one real gradient-descent step to model m. Returns false if training cannot continue. */
+function stepModel(m){
+  const data = m.getData();
+  if (!data.length) { m.msg = 'No training data: add points first.'; return false; }
+  if (m.iter >= MAXIT) { m.msg = 'Reached the safety limit of ' + MAXIT + ' steps — reset to train again.'; return false; }
+  const r = gradientDescentStep(data, m.w, m.b, m.lr);
+  if (!isFinite(r.w) || !isFinite(r.b) || !isFinite(r.lossAfter)) { m.msg = 'Numbers became non-finite; training stopped. Try a smaller learning rate.'; return false; }
+  m.last = r; m.w = r.w; m.b = r.b; m.iter++; m.hist.push(r.lossAfter); m.msg = '';
+  return true;
+}
+function pauseModel(m){ m.running = false; cancelAnimationFrame(m.raf); }
+function startAuto(m, render){
+  if (m.running) return;
+  m.running = true; let last = performance.now(), acc = 0;
+  const tick = now => {
+    if (!m.running) return;
+    acc += (now - last) / 1000 * m.speed; last = now;
+    let n = Math.min(Math.floor(acc), 40); acc = Math.min(acc - n, 1);
+    for (let i = 0; i < n; i++) if (!stepModel(m)) { m.running = false; break; }
+    render();
+    if (m.running) m.raf = requestAnimationFrame(tick);
+  };
+  m.raf = requestAnimationFrame(tick);
+}
+/** Loss-vs-iteration line chart; handles NaN, resets and long histories. */
+function lossChart(svgId, m, W, Hh){
+  const hist = m.hist, ok = hist.filter(v => isFinite(v));
+  const xmax = Math.max(10, hist.length - 1), ymax = ok.length ? Math.max.apply(null, ok) * 1.12 : 1;
+  const P = plot('l' + svgId, W, Hh, [0, xmax], [0, Math.max(ymax, 0.05)]);
+  let s = axes(P, 'Iteration (steps taken)', 'Average loss J');
+  const stride = Math.max(1, Math.floor(hist.length / 400));
+  let d = '';
+  for (let i = 0; i < hist.length; i += stride) if (isFinite(hist[i])) d += (d ? 'L' : 'M') + P.X(i).toFixed(1) + ' ' + P.Y(hist[i]).toFixed(1) + ' ';
+  const lastI = hist.length - 1;
+  if (lastI % stride !== 0 && isFinite(hist[lastI])) d += 'L' + P.X(lastI).toFixed(1) + ' ' + P.Y(hist[lastI]).toFixed(1) + ' ';
+  if (d) s += clip(P, '<path d="' + d + '" fill="none" stroke="var(--loss)" stroke-width="2.5"/>');
+  if (isFinite(hist[lastI])) s += marker(P, lastI, hist[lastI], 'var(--loss)');
+  s += legend(P, [{ k: 'line', c: 'var(--loss)', t: 'Average loss J' }], { right: true });
+  return s;
+}
+
+/* =====================================================================
+   SECTION 7 — MODULE RENDERERS
+   ===================================================================== */
+/* ---------- Module 1 ---------- */
+let m1mode = 'reg';
+function renderM1(){
+  const x = val('m1_x'); let s, out, sum;
+  if (m1mode === 'reg'){
+    const P = plot('c1', 640, 340, [0, 10], [0, 110]), yhat = scoreFit.m * x + scoreFit.b;
+    s = axes(P, 'Hours studied (x)', 'Exam score (points)');
+    s += clip(P, path(P, t => scoreFit.m * t + scoreFit.b, 0, 10, 2, 'stroke="var(--reg)" stroke-width="3"') + seg(P, x, 0, x, yhat, 'stroke="var(--reg)" stroke-dasharray="4 4"') + seg(P, 0, yhat, x, yhat, 'stroke="var(--reg)" stroke-dasharray="4 4"'));
+    scoreData.forEach(d => { s += pt(P, d.x, d.y, 'n', { title: d.x + ' h → ' + d.y + ' points' }); });
+    s += marker(P, x, yhat, 'var(--reg)') + legend(P, [{ k: 'dot', t: 'Student: hours vs score' }, { k: 'line', c: 'var(--reg)', t: 'Fitted line (prediction)' }]);
+    sum = 'Predicting a score: at ' + fmt(x, 1) + ' hours the fitted line predicts ' + fmt(yhat, 1) + ' points.';
+    out = '<p><b>Input:</b> x = ' + fmt(x, 1) + ' hours</p><p><b>Model output:</b> ŷ = ' + fmt(yhat, 1) + ' points</p><p><b>Meaning:</b> a number on a continuous scale — 57.3 is as valid as 57.</p>';
+  } else {
+    const P = plot('c1', 640, 340, [0, 10], [-0.15, 1.15]), p = sigmoid(logFit.w * x + logFit.b);
+    s = axes(P, 'Hours studied (x)', 'Outcome (0 = fail, 1 = pass)', { yticks: [0, 0.5, 1], yfmt: v => v === 0 ? '0 fail' : v === 1 ? '1 pass' : '0.5' });
+    s += clip(P, path(P, t => sigmoid(logFit.w * t + logFit.b), 0, 10, 160, 'stroke="var(--prob)" stroke-width="3" stroke-dasharray="7 4"') + seg(P, x, -0.15, x, p, 'stroke="var(--prob)" stroke-dasharray="4 4"'));
+    passData.forEach(d => { s += pt(P, d.x, d.y, d.y, { title: d.x + ' h → ' + (d.y ? 'passed' : 'failed') }); });
+    s += marker(P, x, p, 'var(--prob)') + legend(P, [{ k: 'c0', t: 'Failed (0)' }, { k: 'c1', t: 'Passed (1)' }, { k: 'dash', c: 'var(--prob)', t: 'Preview: P(pass)' }], { right: true });
+    sum = 'Predicting pass or fail: at ' + fmt(x, 1) + ' hours the preview model gives a ' + pct(p) + ' chance of passing.';
+    out = '<p><b>Input:</b> x = ' + fmt(x, 1) + ' hours</p><p><b>Model output:</b> P(pass) ≈ ' + fmt(p, 3) + ' (' + pct(p) + ')</p><p><b>Meaning:</b> the goal changed — instead of a score we want a probability between 0 and 1, which a threshold can turn into pass or fail.</p>';
+  }
+  draw('ch1', s, sum, 'sum1'); $('out1').innerHTML = out;
+}
+
+/* ---------- Module 2 ---------- */
+function renderM2(){
+  const m = val('m2_m'), b = val('m2_b'), x = val('m2_x'), yhat = m * x + b;
+  const P = plot('c2', 640, 340, [0, 10], [-20, 120]);
+  let s = axes(P, 'Hours studied (x)', 'Exam score (points)'), inner = path(P, t => m * t + b, 0, 10, 2, 'stroke="var(--reg)" stroke-width="3"');
+  const resid = H.map((h, i) => SCORE[i] - (m * h + b));
+  if ($('m2_resid').checked) H.forEach((h, i) => { inner += seg(P, h, SCORE[i], h, m * h + b, 'stroke="var(--loss)" stroke-width="2" stroke-dasharray="3 3"'); });
+  inner += seg(P, x, -20, x, yhat, 'stroke="var(--reg)" stroke-dasharray="4 4"');
+  s += clip(P, inner);
+  scoreData.forEach(d => { s += pt(P, d.x, d.y, 'n', { title: d.x + ' h → ' + d.y }); });
+  s += marker(P, x, yhat, 'var(--reg)');
+  s += legend(P, [{ k: 'dot', t: 'Observed score' }, { k: 'line', c: 'var(--reg)', t: 'Line ŷ = m·x + b' }, { k: 'dash', c: 'var(--loss)', t: 'Residual' }]);
+  const sse = resid.reduce((a, r) => a + r * r, 0), mse = sse / H.length;
+  draw('ch2', s, 'Line with slope ' + fmt(m, 1) + ' and intercept ' + fmt(b, 1) + ' predicts ' + fmt(yhat, 1) + ' at x = ' + fmt(x, 1) + '. Mean squared error ' + fmt(mse, 1) + '.', 'sum2');
+  $('out2').innerHTML = '<div>ŷ = m × x + b</div><div>ŷ = ' + num(m) + ' × ' + sub(x) + ' + ' + sub(b) + ' = ' + num(yhat) + '</div><div>MSE = ' + fmt(mse, 1) + '</div>';
+  $('unb2').textContent = 'at x = 100 hours this same line predicts ' + num(m * 100 + b, 1) + ' points — nothing stops it from going past 100 (or below 0).';
+  let t = '<thead><tr><th>x</th><th>Observed y</th><th>Predicted ŷ</th><th>Residual y−ŷ</th><th>(y−ŷ)²</th></tr></thead><tbody>';
+  H.forEach((h, i) => { t += '<tr><td>' + h + '</td><td>' + SCORE[i] + '</td><td>' + fmt(m * h + b, 1) + '</td><td>' + fmt(resid[i], 1) + '</td><td>' + fmt(resid[i] * resid[i], 1) + '</td></tr>'; });
+  $('mse2').innerHTML = t + '<tr><th colspan="4" class="l">Sum / Mean (÷' + H.length + ')</th><th>' + fmt(sse, 1) + ' / ' + fmt(mse, 1) + '</th></tr></tbody>';
+}
+
+/* ---------- Module 3 ---------- */
+let m3ext = false;
+function renderM3(){
+  const xr = m3ext ? [-15, 30] : [0, 10], x = val('m3_x');
+  const f = t => linFit.m * t + linFit.b, g = t => sigmoid(logFit.w * t + logFit.b);
+  const lo = Math.min(-0.4, f(xr[0]), f(xr[1])), hi = Math.max(1.4, f(xr[0]), f(xr[1])), pad = (hi - lo) * 0.06;
+  const PA = plot('c3a', 560, 330, xr, [lo - pad, hi + pad]);
+  let s = axes(PA, 'Hours studied (x)', 'Linear model output');
+  const y1 = PA.Y(1), y0 = PA.Y(0);
+  if (y1 > PA.m.t) s += '<rect x="' + PA.m.l + '" y="' + PA.m.t + '" width="' + PA.pw + '" height="' + (y1 - PA.m.t) + '" fill="url(#hatch_c3a)"/>' + txt(PA.m.l + 8, PA.m.t + 16, 'above 1 → not a probability', 'class="note-t"');
+  if (y0 < PA.m.t + PA.ph) s += '<rect x="' + PA.m.l + '" y="' + y0 + '" width="' + PA.pw + '" height="' + (PA.m.t + PA.ph - y0) + '" fill="url(#hatch_c3a)"/>' + txt(PA.m.l + 8, PA.m.t + PA.ph - 8, 'below 0 → not a probability', 'class="note-t"');
+  s += hline(PA, 0, 'stroke="#555" stroke-width="1.3"') + hline(PA, 1, 'stroke="#555" stroke-width="1.3"');
+  s += clip(PA, path(PA, f, xr[0], xr[1], 2, 'stroke="var(--reg)" stroke-width="3"'));
+  passData.forEach(d => { s += pt(PA, d.x, d.y, d.y, { title: d.x + ' h → ' + (d.y ? 'passed' : 'failed') }); });
+  const yl = f(x), bad = yl < 0 || yl > 1, col = bad ? 'var(--loss)' : 'var(--reg)';
+  s += marker(PA, x, yl, col) + legend(PA, [{ k: 'line', c: 'var(--reg)', t: 'Straight-line fit' }, { k: 'c0', t: 'Failed' }, { k: 'c1', t: 'Passed' }], { right: true });
+  $('ch3a').innerHTML = s;
+  const PB = plot('c3b', 560, 330, xr, [-0.1, 1.1]);
+  let s2 = axes(PB, 'Hours studied (x)', 'Probability of passing', { yticks: [0, 0.25, 0.5, 0.75, 1] });
+  s2 += hline(PB, 0, 'stroke="#555" stroke-width="1.3"') + hline(PB, 1, 'stroke="#555" stroke-width="1.3"');
+  s2 += clip(PB, path(PB, g, xr[0], xr[1], 240, 'stroke="var(--prob)" stroke-width="3"'));
+  passData.forEach(d => { s2 += pt(PB, d.x, d.y, d.y); });
+  const pg = g(x);
+  s2 += marker(PB, x, pg, 'var(--prob)') + legend(PB, [{ k: 'line', c: 'var(--prob)', t: 'Probability-like curve' }], { right: true });
+  $('ch3b').innerHTML = s2;
+  const status = yl < 0 ? '<span class="badge bad">✖ below 0 — impossible as a probability</span>' : yl > 1 ? '<span class="badge bad">✖ above 1 — impossible as a probability</span>' : '<span class="badge ok">✔ between 0 and 1 — can be read as a probability</span>';
+  $('out3a').innerHTML = 'At x = ' + fmt(x, 1) + ': ŷ = ' + fmt(yl, 3) + '<br>' + status;
+  $('out3b').innerHTML = 'At x = ' + fmt(x, 1) + ': p = ' + fmt(pg, 4) + '<br><span class="badge ok">✔ always strictly between 0 and 1</span>';
+  const sm = 'At x = ' + fmt(x, 1) + ' the straight line outputs ' + fmt(yl, 3) + (bad ? ' (outside [0, 1])' : ' (inside [0, 1])') + ' while the curve gives ' + fmt(pg, 4) + '.';
+  $('sum3').textContent = sm; $('ch3a').setAttribute('aria-label', 'Straight-line fit. ' + sm); $('ch3b').setAttribute('aria-label', 'Probability-like curve. ' + sm);
+}
+
+/* ---------- Module 4 ---------- */
+let m4anim = 0;
+function renderM4(){
+  const z = val('m4_z'), e = Math.exp(-z), den = 1 + e, p = sigmoid(z);
+  const P = plot('c4', 640, 360, [-10, 10], [-0.02, 1.02], { l: 60 });
+  let s = axes(P, 'Score z', 'Predicted probability σ(z)', { yticks: [0, 0.25, 0.5, 0.75, 1] });
+  s += hline(P, 0.5, 'stroke="#9aa3b8" stroke-dasharray="3 4"') + vline(P, 0, 'stroke="#9aa3b8" stroke-dasharray="3 4"');
+  s += hline(P, 0, 'stroke="#555"') + hline(P, 1, 'stroke="#555"');
+  s += clip(P, path(P, sigmoid, -10, 10, 240, 'stroke="var(--prob)" stroke-width="3.5"'));
+  s += seg(P, z, 0, z, p, 'stroke="var(--prob)" stroke-width="2" stroke-dasharray="5 4"') + seg(P, -10, p, z, p, 'stroke="var(--prob)" stroke-width="2" stroke-dasharray="5 4"');
+  s += marker(P, z, p, 'var(--prob)') + txt(P.X(z) + (z > 5 ? -12 : 12), P.Y(p) + (p > 0.5 ? 22 : -14), 'σ(' + fmt(z, 2) + ') = ' + fmt(p, 4), 'font-size="13" font-weight="700" text-anchor="' + (z > 5 ? 'end' : 'start') + '" fill="#4a2468"');
+  s += legend(P, [{ k: 'line', c: 'var(--prob)', t: 'σ(z) = 1/(1+e^(−z))' }], { right: true });
+  draw('ch4', s, 'Sigmoid curve: at z = ' + fmt(z, 2) + ' the output is ' + fmt(p, 4) + ', or ' + pct(p, 2) + '.', 'sum4');
+  $('out4').innerHTML = '<div>z = ' + num(z) + '</div><div>e^(−z) = ' + sci(e) + '</div><div>1 + e^(−z) = ' + fmt(den, 4) + '</div><div>σ(z) = 1 / ' + fmt(den, 4) + ' = ' + fmt(p, 4) + '</div><div>Probability = ' + pct(p, 2) + '</div>';
+  $('ins4').innerHTML =
+    '<div class="card"><b>σ(0) = 0.5</b><p class="readout">Computed now: σ(0) = ' + fmt(sigmoid(0), 4) + '. A score of 0 is a coin-flip.</p></div>' +
+    '<div class="card"><b>Symmetry: σ(−z) = 1 − σ(z)</b><p class="readout">z = ' + num(z) + ': σ(−z) = ' + fmt(sigmoid(-z), 4) + '; 1 − σ(z) = ' + fmt(1 - sigmoid(z), 4) + '.</p></div>' +
+    '<div class="card"><b>Always increasing</b><p class="readout">σ(' + num(z) + ') = ' + fmt(p, 4) + ' &lt; σ(' + num(z + 1) + ') = ' + fmt(sigmoid(z + 1), 4) + '. A bigger score never gives a smaller probability.</p></div>' +
+    '<div class="card"><b>Saturation</b><p class="readout">Distance from the nearest end (0 or 1) at this z: ' + sci(Math.min(p, 1 - p)) + '. Far from 0, the curve flattens out.</p></div>';
+}
+function animateZ(target){
+  cancelAnimationFrame(m4anim);
+  const start = val('m4_z');
+  if (reduceMotion()) { setSlider('m4_z', target); renderM4(); return; }
+  const t0 = performance.now(), dur = 600;
+  const tick = now => { const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3); setSlider('m4_z', start + (target - start) * e); renderM4(); if (k < 1) m4anim = requestAnimationFrame(tick); };
+  m4anim = requestAnimationFrame(tick);
+}
+function renderEx4(){
+  const z0 = val('ex4_z'), p0 = sigmoid(z0), p1 = sigmoid(z0 + 1), d = p1 - p0, slope = p0 * (1 - p0);
+  $('ex4_out').innerHTML = 'Start z = ' + num(z0, 1) + ' → p = ' + fmt(p0, 4) + '. After +1: z = ' + num(z0 + 1, 1) + ' → p = ' + fmt(p1, 4) + '. <b>Change in p = ' + sci(d) + '</b> (local slope σ(1−σ) = ' + sci(slope) + ').' +
+    '<div class="bar" style="width:' + Math.max(1, Math.min(100, d / 0.25 * 100)) + '%" role="img" aria-label="Relative size of the change"></div>' +
+    '<p>' + (slope > 0.15 ? 'Near the middle the curve is steep: a small score change moves the probability a lot.' : 'Out here the curve is flat (saturated): the same score change barely moves the probability.') + '</p>';
+}
+
+/* ---------- Module 5 ---------- */
+function renderM5(){
+  const w = val('m5_w'), b = val('m5_b'), x = val('m5_x'), t = val('m5_t');
+  const z = w * x + b, p = sigmoid(z), cls = predictClass(p, t), e = Math.exp(-z);
+  const xr = [-6, 6], zv = [w * -6 + b, w * 6 + b];
+  const zlo = Math.min(-4, zv[0], zv[1]) - 0.5, zhi = Math.max(4, zv[0], zv[1]) + 0.5;
+  const flat = Math.abs(w) < 1e-9, lt = logit(t), xb = flat ? null : (lt - b) / w;
+  const PA = plot('c5a', 640, 230, xr, [zlo, zhi]), PB = plot('c5b', 640, 250, xr, [-0.05, 1.05]);
+  let a = axes(PA, 'Input x', 'Score z = w·x + b');
+  a += hline(PA, 0, 'stroke="#555" stroke-width="1.3"') + hline(PA, lt, 'stroke="var(--thr)" stroke-dasharray="6 4" stroke-width="1.8"');
+  a += clip(PA, path(PA, v => w * v + b, -6, 6, 2, 'stroke="var(--reg)" stroke-width="3"') + seg(PA, x, zlo, x, z, 'stroke="#667" stroke-dasharray="3 3"'));
+  if (xb !== null && xb >= -6 && xb <= 6) a += vline(PA, xb, 'stroke="var(--thr)" stroke-dasharray="2 4"');
+  a += marker(PA, x, z, 'var(--reg)') + legend(PA, [{ k: 'line', c: 'var(--reg)', t: 'z = w·x + b' }, { k: 'dash', c: 'var(--thr)', t: 'z at threshold' }], { right: true });
+  let c = axes(PB, 'Input x (same axis as Graph A)', 'Probability p', { yticks: [0, 0.25, 0.5, 0.75, 1] });
+  c += hline(PB, t, 'stroke="var(--thr)" stroke-dasharray="6 4" stroke-width="1.8"');
+  c += clip(PB, path(PB, v => sigmoid(w * v + b), -6, 6, 240, 'stroke="var(--prob)" stroke-width="3.5"') + seg(PB, x, -0.05, x, p, 'stroke="#667" stroke-dasharray="3 3"'));
+  if (xb !== null && xb >= -6 && xb <= 6) c += vline(PB, xb, 'stroke="var(--thr)" stroke-dasharray="2 4"');
+  c += marker(PB, x, p, 'var(--prob)') + legend(PB, [{ k: 'line', c: 'var(--prob)', t: 'p = σ(z)' }, { k: 'dash', c: 'var(--thr)', t: 'threshold / boundary' }], { right: true });
+  $('ch5a').innerHTML = a; $('ch5b').innerHTML = c;
+  const bTxt = flat ? 'w = 0, so z = b for every x: the probability is a flat line at σ(b) = ' + fmt(sigmoid(b), 3) + ' and no finite boundary exists (every x gets class ' + predictClass(sigmoid(b), t) + ').'
+    : 'the decision boundary (p = t) is at x = ' + fmt(xb, 2) + (Math.abs(t - 0.5) < 1e-9 ? ' (= −b/w, where p = 0.5)' : ' (where w·x + b = logit(t) = ' + fmt(lt, 2) + ')') + '.';
+  const sm = 'At x = ' + fmt(x, 2) + ': z = ' + fmt(z, 3) + ', p = ' + fmt(p, 4) + ', class ' + cls + '; ' + bTxt;
+  $('sum5').textContent = sm; $('ch5a').setAttribute('aria-label', 'Linear score chart. ' + sm); $('ch5b').setAttribute('aria-label', 'Probability chart. ' + sm);
+  $('pipe5').innerHTML = '<div class="box">Input x<b>' + num(x) + '</b></div><span class="arrow">→</span><div class="box">Linear score z<b>' + fmt(z, 3) + '</b></div><span class="arrow">→</span><div class="box">Sigmoid σ<b>1/(1+e^−z)</b></div><span class="arrow">→</span><div class="box">Probability p<b>' + fmt(p, 4) + '</b></div><span class="arrow">→</span><div class="box">Class (t = ' + fmt(t, 2) + ')<b>' + cls + '</b></div>';
+  $('out5').innerHTML = '<div>x = ' + num(x) + '</div><div>z = w × x + b = ' + sub(w) + ' × ' + sub(x) + ' + ' + sub(b) + ' = ' + fmt(z, 3) + '</div><div>p = 1 / (1 + exp(−z)) = 1 / (1 + ' + sci(e) + ') = ' + fmt(p, 4) + '</div><div>Prediction: p ≥ t ? ' + fmt(p, 4) + (cls ? ' ≥ ' : ' < ') + fmt(t, 2) + ' → class ' + cls + '</div><div>' + bTxt + '</div>';
+  $('log5').innerHTML = '<div class="calc"><div>odds = p/(1−p) = e^z = ' + sci(Math.exp(z)) + '</div><div>log-odds = ln(odds) = ' + fmt(z, 3) + '  (= z)</div></div>';
+}
+
+/* ---------- Module 6 ---------- */
+const EM_X = [-3.5, -3, -2.4, -2, -1.5, -1, -0.6, -0.2, 0.3, 0.7, 1.1, 1.6, 2, 2.6, 3.1, 3.6];
+const EM_Y = [0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1];
+const EM = EM_X.map((x, i) => ({ x, y: EM_Y[i], p: predictProbability(x, 1.2, 0.2) }));
+let prevPred6 = null;
+function metricNote(name, v, why){ return '<tr><td class="l">' + name + '</td><td><b>' + (v === null ? 'undefined (N/A)' : fmt(v, 3)) + '</b></td><td class="l">' + (v === null ? why : '') + '</td></tr>'; }
+function metricsTable(mt, cm){
+  return '<table><tbody>' +
+    metricNote('Accuracy', mt.accuracy, 'there are no observations') +
+    metricNote('Precision', mt.precision, 'no positive predictions (TP+FP = 0)') +
+    metricNote('Recall', mt.recall, 'no actual positives (TP+FN = 0)') +
+    metricNote('F1', mt.f1, 'needs both precision and recall, and they cannot both be 0') + '</tbody></table>';
+}
+function cmTable(c){
+  return '<table><thead><tr><th></th><th>Predicted 1</th><th>Predicted 0</th></tr></thead><tbody><tr><th class="l">Actual 1</th><td>TP = ' + c.tp + '</td><td>FN = ' + c.fn + '</td></tr><tr><th class="l">Actual 0</th><td>FP = ' + c.fp + '</td><td>TN = ' + c.tn + '</td></tr></tbody></table>';
+}
+function renderM6(){
+  const t = val('m6_t'), pred = EM.map(e => predictClass(e.p, t));
+  const changed = pred.map((c, i) => prevPred6 ? c !== prevPred6[i] : false); prevPred6 = pred;
+  const P = plot('c6', 640, 300, [0, 1], [0, 1], { l: 90, b: 50 });
+  let s = axes(P, 'Predicted probability of spam, p', '', { yticks: [0.25, 0.75], yfmt: v => v > 0.5 ? 'Actual spam' : 'Not spam', xticks: [0, 0.25, 0.5, 0.75, 1] });
+  s += '<rect x="' + P.X(t) + '" y="' + P.m.t + '" width="' + (P.X(1) - P.X(t)) + '" height="' + P.ph + '" fill="url(#dots_c6)"/>';
+  s += txt(Math.min(P.X(1) - 8, P.X(t) + 8 + 120), P.m.t + 16, 'predicted spam →', 'font-size="12" font-weight="700" text-anchor="end" fill="#4a2468"') + txt(Math.max(P.m.l + 8, P.X(t) - 8), P.m.t + 16, '← predicted not spam', 'font-size="12" font-weight="700" text-anchor="end" fill="#333"');
+  s += hline(P, 0.5, 'stroke="#c5ccdc"');
+  EM.forEach((e, i) => { const dy = ((i % 3) - 1) * 14, cy = e.y ? 0.75 : 0.25; s += pt(P, e.p, cy, e.y, { dy, title: 'Email ' + (i + 1) + ': p = ' + fmt(e.p, 3) + ', actual ' + (e.y ? 'spam' : 'not spam') }); if (changed[i]) s += ring(P, e.p, cy, dy); });
+  s += '<line x1="' + P.X(t) + '" y1="' + P.m.t + '" x2="' + P.X(t) + '" y2="' + (P.m.t + P.ph) + '" stroke="var(--thr)" stroke-width="3" id="thr6" style="cursor:ew-resize"/>';
+  s += '<polygon points="' + (P.X(t) - 8) + ',' + (P.m.t + P.ph + 1) + ' ' + (P.X(t) + 8) + ',' + (P.m.t + P.ph + 1) + ' ' + P.X(t) + ',' + (P.m.t + P.ph - 11) + '" fill="var(--thr)"/>' + txt(P.X(t), P.m.t + P.ph + 38, 't = ' + fmt(t, 2), 'font-size="12" font-weight="700" text-anchor="middle"');
+  const cm = calculateConfusionMatrix(EM.map(e => e.y), pred), mt = calculateClassificationMetrics(cm), nCh = changed.filter(Boolean).length;
+  const sm = 'Threshold ' + fmt(t, 2) + ': ' + (cm.tp + cm.fp) + ' of ' + EM.length + ' emails predicted spam. TP ' + cm.tp + ', FP ' + cm.fp + ', FN ' + cm.fn + ', TN ' + cm.tn + (nCh ? '; ' + nCh + ' email(s) changed prediction.' : '.');
+  draw('ch6', s, sm, 'sum6');
+  $('cm6').innerHTML = cmTable(cm);
+  $('met6').innerHTML = metricsTable(mt, cm) + '<p>' + (nCh ? '<b>' + nCh + '</b> email(s) just changed class (dashed rings). ' : '') + 'Recall = ' + fmt(mt.recall, 2) + ', precision = ' + fmt(mt.precision, 2) + '. Spam example: a false positive buries a good email; a false negative lets spam through.</p>';
+  $('tbl6').innerHTML = EM.map((e, i) => { const r = pred[i] ? (e.y ? 'TP' : 'FP') : (e.y ? 'FN' : 'TN'); return '<tr' + (changed[i] ? ' style="background:#fff3cd"' : '') + '><td>' + (i + 1) + '</td><td>' + e.x + '</td><td>' + fmt(e.p, 3) + '</td><td>' + (e.y ? 'spam' : 'not spam') + '</td><td>' + (pred[i] ? 'spam' : 'not spam') + (changed[i] ? ' ⟲' : '') + '</td><td><b>' + r + '</b></td></tr>'; }).join('');
+}
+
+/* ---------- Module 7 ---------- */
+function renderM7(){
+  const w = val('m7_w'), b = val('m7_b'), data = toData(D8.approx), g = computeGradients(data, w, b);
+  const P = plot('c7a', 640, 320, [-4, 4], [-0.15, 1.15]);
+  let s = axes(P, 'Input x', 'Label / probability', { yticks: [0, 0.5, 1] });
+  s += clip(P, path(P, v => sigmoid(w * v + b), -4, 4, 200, 'stroke="var(--prob)" stroke-width="3.5"'));
+  g.rows.forEach(r => { s += seg(P, r.x, r.y, r.x, r.p, 'stroke="var(--loss)" stroke-width="2.4" stroke-dasharray="4 3"') + '<circle cx="' + P.X(r.x) + '" cy="' + P.Y(r.p) + '" r="4.5" fill="#fff" stroke="var(--prob)" stroke-width="2.4"/>'; });
+  g.rows.forEach(r => { s += pt(P, r.x, r.y, r.y, { title: 'x = ' + r.x + ', y = ' + r.y + ', p = ' + fmt(r.p, 3) }); });
+  s += legend(P, [{ k: 'c0', t: 'Actual 0' }, { k: 'c1', t: 'Actual 1' }, { k: 'line', c: 'var(--prob)', t: 'p = σ(wx+b)' }, { k: 'dash', c: 'var(--loss)', t: 'Gap to label' }], { right: true });
+  draw('ch7a', s, 'With w = ' + fmt(w, 1) + ' and b = ' + fmt(b, 1) + ' the average loss is ' + fmt(g.loss, 3) + '.', 'sum7');
+  $('out7').innerHTML = '<p><b>Average loss J</b> = ' + fmt(g.loss, 4) + '</p><p>Sum of the 8 losses = ' + fmt(g.loss * g.rows.length, 4) + '</p><p>' + (g.loss < 0.35 ? 'Good fit for this data.' : g.loss < 0.7 ? 'Better than guessing 0.5 everywhere (loss 0.693), but there is room to improve.' : 'No better than guessing 0.5 everywhere (0.693) — adjust w and b.') + '</p>';
+  $('tbl7').innerHTML = g.rows.map(r => '<tr><td>' + r.x + '</td><td>' + r.y + '</td><td>' + fmt(r.p, 3) + '</td><td>' + fmt(r.loss, 3) + '</td></tr>').join('');
+}
+function renderM7c(){
+  const y = parseInt($('m7_y').value, 10), p = val('m7_p');
+  const P = plot('c7b', 640, 320, [0, 1], [0, 5.5]);
+  let s = axes(P, 'Predicted probability p of class 1', 'Loss L', { xticks: [0, 0.25, 0.5, 0.75, 1] });
+  const L1 = v => binaryCrossEntropyFromProb(v, 1), L0 = v => binaryCrossEntropyFromProb(v, 0);
+  s += clip(P, path(P, L1, 0.003, 0.997, 300, 'stroke="var(--c1)" stroke-width="' + (y === 1 ? 4 : 2) + '" ' + (y === 1 ? '' : 'stroke-dasharray="6 4" opacity=".7"')) + path(P, L0, 0.003, 0.997, 300, 'stroke="var(--c0)" stroke-width="' + (y === 0 ? 4 : 2) + '" ' + (y === 0 ? '' : 'stroke-dasharray="6 4" opacity=".7"')));
+  const L = binaryCrossEntropyFromProb(p, y);
+  s += marker(P, p, Math.min(L, 5.4), 'var(--loss)') + legend(P, [{ k: 'line', c: 'var(--c1)', t: 'y = 1: −ln(p)' }, { k: 'line', c: 'var(--c0)', t: 'y = 0: −ln(1−p)' }], { right: true });
+  $('ch7b').innerHTML = s; $('ch7b').setAttribute('aria-label', 'Loss curve: with y = ' + y + ' and p = ' + fmt(p, 2) + ' the loss is ' + fmt(L, 4));
+  const act = y === 1 ? 'y·ln(p)' : '(1−y)·ln(1−p)', arg = y === 1 ? p : 1 - p, lnv = Math.log(arg);
+  const interp = L < 0.2 ? 'small — the prediction is confident and on the right side.' : L < 0.7 ? 'moderate — the model is unsure or only slightly off.' : L < 1.5 ? 'sizable — the prediction leans the wrong way.' : 'large — a confident wrong prediction.';
+  $('out7c').innerHTML = '<div>L = −[ y·ln(p) + (1−y)·ln(1−p) ]</div><div>Substitute y = ' + y + ', p = ' + num(p) + ':</div><div>L = −[ ' + y + '×ln(' + num(p) + ') + ' + (1 - y) + '×ln(' + num(1 - p) + ') ]</div><div>Active term: ' + act + ' (the other is multiplied by 0)</div><div>ln(' + num(arg) + ') = ' + fmt(lnv, 5) + '</div><div>L = ' + fmt(-lnv, 5) + '</div><div>Meaning: ' + interp + '</div>';
+}
+function renderSE(){
+  const z = val('se_z'), p = sigmoid(z), gb = p - 1, gs = 2 * (p - 1) * p * (1 - p);
+  $('se_out').innerHTML = '<div>y = 1, p = σ(' + num(z, 1) + ') = ' + fmt(p, 4) + '</div><div>Cross-entropy gradient w.r.t. z: p − y = ' + fmt(gb, 4) + '</div><div>Squared-error (p−y)² gradient w.r.t. z: 2(p−y)p(1−p) = ' + fmt(gs, 4) + '</div><div>' + (Math.abs(gs) < 0.05 && p < 0.5 ? 'Confidently wrong, yet squared error barely pushes back — learning stalls. Cross-entropy still pushes hard.' : 'Move z far negative (confidently wrong) to see the squared-error gradient vanish.') + '</div>';
+}
+
+/* ---------- Module 8 ---------- */
+let data8 = toData(D8.approx);
+const m8 = newModel(() => data8);
+function initModel8(){ pauseModel(m8); m8.w = val('m8_w0'); m8.b = val('m8_b0'); m8.lr = val('m8_lr'); resetHistory(m8); m8.msg = 'Model initialized. History restarted at iteration 0.'; renderM8(); }
+function renderM8(){
+  const t = val('m8_t'), w = m8.w, b = m8.b, g = computeGradients(data8, w, b), lt = logit(t), xb = Math.abs(w) < 1e-9 ? null : (lt - b) / w;
+  const xs = data8.map(d => d.x), xr = [Math.min(-4, Math.min.apply(null, xs) - 0.5), Math.max(4, Math.max.apply(null, xs) + 0.5)];
+  const P = plot('c8a', 640, 300, xr, [-0.15, 1.15]);
+  let s = axes(P, 'Input x', 'Label / probability', { yticks: [0, 0.5, 1] });
+  s += hline(P, t, 'stroke="var(--thr)" stroke-dasharray="6 4" stroke-width="1.6"');
+  s += clip(P, path(P, v => sigmoid(w * v + b), xr[0], xr[1], 220, 'stroke="var(--prob)" stroke-width="3.5"'));
+  if (xb !== null && xb >= xr[0] && xb <= xr[1]) s += vline(P, xb, 'stroke="var(--thr)" stroke-width="2.2" stroke-dasharray="2 4"') + txt(P.X(xb) + 5, P.m.t + P.ph - 8, 'boundary x = ' + fmt(xb, 2), 'font-size="12" font-weight="700"');
+  data8.forEach(d => { s += pt(P, d.x, d.y, d.y, { title: 'x = ' + d.x + ', y = ' + d.y }); });
+  s += legend(P, [{ k: 'c0', t: 'Actual 0' }, { k: 'c1', t: 'Actual 1' }, { k: 'line', c: 'var(--prob)', t: 'Current p(x)' }, { k: 'dash', c: 'var(--thr)', t: 'Threshold / boundary' }], { right: true });
+  const bTxt = xb === null ? 'no finite boundary (w = 0)' : 'boundary at x = ' + fmt(xb, 2);
+  $('ch8a').innerHTML = s; $('ch8a').setAttribute('aria-label', 'Training data and curve with w = ' + fmt(w, 3) + ' and b = ' + fmt(b, 3) + '; ' + bTxt);
+  $('ch8b').innerHTML = lossChart('ch8b', m8, 640, 260);
+  const lastTxt = m8.last ? 'Last update: w ' + fmt(m8.last.oldW, 4) + ' → ' + fmt(m8.last.w, 4) + ', b ' + fmt(m8.last.oldB, 4) + ' → ' + fmt(m8.last.b, 4) + ', loss ' + fmt(m8.last.lossBefore, 4) + ' → ' + fmt(m8.last.lossAfter, 4) : 'No update applied yet';
+  $('sum8').textContent = 'Iteration ' + m8.iter + ': w = ' + fmt(w, 3) + ', b = ' + fmt(b, 3) + ', loss J = ' + fmt(g.loss, 4) + '; ' + bTxt + '. ' + lastTxt + '.';
+  $('par8').innerHTML = '<div class="card"><b>Current</b><p class="readout">w = ' + fmt(w, 4) + '<br>b = ' + fmt(b, 4) + '<br>iteration = ' + m8.iter + '</p></div>' +
+    '<div class="card"><b>Gradients here</b><p class="readout">∂J/∂w = ' + fmt(g.gw, 4) + '<br>∂J/∂b = ' + fmt(g.gb, 4) + '<br>learning rate α = ' + fmt(m8.lr, 2) + '</p></div>' +
+    '<div class="card"><b>Last applied update</b><p class="readout">' + (m8.last ? 'w: ' + fmt(m8.last.oldW, 4) + ' → ' + fmt(m8.last.w, 4) + '<br>b: ' + fmt(m8.last.oldB, 4) + ' → ' + fmt(m8.last.b, 4) + '<br>J: ' + fmt(m8.last.lossBefore, 4) + ' → ' + fmt(m8.last.lossAfter, 4) + (m8.last.lossAfter > m8.last.lossBefore ? ' (rose!)' : '') : 'none yet — press “Run 1 step”') + '</p></div>';
+  const N = data8.length; let sErr = 0, sGw = 0, sL = 0;
+  g.rows.forEach(r => { sErr += r.err; sGw += r.gradW; sL += r.loss; });
+  $('tbl8').innerHTML = g.rows.map(r => '<tr><td>' + r.x + '</td><td>' + r.y + '</td><td>' + fmt(r.z, 3) + '</td><td>' + fmt(r.p, 4) + '</td><td>' + fmt(r.err, 4) + '</td><td>' + fmt(r.gradW, 4) + '</td><td>' + fmt(r.loss, 4) + '</td></tr>').join('') +
+    '<tr><th colspan="4" class="l">Sum</th><th>' + fmt(sErr, 4) + '</th><th>' + fmt(sGw, 4) + '</th><th>' + fmt(sL, 4) + '</th></tr><tr><th colspan="4" class="l">Average (÷ ' + N + ')</th><th>' + fmt(g.gb, 4) + ' = ∂J/∂b</th><th>' + fmt(g.gw, 4) + ' = ∂J/∂w</th><th>' + fmt(g.loss, 4) + ' = J</th></tr>';
+  const nw = w - m8.lr * g.gw, nb = b - m8.lr * g.gb, lAfter = datasetLoss(data8, nw, nb);
+  $('calc8').innerHTML = '<div>∂J/∂w = (1/' + N + ') × ' + fmt(sGw, 4) + ' = ' + fmt(g.gw, 5) + '</div><div>∂J/∂b = (1/' + N + ') × ' + fmt(sErr, 4) + ' = ' + fmt(g.gb, 5) + '</div>' +
+    '<div>new w = old w − α × ∂J/∂w = ' + sub(w, 4) + ' − ' + num(m8.lr) + ' × ' + sub(g.gw, 4) + ' = ' + fmt(nw, 4) + '</div><div>new b = old b − α × ∂J/∂b = ' + sub(b, 4) + ' − ' + num(m8.lr) + ' × ' + sub(g.gb, 4) + ' = ' + fmt(nb, 4) + '</div>' +
+    '<div>Loss before this update: ' + fmt(g.loss, 4) + '   |   Loss after it (preview, not applied yet): ' + fmt(lAfter, 4) + (lAfter > g.loss ? '  ← higher! The step overshot.' : '  (lower)') + '</div>';
+  $('msg8').textContent = m8.msg;
+  $('m8_auto').disabled = m8.running; $('m8_pause').disabled = !m8.running;
+}
+
+/* ---------- Module 9 ---------- */
+function lineEndpoints(a, bc, c, xr, yr){
+  const pts = [];
+  if (Math.abs(bc) > 1e-9) xr.forEach(x => { const y = (c - a * x) / bc; if (y >= yr[0] - 1e-9 && y <= yr[1] + 1e-9) pts.push([x, y]); });
+  if (Math.abs(a) > 1e-9) yr.forEach(y => { const x = (c - bc * y) / a; if (x >= xr[0] - 1e-9 && x <= xr[1] + 1e-9) pts.push([x, y]); });
+  let best = null, bd = -1;
+  for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) { const d = Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1]); if (d > bd) { bd = d; best = [pts[i], pts[j]]; } }
+  return bd > 1e-9 ? best : null;
+}
+function renderM9a(){
+  const w = val('m9_w'), b = val('m9_b'), t = val('m9_t'), data = toData(D8.approx), lt = logit(t), flat = Math.abs(w) < 1e-9, xb = flat ? null : (lt - b) / w;
+  const xr = [-6, 6], P = plot('c9a', 640, 300, xr, [-0.15, 1.15]);
+  let s = axes(P, 'Input x', 'Label / probability', { yticks: [0, 0.5, 1] });
+  const allClass = predictClass(sigmoid(b), t);
+  const inVis = xb !== null && xb >= xr[0] && xb <= xr[1];
+  const right = w > 0 ? 1 : 0;
+  if (!flat && inVis) s += '<rect x="' + P.X(xb) + '" y="' + P.m.t + '" width="' + (P.X(6) - P.X(xb)) + '" height="' + P.ph + '" fill="url(#dots_c9a)"/>' + txt(P.X(xb) + 8, P.m.t + 16, 'predict class ' + right + ' →', 'font-size="12" font-weight="700" fill="#4a2468"') + txt(P.X(xb) - 8, P.m.t + 16, '← predict class ' + (1 - right), 'font-size="12" font-weight="700" text-anchor="end"');
+  s += hline(P, t, 'stroke="var(--thr)" stroke-dasharray="6 4"');
+  s += clip(P, path(P, v => sigmoid(w * v + b), -6, 6, 240, 'stroke="var(--prob)" stroke-width="3.5"'));
+  if (inVis) s += vline(P, xb, 'stroke="var(--thr)" stroke-width="2.6"');
+  data.forEach(d => { s += pt(P, d.x, d.y, d.y); });
+  const acc = data.filter(d => predictClass(predictProbability(d.x, w, b), t) === d.y).length;
+  s += legend(P, [{ k: 'c0', t: 'Actual 0' }, { k: 'c1', t: 'Actual 1' }, { k: 'line', c: 'var(--prob)', t: 'p = σ(wx+b)' }], { right: true });
+  const msg = flat ? 'w = 0: z = b everywhere, so p is the constant ' + fmt(sigmoid(b), 3) + ' and every x gets class ' + allClass + '. There is no boundary.' : (inVis ? 'boundary at x = ' + fmt(xb, 3) : 'boundary x = ' + fmt(xb, 3) + ' lies outside the plotted range') + '; ' + acc + ' of ' + data.length + ' points classified correctly.';
+  draw('ch9a', s, msg, 'sum9a');
+  $('out9a').innerHTML = '<div>w·x + b = log(t/(1−t))</div><div>log(' + num(t) + '/(1−' + num(t) + ')) = ' + fmt(lt, 4) + '</div>' + (flat ? '<div>w = 0 → no finite boundary: ' + (b >= lt ? 'class 1' : 'class 0') + ' for all x</div>' : '<div>x = (' + fmt(lt, 4) + ' − ' + sub(b) + ') / ' + sub(w) + ' = ' + fmt(xb, 3) + '</div>') + '<div>' + acc + ' / ' + data.length + ' training points correct</div>';
+}
+const PTS2 = (() => { const r = rng(5), a = []; for (let i = 0; i < 12; i++) a.push({ x1: -1.2 + 0.8 * gauss(r), x2: -1 + 0.8 * gauss(r), y: 0 }); for (let i = 0; i < 12; i++) a.push({ x1: 1.2 + 0.8 * gauss(r), x2: 1 + 0.8 * gauss(r), y: 1 }); return a; })();
+function renderM9b(){
+  const w1 = val('m9_w1'), w2 = val('m9_w2'), b = val('m9_b2'), t = val('m9_t2'), c = logit(t);
+  const R = [-4, 4], P = plot('c9b', 640, 400, R, R, { l: 56 }), N = 32, cw = P.pw / N, ch = P.ph / N;
+  let s = axes(P, 'Feature x₁', 'Feature x₂');
+  let cells = '';
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+    const x1 = R[0] + (i + 0.5) / N * 8, x2 = R[0] + (j + 0.5) / N * 8, p = sigmoid(w1 * x1 + w2 * x2 + b);
+    cells += '<rect x="' + (P.m.l + i * cw).toFixed(1) + '" y="' + (P.m.t + P.ph - (j + 1) * ch).toFixed(1) + '" width="' + (cw + 0.6).toFixed(1) + '" height="' + (ch + 0.6).toFixed(1) + '" fill="#7B3FA0" fill-opacity="' + (p * 0.5).toFixed(3) + '"/>';
+  }
+  s += cells;
+  const deg = Math.abs(w1) < 1e-9 && Math.abs(w2) < 1e-9;
+  const ep = deg ? null : lineEndpoints(w1, w2, c - b, R, R);
+  if (ep) s += '<line x1="' + P.X(ep[0][0]) + '" y1="' + P.Y(ep[0][1]) + '" x2="' + P.X(ep[1][0]) + '" y2="' + P.Y(ep[1][1]) + '" stroke="#111" stroke-width="3"/>';
+  PTS2.forEach(d => { s += pt(P, d.x1, d.x2, d.y); });
+  s += legend(P, [{ k: 'c0', t: 'Class 0' }, { k: 'c1', t: 'Class 1' }, { k: 'line', c: '#111', t: 'Boundary p = t' }], { right: true });
+  const acc = PTS2.filter(d => predictClass(predictProbability(w1 * d.x1 + w2 * d.x2, 1, b), t) === d.y).length;
+  let desc;
+  if (deg) desc = 'w₁ = w₂ = 0: z = b everywhere, so p = ' + fmt(sigmoid(b), 3) + ' for every point. There is no boundary; every point gets class ' + predictClass(sigmoid(b), t) + '.';
+  else if (Math.abs(w2) < 1e-9) desc = 'w₂ = 0: vertical boundary at x₁ = ' + fmt((c - b) / w1, 3) + '.';
+  else if (Math.abs(w1) < 1e-9) desc = 'w₁ = 0: horizontal boundary at x₂ = ' + fmt((c - b) / w2, 3) + '.';
+  else desc = 'boundary x₂ = ' + fmt((c - b) / w2, 3) + ' + ' + fmt(-w1 / w2, 3) + '·x₁' + (ep ? '' : ' (outside the plotted square)') + '.';
+  draw('ch9b', s, desc + ' ' + acc + ' of ' + PTS2.length + ' points classified correctly.', 'sum9b');
+  $('out9b').innerHTML = '<div>w₁x₁ + w₂x₂ + b = log(t/(1−t))</div><div>' + sub(w1) + ' x₁ + ' + sub(w2) + ' x₂ + ' + sub(b) + ' = ' + fmt(c, 3) + '</div><div>' + desc + '</div><div>' + acc + ' / ' + PTS2.length + ' correct</div>';
+}
+
+/* ---------- Module 10 ---------- */
+const ds10 = { kind: 'sep', train: [], test: [], added: [] };
+const m10 = newModel(() => ds10.train);
+function loadDS10(kind){ const d = makeDataset(kind); ds10.kind = kind; ds10.train = d.train; ds10.test = d.test; ds10.added = []; }
+function syncSliders10(){ setSlider('m10_w', m10.w); setSlider('m10_b', m10.b); }
+function initModel10(msg){ pauseModel(m10); m10.w = 0; m10.b = 0; resetHistory(m10); m10.msg = msg || 'Parameters initialized to w = 0, b = 0.'; syncSliders10(); renderM10(); }
+function resetExperiment10(){
+  pauseModel(m10); loadDS10($('m10_ds').value); setSlider('m10_lr', 0.3); setSlider('m10_speed', 10); setSlider('m10_t', 0.5);
+  m10.lr = 0.3; m10.speed = 10; $('m10_obs').value = 1; initModel10('Experiment reset: dataset reloaded, w = b = 0, threshold 0.5.');
+}
+function evalSet(data, w, b, t){ const pred = data.map(d => predictClass(predictProbability(d.x, w, b), t)); const cm = calculateConfusionMatrix(data.map(d => d.y), pred); return { cm, mt: calculateClassificationMetrics(cm), pred }; }
+function renderM10(){
+  const w = m10.w, b = m10.b, t = val('m10_t'), tr = ds10.train, te = ds10.test, lt = logit(t), xb = Math.abs(w) < 1e-9 ? null : (lt - b) / w;
+  const R = [-6, 6], P = plot('c10', 640, 340, R, [-0.15, 1.15]);
+  const A = evalSet(tr, w, b, t), B = evalSet(te, w, b, t), loss = datasetLoss(tr, w, b);
+  const obs = Math.max(1, Math.min(tr.length || 1, parseInt($('m10_obs').value, 10) || 1));
+  let s = axes(P, 'Input x', 'Label / probability', { yticks: [0, 0.5, 1] });
+  s += hline(P, t, 'stroke="var(--thr)" stroke-dasharray="6 4"');
+  s += clip(P, path(P, v => sigmoid(w * v + b), -6, 6, 240, 'stroke="var(--prob)" stroke-width="3.5"'));
+  if (xb !== null && xb >= -6 && xb <= 6) s += vline(P, xb, 'stroke="var(--thr)" stroke-width="2.4" stroke-dasharray="2 4"') + txt(P.X(xb) + 5, P.m.t + P.ph - 8, 'boundary x = ' + fmt(xb, 2), 'font-size="12" font-weight="700"');
+  tr.forEach((d, i) => { const jit = (i % 3 - 1) * 5; s += pt(P, d.x, d.y, d.y, { dy: d.y ? jit : -jit, title: 'train #' + (i + 1) + ': x = ' + d.x + ', y = ' + d.y }); if (A.pred[i] !== d.y) s += '<text x="' + P.X(d.x) + '" y="' + (P.Y(d.y) + (d.y ? 26 : -16)) + '" text-anchor="middle" font-size="15" font-weight="800" fill="#111">×</text>'; });
+  te.forEach((d, i) => { s += pt(P, d.x, d.y, d.y, { hollow: true, dy: d.y ? 12 : -12, title: 'eval #' + (i + 1) + ': x = ' + d.x + ', y = ' + d.y }); });
+  if (tr.length) { const o = tr[obs - 1]; s += '<circle cx="' + P.X(o.x) + '" cy="' + P.Y(o.y) + '" r="14" fill="none" stroke="#111" stroke-width="2" stroke-dasharray="4 3"/>'; }
+  s += legend(P, [{ k: 'c0', t: 'Train, class 0' }, { k: 'c1', t: 'Train, class 1' }, { k: 'hollow', t: 'Hollow = evaluation' }, { k: 'line', c: 'var(--prob)', t: 'p(x)' }], { right: true });
+  s += txt(P.m.l + 8, P.m.t + P.ph - 8, '× = misclassified training point', 'font-size="12" font-weight="700"');
+  const bTxt = xb === null ? 'no finite boundary (w = 0)' : 'boundary x = ' + fmt(xb, 2);
+  const sm = 'w = ' + fmt(w, 3) + ', b = ' + fmt(b, 3) + ', threshold ' + fmt(t, 2) + ', ' + bTxt + '. Training loss ' + fmt(loss, 4) + ', training accuracy ' + pct(A.mt.accuracy) + ', evaluation accuracy ' + pct(B.mt.accuracy) + '.';
+  draw('ch10', s, sm, 'sum10');
+  $('ch10b').innerHTML = lossChart('ch10b', m10, 640, 220);
+  const n1 = tr.filter(d => d.y === 1).length;
+  $('mets10').innerHTML = '<table><thead><tr><th class="l">Metric</th><th>Training (' + tr.length + ' pts, ' + n1 + ' of class 1)</th><th>Evaluation (' + te.length + ' pts)</th></tr></thead><tbody>' +
+    '<tr><td class="l">Confusion TP / FP / FN / TN</td><td>' + A.cm.tp + ' / ' + A.cm.fp + ' / ' + A.cm.fn + ' / ' + A.cm.tn + '</td><td>' + B.cm.tp + ' / ' + B.cm.fp + ' / ' + B.cm.fn + ' / ' + B.cm.tn + '</td></tr>' +
+    '<tr><td class="l">Accuracy</td><td>' + fmt(A.mt.accuracy, 3) + '</td><td>' + fmt(B.mt.accuracy, 3) + '</td></tr>' +
+    '<tr><td class="l">Precision</td><td>' + fmt(A.mt.precision, 3) + '</td><td>' + fmt(B.mt.precision, 3) + '</td></tr>' +
+    '<tr><td class="l">Recall</td><td>' + fmt(A.mt.recall, 3) + '</td><td>' + fmt(B.mt.recall, 3) + '</td></tr>' +
+    '<tr><td class="l">F1</td><td>' + fmt(A.mt.f1, 3) + '</td><td>' + fmt(B.mt.f1, 3) + '</td></tr>' +
+    '<tr><td class="l">Average loss (train)</td><td>' + fmt(loss, 4) + '</td><td>—</td></tr></tbody></table>' +
+    '<p class="chart-summary">N/A means the metric is undefined (a zero denominator, e.g. precision when nothing is predicted positive). w = ' + fmt(w, 4) + ', b = ' + fmt(b, 4) + ', iteration ' + m10.iter + '.</p>';
+  const oi = $('m10_obs'); oi.max = Math.max(1, tr.length); oi.disabled = !tr.length; if (+oi.value > +oi.max) oi.value = oi.max;
+  $('m10_obs_o').textContent = tr.length ? obs + ' of ' + tr.length : 'none';
+  if (tr.length) { const o = tr[obs - 1], z = w * o.x + b, p = sigmoid(z), pc = predictClass(p, t), l = binaryCrossEntropyFromLogit(z, o.y);
+    $('calc10').innerHTML = '<div>x = ' + num(o.x) + ', actual y = ' + o.y + '</div><div>z = w × x + b = ' + sub(w, 3) + ' × ' + sub(o.x) + ' + ' + sub(b, 3) + ' = ' + fmt(z, 3) + '</div><div>p = σ(z) = ' + fmt(p, 4) + '</div><div>p ≥ ' + fmt(t, 2) + ' ? → predicted class ' + pc + (pc === o.y ? ' (correct)' : ' (wrong)') + '</div><div>loss = ' + fmt(l, 4) + '</div>';
+  } else $('calc10').innerHTML = '<div>No training observations. Add a point to continue.</div>';
+  $('msg10').textContent = m10.msg;
+  $('m10_auto').disabled = m10.running; $('m10_pause').disabled = !m10.running;
+  // --- challenges: feedback derived from the live model state ---
+  const sepCase = ds10.kind === 'sep';
+  $('ch1_fb').textContent = !sepCase ? 'Switch the dataset to “Clearly separable” first.' : !tr.length ? 'No training data.' : A.mt.accuracy === 1 ? '✔ All ' + tr.length + ' training points are classified correctly at t = ' + fmt(t, 2) + ' (loss ' + fmt(loss, 4) + '). On separable data the loss keeps falling as |w| grows — there is no finite best w.' : 'Training accuracy is ' + (A.cm.tp + A.cm.tn) + ' of ' + tr.length + ' (loss ' + fmt(loss, 3) + '). Train more, or try a positive w and b near 0.';
+  const base = evalSet(tr, w, b, 0.5);
+  $('ch2_fb').textContent = !tr.length ? 'No training data.' : Math.abs(t - 0.5) < 0.005 ? 'Threshold is 0.5: recall ' + fmt(base.mt.recall, 3) + ', precision ' + fmt(base.mt.precision, 3) + '. Move it away from 0.5.' :
+    'At t = 0.5: recall ' + fmt(base.mt.recall, 3) + ', precision ' + fmt(base.mt.precision, 3) + '. At t = ' + fmt(t, 2) + ': recall ' + fmt(A.mt.recall, 3) + ', precision ' + fmt(A.mt.precision, 3) + '. ' + ((A.mt.recall !== null && base.mt.recall !== null && A.mt.recall > base.mt.recall && (A.mt.precision === null || base.mt.precision === null || A.mt.precision <= base.mt.precision)) ? 'Recall rose; precision did not — that is the trade-off.' : (A.mt.recall !== null && base.mt.recall !== null && A.mt.recall < base.mt.recall) ? 'Recall fell as the bar rose; precision may have risen.' : 'Try a larger move to see the effect.');
+  const m1c = tr.filter(d => d.y === 1), m0c = tr.filter(d => d.y === 0), mean = a => a.reduce((s2, d) => s2 + d.x, 0) / (a.length || 1);
+  const expectPos = m1c.length && m0c.length ? mean(m1c) > mean(m0c) : null;
+  $('ch3_fb').textContent = Math.abs(w) < 1e-9 ? 'w = 0: p is the same for every x (a flat line at σ(b) = ' + fmt(sigmoid(b), 3) + ').' : (w < 0 ? 'w is negative: p falls as x rises, so class 1 is predicted on the LEFT of x = ' + fmt(xb, 2) + '.' : 'w is positive: p rises with x, so class 1 is predicted on the RIGHT of x = ' + fmt(xb, 2) + '.') + (expectPos === null ? '' : ' In this data class 1 sits at ' + (expectPos ? 'larger' : 'smaller') + ' x on average, so a ' + (expectPos ? 'positive' : 'negative') + ' w matches it' + ((w > 0) === expectPos ? ' — yours does.' : ' — yours does not, and training accuracy is ' + pct(A.mt.accuracy) + '.'));
+  if (tr.length) { let wi = 0, wl = -1; tr.forEach((d, i) => { const l = binaryCrossEntropyFromLogit(w * d.x + b, d.y); if (l > wl) { wl = l; wi = i; } }); const d = tr[wi], p = predictProbability(d.x, w, b), conf = Math.abs(p - d.y) > 0.8;
+    $('ch5_fb').textContent = 'Largest loss: training point #' + (wi + 1) + ' (x = ' + d.x + ', actual ' + d.y + ', p = ' + fmt(p, 4) + ') → loss ' + fmt(wl, 3) + '. ' + (conf ? 'Confident and wrong: the loss is large.' : 'No point is confidently wrong right now (largest loss is modest). Try a negative w to create one.');
+  } else $('ch5_fb').textContent = 'No training data.';
+}
+function svgClick10(ev){
+  const svg = $('ch10'), P = plot('c10', 640, 340, [-6, 6], [-0.15, 1.15]), px = svgX(svg, ev, 640);
+  if (px < P.m.l || px > P.m.l + P.pw) return;
+  addPoint10(Math.round(P.invX(px) * 10) / 10);
+}
+function addPoint10(x){
+  if (!isFinite(x)) return; x = Math.max(-6, Math.min(6, x)); const y = parseInt($('m10_addy').value, 10), d = { x, y };
+  ds10.train.push(d); ds10.added.push(d);
+  pauseModel(m10); resetHistory(m10); m10.msg = 'Added a class-' + y + ' training point at x = ' + num(x, 1) + '. Loss history restarted because the data changed.'; renderM10();
+}
+function runCompare(){
+  const tr = ds10.train, a = parseFloat($('cmp_a').value), b2 = parseFloat($('cmp_b').value);
+  if (!tr.length || !(a > 0) || !(b2 > 0)) { $('ch4_fb').textContent = 'Need training data and positive learning rates.'; return; }
+  const run = lr => { let w = 0, b = 0; const h = [datasetLoss(tr, 0, 0)]; for (let i = 0; i < 60; i++) { const r = gradientDescentStep(tr, w, b, lr); w = r.w; b = r.b; h.push(r.lossAfter); } return { h, w, b }; };
+  const A = run(a), B = run(b2), all = A.h.concat(B.h).filter(isFinite), P = plot('c10c', 400, 200, [0, 60], [0, Math.max.apply(null, all) * 1.1], { l: 46, b: 40, r: 10 });
+  let s = axes(P, 'Step', 'Loss J');
+  const pl = (h, col, dash) => { let d = ''; h.forEach((v, i) => { if (isFinite(v)) d += (d ? 'L' : 'M') + P.X(i).toFixed(1) + ' ' + P.Y(v).toFixed(1) + ' '; }); return '<path d="' + d + '" fill="none" stroke="' + col + '" stroke-width="2.6" ' + (dash ? 'stroke-dasharray="6 4"' : '') + '/>'; };
+  s += pl(A.h, 'var(--c0)', false) + pl(B.h, 'var(--c1)', true) + legend(P, [{ k: 'line', c: 'var(--c0)', t: 'α₁ = ' + num(a, 3) }, { k: 'dash', c: 'var(--c1)', t: 'α₂ = ' + num(b2, 3) }], { right: true });
+  $('ch10c').innerHTML = s;
+  const fin = h => h[h.length - 1], up = h => h.some((v, i) => i && v > h[i - 1] + 1e-12);
+  $('ch4_fb').textContent = 'After 60 steps: α₁ → loss ' + fmt(fin(A.h), 4) + ' (w = ' + fmt(A.w, 2) + ', b = ' + fmt(A.b, 2) + '); α₂ → loss ' + fmt(fin(B.h), 4) + ' (w = ' + fmt(B.w, 2) + ', b = ' + fmt(B.b, 2) + '). ' + (up(A.h) ? 'α₁ had steps where loss rose. ' : '') + (up(B.h) ? 'α₂ had steps where loss rose (overshooting). ' : '') + 'Loss is not guaranteed to fall at every step for large rates.';
+}
+
+/* ---------- Misconceptions and summary ---------- */
+function renderMyths(){
+  const w = val('my_w'); let t = '<thead><tr><th>Start p</th><th>Start odds</th><th>New odds = odds × e^w (e^w = ' + fmt(Math.exp(w), 3) + ')</th><th>New p</th><th>Change in p</th></tr></thead><tbody>';
+  [0.1, 0.5, 0.9].forEach(p0 => { const o0 = p0 / (1 - p0), o1 = o0 * Math.exp(w), p1 = o1 / (1 + o1); t += '<tr><td>' + p0 + '</td><td>' + fmt(o0, 3) + '</td><td>' + fmt(o1, 3) + '</td><td>' + fmt(p1, 4) + '</td><td>' + (p1 - p0 >= 0 ? '+' : '') + fmt(p1 - p0, 4) + '</td></tr>'; });
+  $('my_tbl').innerHTML = t + '</tbody>';
+}
+function renderSummary(){
+  const x = val('sm_x'), w = val('sm_w'), b = val('sm_b'), t = val('sm_t'), z = w * x + b, p = sigmoid(z), cls = predictClass(p, t);
+  $('sm_out').innerHTML = '<div>Linear regression stops here: ŷ = m·x + b = ' + sub(w) + ' × ' + sub(x) + ' + ' + sub(b) + ' = ' + fmt(z, 3) + '  (any real number)</div><div>Logistic regression continues:</div><div>1. z = ' + fmt(z, 3) + '</div><div>2. e^(−z) = ' + sci(Math.exp(-z)) + '</div><div>3. p = 1/(1 + e^(−z)) = ' + fmt(p, 4) + '  (' + pct(p, 2) + ')</div><div>4. p ≥ ' + fmt(t, 2) + ' ? ' + (cls ? 'yes' : 'no') + ' → class ' + cls + '</div>';
+}
+
+/* =====================================================================
+   SECTION 8 — PROGRESS, NAVIGATION, WIRING
+   ===================================================================== */
+const visited = new Set(); const SECS = ['m1','m2','m3','m4','m5','m6','m7','m8','m9','m10','myths','glossary','summary'];
+function updateProgress(){
+  $('progText').textContent = 'Progress: ' + visited.size + ' of ' + SECS.length + ' sections visited · Knowledge checks: ' + quizDone.size + ' of ' + QUIZ.length + ' correct';
+  const total = SECS.length + QUIZ.length; $('progressBar').style.width = Math.round((visited.size + quizDone.size) / total * 100) + '%';
+}
+function setupObservers(){
+  if (!('IntersectionObserver' in window)) return;
+  const links = {}; document.querySelectorAll('#toc a').forEach(a => { links[a.getAttribute('href').slice(1)] = a; });
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    const id = e.target.id;
+    if (e.isIntersecting) { visited.add(id); document.querySelectorAll('#toc a').forEach(a => a.classList.remove('active')); if (links[id]) links[id].classList.add('active'); updateProgress(); }
+    else { if (id === 'm8' && m8.running) { pauseModel(m8); renderM8(); } if (id === 'm10' && m10.running) { pauseModel(m10); renderM10(); } }
+  }), { threshold: 0.2 });
+  SECS.forEach(id => io.observe($(id)));
+}
+
+function init(){
+  buildSliders(); buildQuizzes(); buildPredicts(); buildGlossary();
+  // Module 1
+  $('m1_reg').addEventListener('click', () => { m1mode = 'reg'; $('m1_reg').setAttribute('aria-pressed', 'true'); $('m1_cls').setAttribute('aria-pressed', 'false'); renderM1(); });
+  $('m1_cls').addEventListener('click', () => { m1mode = 'cls'; $('m1_cls').setAttribute('aria-pressed', 'true'); $('m1_reg').setAttribute('aria-pressed', 'false'); renderM1(); });
+  onInput(['m1_x'], renderM1);
+  // Module 2
+  onInput(['m2_m', 'm2_b', 'm2_x'], renderM2); $('m2_resid').addEventListener('change', renderM2);
+  $('m2_reset').addEventListener('click', () => { setSlider('m2_m', 8); setSlider('m2_b', 12); setSlider('m2_x', 4); $('m2_resid').checked = true; renderM2(); });
+  $('m2_fit').addEventListener('click', () => { setSlider('m2_m', Math.round(scoreFit.m * 10) / 10); setSlider('m2_b', Math.round(scoreFit.b * 10) / 10); renderM2(); });
+  // Module 3
+  onInput(['m3_x'], renderM3);
+  $('m3_ext').addEventListener('click', () => {
+    m3ext = !m3ext; const s = $('m3_x'); s.min = m3ext ? -15 : 0; s.max = m3ext ? 30 : 10; if (+s.value < +s.min) s.value = s.min; if (+s.value > +s.max) s.value = s.max;
+    syncOut(s); $('m3_ext').setAttribute('aria-pressed', m3ext); $('m3_ext').textContent = m3ext ? 'Back to the original range' : 'Extend the input range'; renderM3();
+  });
+  // Module 4
+  onInput(['m4_z'], () => { cancelAnimationFrame(m4anim); renderM4(); });
+  [['Very Negative', -8], ['Negative', -2], ['Zero', 0], ['Positive', 2], ['Very Positive', 8]].forEach(([n, z]) => {
+    const b = document.createElement('button'); b.textContent = n + ' (z = ' + z + ') → ' + pct(sigmoid(z), 2); b.addEventListener('click', () => animateZ(z)); $('m4_presets').appendChild(b);
+  });
+  onInput(['ex4_z'], renderEx4);
+  $('ex4_near').addEventListener('click', () => { setSlider('ex4_z', 0); renderEx4(); });
+  $('ex4_far').addEventListener('click', () => { setSlider('ex4_z', 6); renderEx4(); });
+  // Module 5
+  onInput(['m5_w', 'm5_b', 'm5_x', 'm5_t'], renderM5);
+  // Module 6
+  onInput(['m6_t'], renderM6);
+  const svg6 = $('ch6'); let drag6 = false;
+  const setT6 = ev => { const P = plot('c6', 640, 300, [0, 1], [0, 1], { l: 90, b: 50 }); let v = (svgX(svg6, ev, 640) - P.m.l) / P.pw; v = Math.max(0.05, Math.min(0.95, Math.round(v * 100) / 100)); setSlider('m6_t', v); renderM6(); };
+  svg6.addEventListener('pointerdown', ev => { drag6 = true; try { svg6.setPointerCapture(ev.pointerId); } catch (e) {} setT6(ev); });
+  svg6.addEventListener('pointermove', ev => { if (drag6) setT6(ev); });
+  ['pointerup', 'pointercancel'].forEach(n => svg6.addEventListener(n, () => { drag6 = false; }));
+  // Module 7
+  onInput(['m7_w', 'm7_b'], renderM7); onInput(['m7_p'], renderM7c); $('m7_y').addEventListener('change', renderM7c); onInput(['se_z'], renderSE);
+  $('ex7').innerHTML = [0.1, 0.5, 0.9].map(p => '<tr><td>' + p + '</td><td>' + fmt(binaryCrossEntropyFromProb(p, 1), 4) + '</td><td>' + fmt(binaryCrossEntropyFromProb(p, 0), 4) + '</td></tr>').join('');
+  // Module 8
+  m8.lr = val('m8_lr'); m8.speed = val('m8_speed'); m8.w = val('m8_w0'); m8.b = val('m8_b0'); resetHistory(m8);
+  onInput(['m8_lr'], () => { m8.lr = val('m8_lr'); renderM8(); });
+  onInput(['m8_speed'], () => { m8.speed = val('m8_speed'); });
+  onInput(['m8_t'], renderM8);
+  $('m8_step').addEventListener('click', () => { pauseModel(m8); stepModel(m8); renderM8(); });
+  $('m8_10').addEventListener('click', () => { pauseModel(m8); for (let i = 0; i < 10; i++) if (!stepModel(m8)) break; renderM8(); });
+  $('m8_auto').addEventListener('click', () => { m8.msg = ''; startAuto(m8, renderM8); renderM8(); });
+  $('m8_pause').addEventListener('click', () => { pauseModel(m8); renderM8(); });
+  $('m8_init').addEventListener('click', initModel8);
+  $('m8_resetdata').addEventListener('click', () => { data8 = toData(D8[$('m8_ds').value]); initModel8(); m8.msg = 'Dataset reloaded and model initialized. History restarted.'; renderM8(); });
+  $('m8_ds').addEventListener('change', () => { data8 = toData(D8[$('m8_ds').value]); initModel8(); m8.msg = 'Dataset changed; model re-initialized and history restarted.'; renderM8(); });
+  // Module 9
+  onInput(['m9_w', 'm9_b', 'm9_t'], renderM9a); onInput(['m9_w1', 'm9_w2', 'm9_b2', 'm9_t2'], renderM9b);
+  // Module 10
+  loadDS10('sep'); m10.lr = val('m10_lr'); m10.speed = val('m10_speed'); resetHistory(m10);
+  $('m10_ds').addEventListener('change', () => { pauseModel(m10); loadDS10($('m10_ds').value); $('m10_obs').value = 1; initModel10('Dataset changed: parameters re-initialized and loss history restarted.'); });
+  onInput(['m10_lr'], () => { m10.lr = val('m10_lr'); renderM10(); });
+  onInput(['m10_speed'], () => { m10.speed = val('m10_speed'); });
+  onInput(['m10_t', 'm10_obs'], renderM10);
+  onInput(['m10_w', 'm10_b'], () => { pauseModel(m10); m10.w = val('m10_w'); m10.b = val('m10_b'); resetHistory(m10); m10.msg = 'Manual parameters set. Loss history restarted from here.'; renderM10(); });
+  $('m10_step').addEventListener('click', () => { pauseModel(m10); stepModel(m10); syncSliders10(); renderM10(); });
+  $('m10_10').addEventListener('click', () => { pauseModel(m10); for (let i = 0; i < 10; i++) if (!stepModel(m10)) break; syncSliders10(); renderM10(); });
+  $('m10_100').addEventListener('click', () => { pauseModel(m10); for (let i = 0; i < 100; i++) if (!stepModel(m10)) break; syncSliders10(); renderM10(); });
+  $('m10_auto').addEventListener('click', () => { m10.msg = ''; startAuto(m10, () => { syncSliders10(); renderM10(); }); renderM10(); });
+  $('m10_pause').addEventListener('click', () => { pauseModel(m10); renderM10(); });
+  $('m10_init').addEventListener('click', () => initModel10());
+  $('m10_reset').addEventListener('click', resetExperiment10);
+  $('m10_addbtn').addEventListener('click', () => addPoint10(parseFloat($('m10_addx').value)));
+  $('m10_undo').addEventListener('click', () => { const d = ds10.added.pop(); if (!d) { m10.msg = 'No added points to undo.'; renderM10(); return; } const i = ds10.train.lastIndexOf(d); if (i >= 0) ds10.train.splice(i, 1); pauseModel(m10); resetHistory(m10); m10.msg = 'Removed the last added point; loss history restarted.'; renderM10(); });
+  $('ch10').addEventListener('click', svgClick10);
+  $('cmp_run').addEventListener('click', runCompare);
+  // Misconceptions / summary
+  $('my2').textContent = fmt(sigmoid(10), 7); onInput(['my_w'], renderMyths); onInput(['sm_x', 'sm_w', 'sm_b', 'sm_t'], renderSummary);
+  renderM1(); renderM2(); renderM3(); renderM4(); renderEx4(); renderM5(); renderM6(); renderM7(); renderM7c(); renderSE(); renderM8(); renderM9a(); renderM9b(); renderM10(); runCompare(); renderMyths(); renderSummary();
+  setupObservers(); updateProgress();
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+</script>
+</body>
+</html>

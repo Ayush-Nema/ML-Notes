@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Random Forest — An Interactive Guide for Beginners</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--ink:#1e2433;--mut:#5b6478;--line:#e3e6ef;--acc:#4f46e5;--acc2:#eef0ff;--c0:#3b82f6;--c1:#f97316;--c2:#10b981;--good:#16a34a;--bad:#dc2626;--warn:#b45309}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);display:flex;overflow:hidden}
+aside{width:276px;background:#1b1f3b;color:#d9dcf5;display:flex;flex-direction:column;flex-shrink:0;z-index:20}
+.brand{padding:20px 18px 14px;font-weight:700;font-size:19px;color:#fff;border-bottom:1px solid #2c3160}
+.brand small{display:block;font-weight:400;font-size:12px;color:#9aa0d6;margin-top:2px}
+nav{flex:1;overflow-y:auto;padding:10px 8px}
+.navitem{display:flex;gap:10px;align-items:center;width:100%;text-align:left;background:none;border:0;color:#c5c9ee;padding:9px 10px;border-radius:9px;cursor:pointer;font:inherit;font-size:14px;line-height:1.3}
+.navitem:hover{background:#262b55}
+.navitem .num{flex:0 0 26px;height:26px;border-radius:50%;background:#2c3160;display:grid;place-items:center;font-size:12px;font-weight:700}
+.navitem.visited .num{background:#3f8f6b;color:#fff}
+.navitem.active{background:var(--acc);color:#fff}
+.navitem.active .num{background:#fff;color:var(--acc)}
+.prog{height:5px;background:#2c3160}.prog div{height:100%;width:0;background:#7be0b0;transition:width .3s}
+main{flex:1;display:flex;flex-direction:column;min-width:0;height:100vh}
+#content{flex:1;overflow-y:auto;padding:30px clamp(16px,4vw,48px) 20px;scroll-behavior:smooth}
+section{display:none;max-width:940px;margin:0 auto;animation:fade .35s}
+section.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px clamp(16px,4vw,48px);background:#fff;border-top:1px solid var(--line)}
+.pager button{background:var(--acc);color:#fff;border:0;padding:10px 20px;border-radius:10px;font:inherit;font-weight:600;cursor:pointer}
+.pager button:disabled{background:#c9cde0;cursor:not-allowed}
+.pager button.sec{background:#fff;color:var(--acc);border:2px solid var(--acc)}
+.pager button.sec:disabled{color:#b3b8d0;border-color:#c9cde0;background:#fff}
+#pos{color:var(--mut);font-size:14px;text-align:center}
+#menuBtn{display:none;position:fixed;top:10px;left:10px;z-index:30;background:var(--acc);color:#fff;border:0;border-radius:8px;width:40px;height:40px;font-size:20px;cursor:pointer}
+h1{font-size:2rem;line-height:1.2;margin:.2em 0 .3em}
+h2{font-size:1.6rem;margin:.1em 0 .4em}
+h3{font-size:1.18rem;margin:1.5em 0 .4em;color:#2b3150}
+.kicker{color:var(--acc);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:12px}
+p{margin:.6em 0}
+.lead{font-size:1.1rem;color:#3a4260}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:16px 0;box-shadow:0 1px 2px rgba(20,25,60,.04)}
+.card h4{margin:0 0 8px;font-size:1.02rem}
+.callout{border-left:5px solid var(--acc);background:var(--acc2);padding:12px 16px;border-radius:0 10px 10px 0;margin:16px 0}
+.callout.tip{border-color:var(--c2);background:#e9f9f2}
+.callout.warn{border-color:#f59e0b;background:#fff6e5}
+.callout.key{border-color:var(--acc)}
+.callout b.t{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px;color:#444b6e}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+.eq{background:#fbfbff;border:1px solid var(--line);border-radius:10px;padding:8px 14px;margin:12px 0;overflow-x:auto;text-align:center}
+math{font-size:1.15em;font-family:"STIX Two Math","Cambria Math","Latin Modern Math",serif}
+math[display=block]{margin:.35em 0}
+.ctl{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center;margin:10px 0}
+.ctl label{font-size:14px;color:var(--mut);display:flex;flex-direction:column;gap:2px;min-width:150px}
+.ctl label b{color:var(--ink)}
+input[type=range]{accent-color:var(--acc);width:100%}
+select,input[type=number]{font:inherit;padding:5px 8px;border:1px solid #cdd2e4;border-radius:8px;background:#fff}
+.btn{background:var(--acc);color:#fff;border:0;border-radius:9px;padding:8px 14px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.btn.sec{background:#fff;color:var(--acc);border:2px solid var(--acc);padding:6px 12px}
+.btn.on{background:var(--acc);color:#fff}
+.btn:hover{filter:brightness(1.07)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+canvas{max-width:100%;border:1px solid var(--line);border-radius:10px;background:#fff;display:block;height:auto}
+.stats{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+.stat{flex:1 1 120px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 12px;text-align:center}
+.stat b{display:block;font-size:1.35rem}
+.stat span{font-size:12px;color:var(--mut)}
+table.tbl{border-collapse:collapse;width:100%;font-size:14px}
+.tbl th,.tbl td{border:1px solid var(--line);padding:5px 9px;text-align:center}
+.tbl th{background:#f0f2fa}
+.tbl tr.hl td{background:#fff3c4}
+.pill{display:inline-block;padding:1px 10px;border-radius:999px;font-size:13px;font-weight:600;color:#fff}
+.yes{background:var(--c2)}.no{background:var(--c1)}
+.c0{color:var(--c0)}.c1{color:var(--c1)}.c2{color:var(--c2)}
+svg text{font:13px system-ui,sans-serif}
+.tn rect{fill:#fff;stroke:#b8bed6;stroke-width:2;rx:9}
+.tn.leafY rect{fill:#dcf7ea}.tn.leafN rect{fill:#ffe9d6}
+.tn.on rect{stroke:var(--acc);stroke-width:4}
+.ed{stroke:#b8bed6;stroke-width:2}.ed.on{stroke:var(--acc);stroke-width:4}
+.marble{display:inline-block;width:22px;height:22px;border-radius:50%;margin:2px}
+.bar{height:20px;border-radius:5px;background:var(--acc);min-width:2px;transition:width .25s}
+.barrow{display:grid;grid-template-columns:130px 1fr 60px;gap:8px;align-items:center;margin:5px 0;font-size:14px}
+details{background:#fff;border:1px solid var(--line);border-radius:12px;margin:10px 0;padding:2px 16px}
+summary{cursor:pointer;font-weight:600;padding:10px 0}
+details[open] summary{border-bottom:1px solid var(--line);margin-bottom:8px}
+.fold{display:flex;gap:3px;margin:4px 0}
+.fold i{flex:1;height:18px;border-radius:4px;background:#d6dbef}
+.fold i.t{background:var(--c1)}
+.cell{display:inline-block;width:28px;height:28px;margin:2px;border-radius:6px;text-align:center;line-height:28px;font-size:12px;font-weight:700}
+.cell.oob{background:#e9ecf6;color:#8a91ad}
+.cell.in{background:var(--acc);color:#fff}
+.dot{display:inline-block;width:14px;height:14px;border-radius:50%;margin:2px}
+pre{background:#14172e;color:#d8def9;padding:14px 16px;border-radius:10px;overflow:auto;font-size:13px;line-height:1.5;position:relative}
+pre.rules{background:#f4f5fb;color:#222;max-height:230px}
+code{background:#eef0fa;padding:1px 6px;border-radius:5px;font-size:.92em}
+.pc{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:820px){.pc{grid-template-columns:1fr}}
+.pro{border-top:5px solid var(--good)}.con{border-top:5px solid var(--bad)}
+.qopt{display:block;width:100%;text-align:left;margin:6px 0;padding:9px 12px;background:#fff;border:2px solid var(--line);border-radius:10px;font:inherit;cursor:pointer}
+.qopt:hover{border-color:var(--acc)}
+.qopt.right{border-color:var(--good);background:#e8f8ee}.qopt.wrong{border-color:var(--bad);background:#fdeaea}
+.why{display:none;margin-top:8px;font-size:14px;color:#3a4260}
+.legend span{margin-right:14px;font-size:14px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+@media(max-width:820px){
+ aside{position:fixed;left:-290px;top:0;bottom:0;transition:left .25s}
+ aside.open{left:0;box-shadow:0 0 0 100vmax rgba(0,0,0,.4)}
+ #menuBtn{display:block}
+ #content{padding-top:58px}
+}
+</style>
+</head>
+<body>
+<button id="menuBtn" aria-label="Menu">☰</button>
+<aside id="side">
+  <div class="brand">🌳 Random Forest<small>Intuition → Intermediate · interactive</small></div>
+  <nav id="nav"></nav>
+  <div class="prog"><div id="progBar"></div></div>
+</aside>
+<main>
+<div id="content">
+
+<!-- ============ 0 WELCOME ============ -->
+<section id="s0" data-title="Welcome &amp; Roadmap">
+  <div class="kicker">Machine Learning · Beginner Series</div>
+  <h1>Random Forest: from one tree to a crowd of trees</h1>
+  <p class="lead">A <b>random forest</b> is one of the most reliable “first choice” models for tabular data. It is built from a very simple idea: ask many slightly different decision trees and let them vote.</p>
+  <div class="card">
+    <h4>What you will be able to do after this lesson</h4>
+    <ul>
+      <li>Explain what a decision tree is and read one as a set of <i>if–then</i> rules.</li>
+      <li>Compute <b>entropy, Gini impurity</b> and <b>information gain</b> by hand, and understand how a tree picks its splits.</li>
+      <li>Diagnose <b>overfitting</b> and measure a model with accuracy, precision, recall, F1, cross-validation and OOB error.</li>
+      <li>Explain <b>bagging</b> and <b>feature randomness</b>, and why they reduce variance.</li>
+      <li>Train a forest on the real <b>Iris</b> dataset, read feature importances, and tune hyperparameters.</li>
+      <li>List the strengths, weaknesses, assumptions and validation steps of random forests.</li>
+    </ul>
+  </div>
+  <h3>Roadmap</h3>
+  <div id="roadmap" class="grid3"></div>
+  <div class="grid2">
+    <div class="card"><h4>🧪 Two running examples</h4>
+      <p><b>Toy:</b> the classic <i>“Should we play tennis today?”</i> table (14 rows) and small 2-D point clouds, to build intuition.</p>
+      <p><b>Real:</b> Fisher's <i>Iris</i> flowers (150 samples, 4 measurements, 3 species).</p></div>
+    <div class="card"><h4>🧭 How to use this page</h4>
+      <p>Use the bar on the left or the <b>Next / Previous</b> buttons (or the ← → keys). Every section has widgets: <b>move the sliders, press the buttons, break things</b>. That is the fastest way to learn.</p></div>
+  </div>
+  <div class="callout warn"><b class="t">Note</b>Equations are written in MathML and render natively in current Chrome, Edge, Firefox and Safari. No internet connection is needed for anything on this page.</div>
+</section>
+
+<!-- ============ 1 WHAT IS A DECISION TREE ============ -->
+<section id="s1" data-title="What is a Decision Tree?">
+  <div class="kicker">Part 1 · Intuition</div>
+  <h2>A tree is a flowchart of yes/no questions</h2>
+  <p class="lead">Think of the game “20 questions”. Each question splits the possibilities in two, and after a few good questions you can name the answer. A <b>decision tree</b> is a flowchart that was <i>learned from data</i> to do exactly that.</p>
+  <div class="card">
+    <h4>Anatomy of a tree</h4>
+    <ul>
+      <li><b>Root node</b>: the first question, asked about every example.</li>
+      <li><b>Internal node</b>: a question about one feature, e.g. “Is Outlook = Sunny?” or “Is petal length ≤ 2.45?”.</li>
+      <li><b>Branch</b>: one possible answer to the question.</li>
+      <li><b>Leaf</b>: the end point; it outputs a prediction (a class, or an average for regression).</li>
+      <li><b>Depth</b>: the longest chain of questions from root to a leaf.</li>
+    </ul>
+  </div>
+
+  <h3>Toy example 1 — “Should we play tennis?”</h3>
+  <p>Fourteen past days were recorded. For each day we know the weather and whether we played. The tree below was learned from this table (you will learn <i>how</i> in the next sections).</p>
+  <div class="card">
+    <div class="ctl">
+      <label>Outlook <select id="t_out"><option>Sunny</option><option>Overcast</option><option>Rain</option></select></label>
+      <label>Humidity <select id="t_hum"><option>High</option><option>Normal</option></select></label>
+      <label>Wind <select id="t_wind"><option>Weak</option><option>Strong</option></select></label>
+    </div>
+    <svg id="ttree" viewBox="0 0 620 290" width="100%" style="max-width:640px;display:block;margin:auto"></svg>
+    <p id="t_verdict" style="text-align:center;font-size:1.05rem"></p>
+    <details open><summary>The 14 training days (rows that reached the same leaf are highlighted)</summary><div style="overflow-x:auto"><table class="tbl" id="ptable"></table></div></details>
+  </div>
+  <div class="callout key"><b class="t">Key idea</b>A tree is just a set of <b>rules</b>:<br><code>IF Outlook = Overcast THEN Play = Yes</code><br><code>IF Outlook = Sunny AND Humidity = High THEN Play = No</code><br>Each path from root to leaf is one rule. That is why trees are so easy to explain to non-experts.</div>
+  <div class="callout tip"><b class="t">Try it</b>Change “Wind” while Outlook = Sunny. Nothing changes — the tree never asks about wind on sunny days. Trees automatically ignore questions that do not help.</div>
+</section>
+
+<!-- ============ 2 IMPURITY ============ -->
+<section id="s2" data-title="Choosing the Best Question: Impurity &amp; Gain">
+  <div class="kicker">Part 2 · How trees are created (1/3)</div>
+  <h2>Which question should we ask first?</h2>
+  <p class="lead">A good question separates the classes into <b>pure</b> groups: groups where almost everyone has the same label. We need a number that measures “how mixed” a group is.</p>
+
+  <h3>Impurity: how mixed is a bag of marbles?</h3>
+  <div class="card">
+    <div class="ctl">
+      <label>Blue marbles: <b id="m0v">8</b><input type="range" id="m0" min="0" max="20" value="8"></label>
+      <label>Orange marbles: <b id="m1v">8</b><input type="range" id="m1" min="0" max="20" value="8"></label>
+    </div>
+    <div id="marbles" style="min-height:60px"></div>
+    <div class="stats">
+      <div class="stat"><b id="m_p">0.50</b><span>fraction orange <i>p</i></span></div>
+      <div class="stat"><b id="m_g">0.500</b><span>Gini impurity</span></div>
+      <div class="stat"><b id="m_h">1.000</b><span>Entropy (bits)</span></div>
+    </div>
+    <canvas id="impcv"></canvas>
+  </div>
+  <p>For a group <math><mi>S</mi></math> with <math><mi>K</mi></math> classes, let <math><msub><mi>p</mi><mi>k</mi></msub></math> be the fraction of examples in class <math><mi>k</mi></math>. Two popular measures:</p>
+  <div class="eq">
+  <math display="block"><mrow><mi>G</mi><mo>(</mo><mi>S</mi><mo>)</mo><mo>=</mo><mn>1</mn><mo>−</mo><munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>1</mn></mrow><mi>K</mi></munderover><msubsup><mi>p</mi><mi>k</mi><mn>2</mn></msubsup><mspace width="2em"/><mtext>(Gini impurity)</mtext></mrow></math>
+  <math display="block"><mrow><mi>H</mi><mo>(</mo><mi>S</mi><mo>)</mo><mo>=</mo><mo>−</mo><munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>1</mn></mrow><mi>K</mi></munderover><msub><mi>p</mi><mi>k</mi></msub><msub><mi>log</mi><mn>2</mn></msub><msub><mi>p</mi><mi>k</mi></msub><mspace width="2em"/><mtext>(Entropy)</mtext></mrow></math>
+  </div>
+  <p>Both are <b>0</b> for a perfectly pure group and largest when the classes are evenly mixed (for two classes: Gini = 0.5, entropy = 1 bit). Move the sliders to see the curves.</p>
+
+  <h3>Information gain: how much did a question help?</h3>
+  <p>A split sends <math><msub><mi>n</mi><mi>L</mi></msub></math> examples left and <math><msub><mi>n</mi><mi>R</mi></msub></math> right. The quality of the split is the <b>weighted</b> impurity of its two children, and the <b>gain</b> is how much impurity dropped:</p>
+  <div class="eq">
+  <math display="block"><mrow><mi>I</mi><mo>(</mo><mi>S</mi><mo>,</mo><mi>q</mi><mo>)</mo><mo>=</mo><mfrac><msub><mi>n</mi><mi>L</mi></msub><mi>n</mi></mfrac><mi>G</mi><mo>(</mo><msub><mi>S</mi><mi>L</mi></msub><mo>)</mo><mo>+</mo><mfrac><msub><mi>n</mi><mi>R</mi></msub><mi>n</mi></mfrac><mi>G</mi><mo>(</mo><msub><mi>S</mi><mi>R</mi></msub><mo>)</mo></mrow></math>
+  <math display="block"><mrow><mi mathvariant="normal">Δ</mi><mo>(</mo><mi>S</mi><mo>,</mo><mi>q</mi><mo>)</mo><mo>=</mo><mi>G</mi><mo>(</mo><mi>S</mi><mo>)</mo><mo>−</mo><mi>I</mi><mo>(</mo><mi>S</mi><mo>,</mo><mi>q</mi><mo>)</mo></mrow></math>
+  </div>
+  <p>With entropy in place of <math><mi>G</mi></math>, <math><mi mathvariant="normal">Δ</mi></math> is the famous <b>information gain</b> used by ID3/C4.5. The tree picks the question <math><mi>q</mi></math> with the largest gain.</p>
+
+  <h3>Toy example 1, continued — which feature should be the root?</h3>
+  <div class="card">
+    <div class="row" id="gainBtns"></div>
+    <div class="ctl"><label>Criterion <select id="gcrit"><option value="entropy">Entropy (information gain)</option><option value="gini">Gini</option></select></label></div>
+    <p id="g_parent"></p>
+    <div style="overflow-x:auto"><table class="tbl" id="gtable"></table></div>
+    <p id="g_result" style="font-weight:600"></p>
+    <h4>Gain of every feature at the root</h4>
+    <div id="gbars"></div>
+  </div>
+  <div class="callout key"><b class="t">Result</b>Outlook gives the biggest drop in impurity, so it becomes the root. Then the algorithm repeats the same procedure <i>inside each branch</i>. (Sunny → asks about Humidity; Rain → asks about Wind.)</div>
+  <div class="callout tip"><b class="t">Try it</b>Switch between Entropy and Gini. The numbers change, but is the winner the same? In practice the two almost always choose the same or nearly the same splits.</div>
+</section>
+
+<!-- ============ 3 GROWING (SPLITS) ============ -->
+<section id="s3" data-title="Growing a Tree: Greedy Splits">
+  <div class="kicker">Part 3 · How trees are created (2/3)</div>
+  <h2>Split the data yourself</h2>
+  <p class="lead">With numeric features, a question looks like <b>“is feature ≤ threshold?”</b>. Below, 44 students are plotted by hours studied and hours slept. Blue = <b>Fail</b>, orange = <b>Pass</b>. Move the threshold and try to find the best split. Can you beat the algorithm?</p>
+  <div class="card">
+    <div class="ctl">
+      <label>Feature to split on
+        <select id="s3f"><option value="x">Hours studied (x)</option><option value="y">Hours slept (y)</option></select></label>
+      <label>Threshold <i>t</i>: <b id="s3tv">5.0</b><input type="range" id="s3t" min="0" max="10" step="0.1" value="5"></label>
+      <button class="btn" id="s3best">Show algorithm's best split</button>
+    </div>
+    <div class="grid2">
+      <div><canvas id="s3cv"></canvas><div class="legend" style="margin-top:6px"><span><i style="background:var(--c0)"></i>Fail</span><span><i style="background:var(--c1)"></i>Pass</span></div></div>
+      <div><canvas id="s3curve"></canvas><p style="font-size:13px;color:var(--mut)">Weighted impurity <math><mi>I</mi></math> for every threshold of the chosen feature (lower is better). Green marker = the best possible.</p></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="s3L">–</b><span>Left (≤ t): Fail / Pass</span></div>
+      <div class="stat"><b id="s3R">–</b><span>Right (&gt; t): Fail / Pass</span></div>
+      <div class="stat"><b id="s3I">–</b><span>Weighted Gini <i>I</i></span></div>
+      <div class="stat"><b id="s3gain">–</b><span>Gain Δ (parent G = 0.500)</span></div>
+    </div>
+    <p id="s3msg"></p>
+  </div>
+
+  <h3>The greedy recursive algorithm</h3>
+  <ol>
+    <li><b>Start</b> with all training data in the root node.</li>
+    <li>For every feature <math><mi>j</mi></math> and every candidate threshold <math><mi>t</mi></math> (midpoints between consecutive sorted values) compute the weighted impurity of the two children.</li>
+    <li><b>Pick</b> the best pair and split the node in two:
+      <div class="eq"><math display="block"><mrow><mo>(</mo><msup><mi>j</mi><mo>*</mo></msup><mo>,</mo><msup><mi>t</mi><mo>*</mo></msup><mo>)</mo><mo>=</mo><munder><mi>argmin</mi><mrow><mi>j</mi><mo>,</mo><mi>t</mi></mrow></munder><mi>I</mi><mo>(</mo><mi>S</mi><mo>,</mo><mi>j</mi><mo>,</mo><mi>t</mi><mo>)</mo></mrow></math></div></li>
+    <li><b>Recurse</b> on the left and right child.</li>
+    <li><b>Stop</b> when a node is pure, the depth limit is reached, there are too few samples to split, or no split improves impurity. Make it a <b>leaf</b> that predicts the majority class.</li>
+  </ol>
+  <div class="callout warn"><b class="t">“Greedy” means short-sighted</b>The algorithm picks the best split <i>right now</i> without looking ahead. It is fast, but does not guarantee the globally best tree. A small change in the data can change the root split, so a whole tree can change. This instability matters later.</div>
+  <h3>Regression trees</h3>
+  <p>If the target is a number (house price, temperature) the leaf predicts the <b>mean</b> of its training targets and the impurity is the mean squared error around that mean:</p>
+  <div class="eq"><math display="block"><mrow><mi>MSE</mi><mo>(</mo><mi>S</mi><mo>)</mo><mo>=</mo><mfrac><mn>1</mn><mrow><mo>|</mo><mi>S</mi><mo>|</mo></mrow></mfrac><munder><mo>∑</mo><mrow><mi>i</mi><mo>∈</mo><mi>S</mi></mrow></munder><msup><mrow><mo>(</mo><msub><mi>y</mi><mi>i</mi></msub><mo>−</mo><mover><mi>y</mi><mo>¯</mo></mover><mo>)</mo></mrow><mn>2</mn></msup></mrow></math></div>
+</section>
+
+<!-- ============ 4 OVERFITTING ============ -->
+<section id="s4" data-title="Full Trees &amp; Overfitting">
+  <div class="kicker">Part 4 · How trees are created (3/3)</div>
+  <h2>Let a tree grow… too much</h2>
+  <p class="lead">If we keep splitting until every leaf is pure, the tree can memorise the training set, including its noise. Here is a noisy “two moons” problem with 100 training points (dots) and 200 hidden test points. Control how deep the tree may grow.</p>
+  <div class="card">
+    <div class="ctl">
+      <label>Max depth: <b id="s4dv">3</b><input type="range" id="s4d" min="1" max="15" value="3"></label>
+      <label>Min samples per leaf: <b id="s4mv">1</b><input type="range" id="s4m" min="1" max="20" value="1"></label>
+      <label>Criterion <select id="s4c"><option value="gini">Gini</option><option value="entropy">Entropy</option></select></label>
+      <label style="min-width:auto"><span><input type="checkbox" id="s4test"> show test points</span></label>
+    </div>
+    <div class="grid2">
+      <div><canvas id="s4cv"></canvas><div class="legend" style="margin-top:6px"><span><i style="background:var(--c0)"></i>class 0</span><span><i style="background:var(--c1)"></i>class 1</span><span>● train &nbsp; ○ test</span></div>
+        <p style="font-size:13px;color:var(--mut);margin:6px 0 0"><b>Background shading</b> = the tree's prediction at that spot. Solid blue/orange: a <i>pure</i> leaf (all training points share one class). Paler, blended colour: a <i>mixed</i> leaf, with the shade showing the share of each class in it. Raising “min samples per leaf” forces larger, mixed leaves, so the boundary smooths out.</p></div>
+      <div><canvas id="s4curve"></canvas></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="s4tr">–</b><span>Train accuracy</span></div>
+      <div class="stat"><b id="s4te">–</b><span>Test accuracy</span></div>
+      <div class="stat"><b id="s4lv">–</b><span>Leaves</span></div>
+      <div class="stat"><b id="s4dp">–</b><span>Actual depth</span></div>
+    </div>
+    <p id="s4msg"></p>
+    <details><summary>Show the tree as rules</summary><pre class="rules" id="s4rules"></pre></details>
+  </div>
+  <div class="grid2">
+    <div class="card"><h4>📉 Underfitting (high bias)</h4><p>Too shallow: a single straight cut cannot capture a curved boundary. Both train and test accuracy are mediocre.</p></div>
+    <div class="card"><h4>📈 Overfitting (high variance)</h4><p>Too deep: the boundary becomes jagged and wraps around individual noisy points. Train accuracy ≈ 100%, test accuracy drops.</p></div>
+  </div>
+  <div class="callout key"><b class="t">The bias–variance picture</b>Single deep trees have <b>low bias</b> but <b>high variance</b>: re-draw the training set and the tree changes a lot. Random forests are designed to keep the low bias and <i>cut the variance</i>. Next, learn how to measure all this properly.</div>
+  <div class="callout tip"><b class="t">Try it</b>Slide max depth to 15 and watch the train accuracy reach 100% while test accuracy stops improving. Then raise “min samples per leaf” to 5–8: you have just <b>regularised</b> the tree.</div>
+</section>
+
+<!-- ============ 5 EVALUATION ============ -->
+<section id="s5" data-title="Evaluating a Model">
+  <div class="kicker">Part 5 · Evaluation</div>
+  <h2>How do we know a model is any good?</h2>
+  <p class="lead">Golden rule: <b>never judge a model on the data it was trained on.</b> Hold some data back (a <i>test set</i>) and measure there.</p>
+  <h3>Confusion matrix and metrics (binary case)</h3>
+  <div class="card">
+    <div class="row" style="margin-bottom:10px">
+      <span>Presets:</span>
+      <button class="btn sec" data-p="40,10,5,45">Balanced</button>
+      <button class="btn sec" data-p="0,0,10,990">Imbalanced “lazy” model</button>
+      <button class="btn sec" data-p="8,20,2,970">Noisy alarm</button>
+    </div>
+    <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;max-width:460px;align-items:center;text-align:center">
+      <div></div><b>Predicted +</b><b>Predicted −</b>
+      <b>Actual +</b>
+      <label style="background:#e6f6ee;padding:8px;border-radius:8px">TP<br><input type="number" id="cm_tp" min="0" value="40" style="width:80px"></label>
+      <label style="background:#fdeaea;padding:8px;border-radius:8px">FN<br><input type="number" id="cm_fn" min="0" value="5" style="width:80px"></label>
+      <b>Actual −</b>
+      <label style="background:#fdeaea;padding:8px;border-radius:8px">FP<br><input type="number" id="cm_fp" min="0" value="10" style="width:80px"></label>
+      <label style="background:#e6f6ee;padding:8px;border-radius:8px">TN<br><input type="number" id="cm_tn" min="0" value="45" style="width:80px"></label>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="m_acc">–</b><span>Accuracy</span></div>
+      <div class="stat"><b id="m_prec">–</b><span>Precision</span></div>
+      <div class="stat"><b id="m_rec">–</b><span>Recall</span></div>
+      <div class="stat"><b id="m_f1">–</b><span>F1 score</span></div>
+    </div>
+    <p id="m_note"></p>
+  </div>
+  <div class="eq">
+    <math display="block"><mrow><mtext>Accuracy</mtext><mo>=</mo><mfrac><mrow><mi>TP</mi><mo>+</mo><mi>TN</mi></mrow><mrow><mi>TP</mi><mo>+</mo><mi>TN</mi><mo>+</mo><mi>FP</mi><mo>+</mo><mi>FN</mi></mrow></mfrac><mspace width="2em"/><mtext>Precision</mtext><mo>=</mo><mfrac><mi>TP</mi><mrow><mi>TP</mi><mo>+</mo><mi>FP</mi></mrow></mfrac></mrow></math>
+    <math display="block"><mrow><mtext>Recall</mtext><mo>=</mo><mfrac><mi>TP</mi><mrow><mi>TP</mi><mo>+</mo><mi>FN</mi></mrow></mfrac><mspace width="2em"/><msub><mi>F</mi><mn>1</mn></msub><mo>=</mo><mfrac><mrow><mn>2</mn><mo>·</mo><mtext>Precision</mtext><mo>·</mo><mtext>Recall</mtext></mrow><mrow><mtext>Precision</mtext><mo>+</mo><mtext>Recall</mtext></mrow></mfrac></mrow></math>
+  </div>
+  <ul>
+    <li><b>Precision</b>: of the cases I flagged positive, how many really were?</li>
+    <li><b>Recall</b>: of all real positives, how many did I catch?</li>
+  </ul>
+  <div class="callout warn"><b class="t">Accuracy can lie</b>Press the “Imbalanced lazy model” preset: the model never finds a single positive case, yet its accuracy is 99%. Always look at precision, recall and F1 when classes are imbalanced.</div>
+
+  <h3>k-fold cross-validation</h3>
+  <p>One test set can be lucky or unlucky. <b>Cross-validation</b> splits the data into <math><mi>k</mi></math> folds; each fold takes one turn as the test set while the model trains on the other <math><mi>k</mi><mo>−</mo><mn>1</mn></math> folds:</p>
+  <div class="eq"><math display="block"><mrow><msub><mtext>Score</mtext><mtext>CV</mtext></msub><mo>=</mo><mfrac><mn>1</mn><mi>k</mi></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>k</mi></munderover><msub><mtext>Score</mtext><mi>i</mi></msub></mrow></math></div>
+  <div class="card"><div class="ctl"><label>Number of folds k: <b id="kv">5</b><input type="range" id="kf" min="2" max="10" value="5"></label></div><div id="folds"></div><p id="kmsg" style="font-size:14px;color:var(--mut)"></p></div>
+  <div class="callout key"><b class="t">Random forests have a free validation set</b>Each tree is trained on a bootstrap sample, so some rows are left out of that tree. Predicting those rows with only the trees that never saw them gives the <b>out-of-bag (OOB) score</b>, a built-in estimate of test performance. You will compute it in Part 6.</div>
+</section>
+
+<!-- ============ 6 RANDOM FOREST ============ -->
+<section id="s6" data-title="From One Tree to a Forest">
+  <div class="kicker">Part 6 · Random Forest</div>
+  <h2>Many different trees, one vote</h2>
+  <p class="lead">One tree is unstable. The fix: grow <b>many</b> trees, make each one see the data a bit differently, and <b>combine</b> their answers.</p>
+
+  <h3>6.1 Why does a crowd beat an individual?</h3>
+  <div class="card">
+    <p>Suppose each “voter” is right with probability <i>p</i> and they vote <b>independently</b>. What is the chance the <b>majority</b> is right?</p>
+    <div class="ctl">
+      <label>Single voter accuracy <i>p</i>: <b id="crp">0.60</b><input type="range" id="crpi" min="0.5" max="0.9" step="0.01" value="0.6"></label>
+      <label>Number of voters N: <b id="crn">11</b><input type="range" id="crni" min="1" max="101" step="2" value="11"></label>
+    </div>
+    <div class="stats"><div class="stat"><b id="crres">–</b><span>P(majority is correct)</span></div></div>
+    <canvas id="crcv"></canvas>
+    <div class="eq"><math display="block"><mrow><mi>P</mi><mo>=</mo><munderover><mo>∑</mo><mrow><mi>k</mi><mo>&gt;</mo><mi>N</mi><mo>/</mo><mn>2</mn></mrow><mi>N</mi></munderover><mrow><mo>(</mo><mfrac linethickness="0"><mi>N</mi><mi>k</mi></mfrac><mo>)</mo></mrow><msup><mi>p</mi><mi>k</mi></msup><msup><mrow><mo>(</mo><mn>1</mn><mo>−</mo><mi>p</mi><mo>)</mo></mrow><mrow><mi>N</mi><mo>−</mo><mi>k</mi></mrow></msup></mrow></math></div>
+    <p>Mediocre voters become excellent as a group, <b>but only if their mistakes are not all the same</b>. Ten copies of the same tree vote identically and gain nothing. We need <b>diverse</b> trees. A random forest creates diversity in two ways:</p>
+  </div>
+
+  <div class="grid2">
+    <div class="card"><h4>① Bagging (bootstrap aggregating)</h4><p>Each tree trains on a <b>bootstrap sample</b>: draw <i>n</i> rows <i>with replacement</i> from the <i>n</i> training rows.</p></div>
+    <div class="card"><h4>② Random feature subsets</h4><p>At <b>every split</b>, a tree may only consider a random subset of <i>m</i> out of <i>p</i> features (typical: <math><mi>m</mi><mo>≈</mo><msqrt><mi>p</mi></msqrt></math> for classification, <math><mi>p</mi><mo>/</mo><mn>3</mn></math> for regression).</p></div>
+  </div>
+
+  <h3>6.2 Bootstrap sampling — draw it</h3>
+  <div class="card">
+    <div class="ctl"><label>Training set size n: <b id="bnv">14</b><input type="range" id="bn" min="5" max="60" value="14"></label>
+      <button class="btn" id="bdraw">Draw a bootstrap sample</button>
+      <button class="btn sec" id="b1000">Repeat 1000 times</button></div>
+    <p style="font-size:14px;color:var(--mut)">Each square is one training row. <b style="color:var(--acc)">Purple</b> = picked (number = how many times). <b>Grey</b> = never picked, i.e. <b>out-of-bag</b> for this tree.</p>
+    <div id="bgrid"></div>
+    <div class="stats">
+      <div class="stat"><b id="b_u">–</b><span>unique rows in bag</span></div>
+      <div class="stat"><b id="b_o">–</b><span>out-of-bag rows</span></div>
+      <div class="stat"><b id="b_avg">–</b><span>average unique % (1000 draws)</span></div>
+    </div>
+    <p>The chance that a particular row is <i>never</i> picked in <math><mi>n</mi></math> draws:</p>
+    <div class="eq"><math display="block"><mrow><msup><mrow><mo>(</mo><mn>1</mn><mo>−</mo><mfrac><mn>1</mn><mi>n</mi></mfrac><mo>)</mo></mrow><mi>n</mi></msup><mo>⟶</mo><msup><mi>e</mi><mrow><mo>−</mo><mn>1</mn></mrow></msup><mo>≈</mo><mn>0.368</mn></mrow></math></div>
+    <p>So each tree sees about <b>63.2%</b> unique rows and leaves out about <b>36.8%</b>. Those left-out rows are what makes the OOB score possible.</p>
+  </div>
+
+  <h3>6.3 Why averaging reduces variance</h3>
+  <p>Suppose each tree has prediction variance <math><msup><mi>σ</mi><mn>2</mn></msup></math> and the trees' predictions have pairwise correlation <math><mi>ρ</mi></math>. The variance of the average of <math><mi>B</mi></math> trees is:</p>
+  <div class="eq"><math display="block"><mrow><mi>Var</mi><mo>(</mo><mover><mi>f</mi><mo>¯</mo></mover><mo>)</mo><mo>=</mo><mi>ρ</mi><msup><mi>σ</mi><mn>2</mn></msup><mo>+</mo><mfrac><mrow><mn>1</mn><mo>−</mo><mi>ρ</mi></mrow><mi>B</mi></mfrac><msup><mi>σ</mi><mn>2</mn></msup></mrow></math></div>
+  <div class="card">
+    <div class="ctl">
+      <label>Correlation between trees ρ: <b id="rhov">0.30</b><input type="range" id="rho" min="0" max="1" step="0.01" value="0.3"></label>
+      <label>Number of trees B: <b id="rbv">50</b><input type="range" id="rb" min="1" max="100" value="50"></label>
+    </div>
+    <div class="stats"><div class="stat"><b id="varres">–</b><span>Var of forest (σ² = 1)</span></div></div>
+    <canvas id="varcv"></canvas>
+    <p style="font-size:14px;color:var(--mut)">Adding trees kills the second term, but the first term <math><mi>ρ</mi><msup><mi>σ</mi><mn>2</mn></msup></math> remains. That is why <b>decorrelating</b> trees (random feature subsets!) is just as important as adding more of them.</p>
+  </div>
+
+  <h3>6.4 The forest in action (toy example 2: noisy moons)</h3>
+  <div class="card">
+    <div class="ctl">
+      <label>Number of trees B: <b id="fbv">25</b><input type="range" id="fb" min="1" max="100" value="25"></label>
+      <label>Max depth: <b id="fdv">12</b><input type="range" id="fd" min="1" max="15" value="12"></label>
+      <label>Features tried per split m: <select id="fm"><option value="2">2 (all, = bagging only)</option><option value="1" selected>1 (random)</option></select></label>
+    </div>
+    <p style="font-size:14px;color:var(--mut)">First six individual trees, each trained on its own bootstrap sample:</p>
+    <div class="row" id="thumbs"></div>
+    <div class="grid2" style="margin-top:12px">
+      <div><b>One tree</b> (trained on all the data)<canvas id="f1cv"></canvas></div>
+      <div><b>Forest</b> (colour = share of votes)<canvas id="f2cv"></canvas></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="f_s">–</b><span>single tree: test accuracy</span></div>
+      <div class="stat"><b id="f_f">–</b><span>forest: test accuracy</span></div>
+      <div class="stat"><b id="f_o">–</b><span>forest: OOB accuracy</span></div>
+    </div>
+  </div>
+  <div class="callout key"><b class="t">The prediction rule</b>
+    <math display="block"><mrow><mover><mi>y</mi><mo>^</mo></mover><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><mi>mode</mi><mo>{</mo><msub><mi>h</mi><mn>1</mn></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>,</mo><mo>…</mo><mo>,</mo><msub><mi>h</mi><mi>B</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>}</mo><mspace width="2em"/><mtext>(classification)</mtext></mrow></math>
+    <math display="block"><mrow><mover><mi>y</mi><mo>^</mo></mover><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><mfrac><mn>1</mn><mi>B</mi></mfrac><munderover><mo>∑</mo><mrow><mi>b</mi><mo>=</mo><mn>1</mn></mrow><mi>B</mi></munderover><msub><mi>h</mi><mi>b</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo><mspace width="2em"/><mtext>(regression)</mtext></mrow></math>
+    where <math><msub><mi>h</mi><mi>b</mi></msub></math> is the <math><mi>b</mi></math>-th tree.</div>
+  <div class="callout tip"><b class="t">Try it</b>Compare the single tree with a forest of 1 → 5 → 50 trees. Notice how the jagged, over-confident boundary smooths out. Set m = 2 and m = 1 and compare how different the thumbnails look.</div>
+</section>
+
+<!-- ============ 6b BUILDING A FOREST ============ -->
+<section id="s6b" data-title="Building a Random Forest &amp; Bagging">
+  <div class="kicker">Part 7 · How a Random Forest is built</div>
+  <h2>The recipe: bag the data, shuffle the features, vote</h2>
+  <p class="lead">You now know why a crowd of different trees beats one tree. This section shows <b>exactly how the crowd is created</b>, step by step, starting with the first ingredient: <b>bagging</b>.</p>
+
+  <h3>7.1 Bagging = <u>B</u>ootstrap + <u>agg</u>regat<u>ing</u></h3>
+  <div class="card">
+    <h4>🧠 The intuition</h4>
+    <p>Imagine 100 students preparing for the same exam. Each gets a <i>different photocopy</i> of the textbook: some pages are copied twice, some are missing. Every student studies alone and writes an answer sheet. The final answer is whatever <b>most students</b> wrote. Each student is a bit wrong in their own way, but their mistakes differ, so the majority is more reliable than any one student.</p>
+    <p>That is bagging. The “students” are decision trees and the “photocopies” are <b>bootstrap samples</b> of the training data.</p>
+  </div>
+  <ol>
+    <li><b>Bootstrap:</b> create <math><mi>B</mi></math> new training sets, each by drawing <math><mi>n</mi></math> rows <i>with replacement</i> from the original <math><mi>n</mi></math> rows.</li>
+    <li><b>Train independently:</b> fit one model (here a deep decision tree) on each bootstrap set.</li>
+    <li><b>Aggregate:</b> combine all predictions into one: a vote for classification, an average for regression.</li>
+  </ol>
+  <div class="eq">
+    <math display="block"><mrow><msubsup><mi>D</mi><mi>b</mi><mo>*</mo></msubsup><mo>=</mo><mo>{</mo><mo>(</mo><msub><mi>x</mi><msub><mi>i</mi><mn>1</mn></msub></msub><mo>,</mo><msub><mi>y</mi><msub><mi>i</mi><mn>1</mn></msub></msub><mo>)</mo><mo>,</mo><mo>…</mo><mo>,</mo><mo>(</mo><msub><mi>x</mi><msub><mi>i</mi><mi>n</mi></msub></msub><mo>,</mo><msub><mi>y</mi><msub><mi>i</mi><mi>n</mi></msub></msub><mo>)</mo><mo>}</mo><mo>,</mo><mspace width="1em"/><msub><mi>i</mi><mi>j</mi></msub><mo>∼</mo><mtext>Uniform</mtext><mo>{</mo><mn>1</mn><mo>,</mo><mo>…</mo><mo>,</mo><mi>n</mi><mo>}</mo><mspace width="1em"/><mtext>(for each </mtext><mi>b</mi><mo>=</mo><mn>1</mn><mo>,</mo><mo>…</mo><mo>,</mo><mi>B</mi><mtext>)</mtext></mrow></math>
+    <math display="block"><mrow><msub><mi>h</mi><mi>b</mi></msub><mo>=</mo><mtext>Tree trained on </mtext><msubsup><mi>D</mi><mi>b</mi><mo>*</mo></msubsup><mspace width="2em"/><msub><mover><mi>y</mi><mo>^</mo></mover><mtext>bag</mtext></msub><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><mfrac><mn>1</mn><mi>B</mi></mfrac><munderover><mo>∑</mo><mrow><mi>b</mi><mo>=</mo><mn>1</mn></mrow><mi>B</mi></munderover><msub><mi>h</mi><mi>b</mi></msub><mo>(</mo><mi>x</mi><mo>)</mo></mrow></math>
+  </div>
+  <div class="grid2">
+    <div class="card"><h4>What bagging fixes</h4>
+      <p>The average of <math><mi>B</mi></math> trees has the <b>same bias</b> as one tree, since <math><mi>E</mi><mo>[</mo><mover><mi>h</mi><mo>¯</mo></mover><mo>]</mo><mo>=</mo><mi>E</mi><mo>[</mo><msub><mi>h</mi><mi>b</mi></msub><mo>]</mo></math>, but a much <b>lower variance</b>. This is why we grow each tree deep (low bias) and let averaging remove the instability.</p></div>
+    <div class="card"><h4>Who benefits from bagging?</h4>
+      <p><b>Unstable learners</b> change a lot when the data change slightly: deep decision trees, neural networks. They gain a lot.</p>
+      <p><b>Stable learners</b> barely change: linear regression, k-NN with large k. They gain almost nothing.</p></div>
+  </div>
+  <div class="callout key"><b class="t">Hard vote vs. soft vote</b>
+    <b>Hard vote:</b> each tree votes for one class; the most frequent class wins.<br>
+    <b>Soft vote:</b> each tree reports the class fractions in its leaf, <math><msub><mi>p</mi><mi>b</mi></msub><mo>(</mo><mi>c</mi><mo>∣</mo><mi>x</mi><mo>)</mo></math>, and the forest averages them:
+    <math display="block"><mrow><mover><mi>P</mi><mo>^</mo></mover><mo>(</mo><mi>c</mi><mo>∣</mo><mi>x</mi><mo>)</mo><mo>=</mo><mfrac><mn>1</mn><mi>B</mi></mfrac><munderover><mo>∑</mo><mrow><mi>b</mi><mo>=</mo><mn>1</mn></mrow><mi>B</mi></munderover><msub><mi>p</mi><mi>b</mi></msub><mo>(</mo><mi>c</mi><mo>∣</mo><mi>x</mi><mo>)</mo><mspace width="2em"/><mover><mi>y</mi><mo>^</mo></mover><mo>=</mo><munder><mi>argmax</mi><mi>c</mi></munder><mover><mi>P</mi><mo>^</mo></mover><mo>(</mo><mi>c</mi><mo>∣</mo><mi>x</mi><mo>)</mo></mrow></math>
+    scikit-learn uses the soft vote. Our demos use the simple hard vote.</div>
+
+  <h3>7.2 Watch a forest being built (Iris flowers)</h3>
+  <p>Press <b>Next step</b> to walk through the four stages that create <i>one</i> tree. Keep pressing to build the next tree. The forest grows one tree at a time.</p>
+  <div class="card">
+    <div class="ctl">
+      <label>Features tried per split <i>m</i>: <b id="rfmv">2</b><input type="range" id="rfm" min="1" max="4" value="2"></label>
+      <button class="btn" id="rfnext">Next step ▶</button>
+      <button class="btn sec" id="rfadd">⏩ Add 10 trees</button>
+      <button class="btn sec" id="rfreset">↺ Start over</button>
+    </div>
+    <div id="rfsteps" style="margin:8px 0"></div>
+    <p id="rfhead"></p>
+    <div id="rfstage"></div>
+  </div>
+  <div class="callout tip"><b class="t">Try it</b>Set <i>m</i> = 4 (every feature allowed) and look at step ②: nearly every tree starts with a petal measurement. Then set <i>m</i> = 1 and watch the root feature change from tree to tree. Next we measure that effect.</div>
+
+  <h3>7.3 Bagging alone is not enough: random feature subsets</h3>
+  <p>If one feature is clearly the strongest, <b>every</b> bagged tree will put it at the root and build nearly the same tree, even though the bootstrap samples differ. The trees stay <b>highly correlated</b> (<math><mi>ρ</mi></math> is large), and from Part 6 we know that a large <math><mi>ρ</mi></math> limits how much averaging can help.</p>
+  <p><b>Random forest adds a second source of randomness:</b> at <i>every split</i> of every tree, only <math><mi>m</mi></math> randomly chosen features (out of <math><mi>p</mi></math>) are allowed to compete. Strong features sometimes sit out, so weaker features get a chance, and the trees become different from one another.</p>
+  <div class="card">
+    <h4>Experiment: which feature is chosen at the root of 200 trees?</h4>
+    <div class="ctl"><label>Features tried per split <i>m</i>: <b id="rrmv">4</b><input type="range" id="rrm" min="1" max="4" value="4"></label></div>
+    <div id="rrbars"></div>
+    <p id="rrmsg" style="font-weight:600"></p>
+    <p style="font-size:14px;color:var(--mut)"><i>m</i> = 4 is plain <b>bagging</b>; smaller <i>m</i> is a true <b>random forest</b>. Each tree is trained on its own bootstrap sample of all 150 flowers.</p>
+  </div>
+  <div style="overflow-x:auto"><table class="tbl">
+    <tr><th></th><th>Single tree</th><th>Bagging</th><th>Random forest</th></tr>
+    <tr><td>Training rows per tree</td><td>all (the original data)</td><td>bootstrap sample</td><td>bootstrap sample</td></tr>
+    <tr><td>Features per split</td><td>all <i>p</i></td><td>all <i>p</i></td><td>random subset of <i>m</i></td></tr>
+    <tr><td>Trees are…</td><td>just one</td><td>diverse in data only</td><td>diverse in data <b>and</b> features</td></tr>
+    <tr><td>Correlation ρ between trees</td><td>–</td><td>medium–high</td><td>lower</td></tr>
+  </table></div>
+  <p>Common defaults: <math><mi>m</mi><mo>=</mo><mo>⌊</mo><msqrt><mi>p</mi></msqrt><mo>⌋</mo></math> for classification and <math><mi>m</mi><mo>=</mo><mo>⌊</mo><mi>p</mi><mo>/</mo><mn>3</mn><mo>⌋</mo></math> for regression.</p>
+
+  <h3>7.4 Does it really help? Single tree vs. bagging vs. random forest</h3>
+  <p>The experiment below trains each model on <b>30 different random train/test splits</b> of Iris (105 training flowers, 45 test flowers; 30 trees, depth up to 12; RF uses <i>m</i> = 2). Each dot is one split. A model that is more <b>stable</b> has dots that are tightly clustered.</p>
+  <div class="card">
+    <button class="btn" id="rexrun">Run again with new splits</button>
+    <canvas id="rexcv" style="margin-top:10px"></canvas>
+    <div style="overflow-x:auto"><table class="tbl" id="rextab" style="margin-top:10px"></table></div>
+    <p style="font-size:14px;color:var(--mut)">Iris is tiny and easy (only 4 features), so all three models are close and the exact ranking can change between runs. The advantage of forests grows with noisier data and many correlated features. What you should usually see is that the single tree's dots are more spread out.</p>
+  </div>
+
+  <h3>7.5 The full recipe</h3>
+  <pre>INPUT : training set D with n rows and p features,
+        number of trees B, features per split m
+FOR b = 1 ... B:
+    1. Draw a bootstrap sample D*_b  (n rows, with replacement)
+    2. Grow a tree h_b on D*_b:
+         at EVERY node:
+           a. pick m features at random out of p
+           b. find the best (feature, threshold) among those m
+              (largest drop in Gini / entropy)
+           c. split, then repeat on both children
+         stop when a node is pure or too small   (no pruning)
+    3. Remember which rows were NOT drawn (the out-of-bag rows)
+PREDICT x : majority vote of h_1(x) ... h_B(x)     (regression: average)</pre>
+  <p>The rows left out of <math><msubsup><mi>D</mi><mi>b</mi><mo>*</mo></msubsup></math> give a free validation score. For each training row <math><mi>i</mi></math>, only the trees that <b>never saw it</b> vote:</p>
+  <div class="eq">
+    <math display="block"><mrow><msubsup><mover><mi>y</mi><mo>^</mo></mover><mi>i</mi><mtext>oob</mtext></msubsup><mo>=</mo><mi>mode</mi><mo>{</mo><msub><mi>h</mi><mi>b</mi></msub><mo>(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>)</mo><mo>:</mo><mi>i</mi><mo>∉</mo><msubsup><mi>D</mi><mi>b</mi><mo>*</mo></msubsup><mo>}</mo><mspace width="2em"/><msub><mtext>Err</mtext><mtext>oob</mtext></msub><mo>=</mo><mfrac><mn>1</mn><mi>n</mi></mfrac><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><mi>𝟙</mi><mo>[</mo><msubsup><mover><mi>y</mi><mo>^</mo></mover><mi>i</mi><mtext>oob</mtext></msubsup><mo>≠</mo><msub><mi>y</mi><mi>i</mi></msub><mo>]</mo></mrow></math>
+  </div>
+  <div class="callout key"><b class="t">Summary</b><b>Random forest = bagging + random feature subsets + deep unpruned trees + voting.</b> Bootstrap and feature randomness make trees <i>different</i>, deep trees keep each one <i>low-bias</i>, and voting <i>averages away the variance</i>. In the next section you will train one on real data.</div>
+</section>
+
+<!-- ============ 7 IRIS LAB ============ -->
+<section id="s7" data-title="Real Data Lab: Iris Flowers">
+  <div class="kicker">Part 8 · Real dataset example</div>
+  <h2>Random forest on Fisher's Iris data</h2>
+  <p class="lead">150 flowers, three species (<span class="c0"><b>setosa</b></span>, <span class="c1"><b>versicolor</b></span>, <span class="c2"><b>virginica</b></span>), four measurements in cm: sepal length, sepal width, petal length, petal width. The task: identify the species from the measurements. The forest below is trained <b>live in your browser</b>.</p>
+  <div class="card">
+    <h4>1 · Look at the data</h4>
+    <div class="ctl">
+      <label>x-axis <select id="ixa"></select></label>
+      <label>y-axis <select id="iya"></select></label>
+    </div>
+    <canvas id="isc"></canvas>
+    <div class="legend" style="margin-top:6px"><span><i style="background:var(--c0)"></i>setosa</span><span><i style="background:var(--c1)"></i>versicolor</span><span><i style="background:var(--c2)"></i>virginica</span><span>● train &nbsp; ○ test &nbsp; ★ your flower</span></div>
+    <p style="font-size:14px;color:var(--mut)">Setosa is easy to separate. Versicolor and virginica overlap, which is where trees earn their keep.</p>
+  </div>
+  <div class="card">
+    <h4>2 · Train a forest</h4>
+    <div class="ctl">
+      <label>Trees B: <b id="lnv">50</b><input type="range" id="ln" min="1" max="200" value="50"></label>
+      <label>Max depth: <b id="ldv">6</b><input type="range" id="ld" min="1" max="12" value="6"></label>
+      <label>Features per split m: <b id="lmv">2</b><input type="range" id="lm" min="1" max="4" value="2"></label>
+      <label>Test share: <b id="ltv">30%</b><input type="range" id="lt" min="10" max="50" step="5" value="30"></label>
+      <button class="btn" id="lseed">🔀 New random split</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="l_tr">–</b><span>Train accuracy</span></div>
+      <div class="stat"><b id="l_te">–</b><span>Test accuracy (forest)</span></div>
+      <div class="stat"><b id="l_oob">–</b><span>OOB accuracy</span></div>
+      <div class="stat"><b id="l_one">–</b><span>Test accuracy (1 tree)</span></div>
+    </div>
+    <div class="grid2">
+      <div><h4>Confusion matrix (test set)</h4><div id="lcm"></div><p style="font-size:13px;color:var(--mut)">Rows = actual species, columns = predicted.</p></div>
+      <div><h4>Per-class precision / recall</h4><div id="lpr"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h4>3 · Predict a flower and watch the trees vote</h4>
+    <div class="row" style="margin-bottom:8px"><span>Presets:</span><button class="btn sec" data-f="5.0,3.4,1.5,0.2">Typical setosa</button><button class="btn sec" data-f="5.9,2.8,4.3,1.3">Typical versicolor</button><button class="btn sec" data-f="6.6,3.0,5.6,2.0">Typical virginica</button><button class="btn sec" data-f="6.0,2.8,4.9,1.7">Borderline</button></div>
+    <div class="grid2">
+      <div id="lsliders"></div>
+      <div><div id="lvotebars"></div><p style="font-size:13px;color:var(--mut);margin-bottom:2px">One dot per tree, coloured by its vote:</p><div id="ldots"></div></div>
+    </div>
+    <p id="lpred" style="font-weight:600;font-size:1.05rem"></p>
+  </div>
+  <div class="callout tip"><b class="t">Try it</b>(1) Set B = 1, max depth = 12 and click “New random split” several times: test accuracy jumps around. (2) Set B = 100 and repeat: it is more stable. (3) Use the Borderline preset: the trees disagree, and the vote share shows <b>how confident</b> the forest is.</div>
+  <div class="callout warn"><b class="t">Small data warning</b>With only 45 test flowers, one mistake moves accuracy by about 2%. This is why we also use OOB scores and cross-validation instead of trusting a single split.</div>
+</section>
+
+<!-- ============ 8 IMPORTANCE & TUNING ============ -->
+<section id="s8" data-title="Feature Importance &amp; Tuning">
+  <div class="kicker">Part 9 · Intermediate</div>
+  <h2>What did the forest learn, and how do we tune it?</h2>
+  <h3>8.1 Impurity-based importance (MDI)</h3>
+  <p>Every time a feature is used for a split, it reduces impurity. Add up those reductions, weighted by how many samples reached the node, and average over trees:</p>
+  <div class="eq"><math display="block"><mrow><mi>Imp</mi><mo>(</mo><mi>j</mi><mo>)</mo><mo>=</mo><mfrac><mn>1</mn><mi>B</mi></mfrac><munderover><mo>∑</mo><mrow><mi>b</mi><mo>=</mo><mn>1</mn></mrow><mi>B</mi></munderover><munder><mo>∑</mo><mrow><mi>t</mi><mo>∈</mo><msub><mi>T</mi><mi>b</mi></msub><mo>:</mo><mi>feat</mi><mo>(</mo><mi>t</mi><mo>)</mo><mo>=</mo><mi>j</mi></mrow></munder><mfrac><msub><mi>n</mi><mi>t</mi></msub><mi>N</mi></mfrac><mi mathvariant="normal">Δ</mi><msub><mi>G</mi><mi>t</mi></msub></mrow></math></div>
+  <h3>8.2 Permutation importance</h3>
+  <p>Shuffle one feature's column in the <b>test</b> set, breaking its link with the label, and measure how much accuracy drops. A big drop means the model really relied on that feature. It is less biased than MDI, which favours features with many distinct values.</p>
+  <div class="card">
+    <div class="row"><button class="btn" id="permBtn">Compute permutation importance (10 repeats)</button><span style="font-size:14px;color:var(--mut)">uses the forest from the Iris lab</span></div>
+    <div class="grid2"><div><h4>MDI (from training)</h4><div id="mdi"></div></div><div><h4>Permutation (on test set)</h4><div id="perm"><p style="color:var(--mut)">Press the button.</p></div></div></div>
+  </div>
+  <div class="callout warn"><b class="t">Importance ≠ causation</b>Importance says what the <i>model</i> uses, not what <i>causes</i> the outcome. Correlated features also “share” importance: petal length and petal width carry almost the same information in Iris.</div>
+
+  <h3>8.3 More trees: when do we stop?</h3>
+  <div class="card">
+    <p>Error of a forest as trees are added (same depth and <i>m</i> as in the lab, 150 trees). The curve flattens: more trees never hurt much, they just stop helping.</p>
+    <button class="btn" id="oobBtn">Re-run with a new seed</button>
+    <canvas id="oobcv" style="margin-top:10px"></canvas>
+  </div>
+
+  <h3>8.4 Hyperparameter cheat-sheet</h3>
+  <div style="overflow-x:auto"><table class="tbl" style="text-align:left">
+    <tr><th>Parameter</th><th>What it does</th><th>Typical advice</th></tr>
+    <tr><td><code>n_estimators</code> (B)</td><td>Number of trees</td><td>100–500; more is safe but slower. Watch the OOB curve flatten.</td></tr>
+    <tr><td><code>max_features</code> (m)</td><td>Features tried at each split</td><td><math><msqrt><mi>p</mi></msqrt></math> for classification, <math><mi>p</mi><mo>/</mo><mn>3</mn></math> for regression. Smaller m → more diverse trees, higher bias per tree. <b>The most important knob.</b></td></tr>
+    <tr><td><code>max_depth</code></td><td>Max levels per tree</td><td>Default: grow fully. Limit it to speed up or to smooth noisy data.</td></tr>
+    <tr><td><code>min_samples_leaf</code></td><td>Min rows in a leaf</td><td>1 for clean data; 3–10 for noisy data and smoother regression.</td></tr>
+    <tr><td><code>bootstrap</code> / <code>max_samples</code></td><td>Sample with replacement / how many rows per tree</td><td>Smaller samples → more diversity and faster training.</td></tr>
+    <tr><td><code>class_weight</code></td><td>Penalise errors on rare classes more</td><td>Try <code>"balanced"</code> for imbalanced data.</td></tr>
+    <tr><td><code>criterion</code></td><td>gini / entropy / (MSE for regression)</td><td>Rarely matters in practice.</td></tr>
+  </table></div>
+</section>
+
+<!-- ============ 9 PROS CONS ============ -->
+<section id="s9" data-title="Merits &amp; Demerits">
+  <div class="kicker">Part 10 · Strengths and weaknesses</div>
+  <h2>When should you reach for a random forest?</h2>
+  <p>Click each card to expand the details.</p>
+  <div class="pc">
+    <div>
+      <div class="card pro"><h4 style="color:var(--good)">✅ Merits</h4></div>
+      <details><summary>Strong accuracy out of the box</summary>Averaging many decorrelated trees gives low variance without much tuning. Often a hard-to-beat baseline on tabular data.</details>
+      <details><summary>Resistant to overfitting (as B grows)</summary>Adding more trees does not make the forest overfit more; the variance only decreases until it plateaus at <math><mi>ρ</mi><msup><mi>σ</mi><mn>2</mn></msup></math>. (Individual deep trees may still memorise noise; the forest averages it out.)</details>
+      <details><summary>No feature scaling needed</summary>Splits compare a feature to a threshold, so only the <i>order</i> of values matters. Standardising or log-transforming features does not change the splits.</details>
+      <details><summary>Handles non-linear effects and interactions</summary>The tree structure naturally captures “if A is high <i>and</i> B is low” without you engineering interaction terms.</details>
+      <details><summary>Mixed feature types, little preparation</summary>Numeric and (encoded) categorical features can coexist. Some implementations handle missing values natively.</details>
+      <details><summary>Built-in validation and diagnostics</summary>OOB score, feature importance and proximity measures come for free. Training parallelises easily because the trees are independent.</details>
+    </div>
+    <div>
+      <div class="card con"><h4 style="color:var(--bad)">⚠️ Demerits</h4></div>
+      <details><summary>Less interpretable than a single tree</summary>You can read one tree, but not 500. Importance plots and partial-dependence/SHAP help, yet the model is a “grey box”.</details>
+      <details><summary>Cannot extrapolate</summary>Predictions are averages of training targets, so outside the training range a regression forest simply flatlines (see Part 11).</details>
+      <details><summary>Memory and prediction time</summary>Hundreds of deep trees must be stored and traversed. It can be heavy for large models or low-latency edge devices.</details>
+      <details><summary>Can be biased toward high-cardinality features</summary>MDI importance favours features with many unique values (e.g. IDs). Use permutation importance to double check.</details>
+      <details><summary>Struggles with very sparse, high-dimensional data</summary>For text bag-of-words or wide sparse matrices, linear models often win. Images, audio and sequences are better served by deep learning.</details>
+      <details><summary>Probabilities are not always calibrated</summary>Vote fractions are rough probabilities, often too cautious near 0 and 1. Calibrate (Platt/isotonic) if you need trustworthy probabilities.</details>
+      <details><summary>Imbalanced classes can hurt</summary>Majority voting favours the common class. Use class weights, resampling and threshold tuning, and judge with recall/F1, not accuracy.</details>
+    </div>
+  </div>
+  <h3>Decision tree vs. random forest — side by side</h3>
+  <div style="overflow-x:auto"><table class="tbl">
+    <tr><th></th><th>Single decision tree</th><th>Random forest</th></tr>
+    <tr><td>Interpretability</td><td>★★★★★</td><td>★★</td></tr>
+    <tr><td>Accuracy on tabular data</td><td>★★</td><td>★★★★</td></tr>
+    <tr><td>Variance</td><td>High</td><td>Low</td></tr>
+    <tr><td>Training / prediction cost</td><td>Very cheap (1 tree)</td><td>About <i>B</i> times more, where <i>B</i> = number of trees (e.g. 200 trees ≈ 200× the work). Training can be parallelised because trees are independent.</td></tr>
+    <tr><td>Tuning effort</td><td>Needs pruning/limits</td><td>Mostly robust defaults</td></tr>
+  </table></div>
+</section>
+
+<!-- ============ 10 ASSUMPTIONS ============ -->
+<section id="s10" data-title="Assumptions &amp; Validations">
+  <div class="kicker">Part 11 · Assumptions and sanity checks</div>
+  <h2>What does a random forest assume?</h2>
+  <p class="lead">Random forests are <b>non-parametric</b>: unlike linear regression they do <i>not</i> assume a linear relationship, normally distributed errors or constant variance. But they are not assumption-free.</p>
+  <h3>Assumptions &amp; what to check</h3>
+  <details open><summary>1. Training data are independent and identically distributed (i.i.d.)</summary>Bootstrap sampling assumes rows are independent draws. <b>Check:</b> are there repeated measurements of the same person, patient, store or machine? If so, use <i>grouped</i> cross-validation so that the same entity is never in both train and test. For time series, use <i>time-ordered</i> splits.</details>
+  <details><summary>2. Train and future data come from the same distribution</summary>If tomorrow's data look different (<i>drift</i>), the learned splits no longer apply. <b>Check:</b> compare feature distributions of train vs new data; monitor performance after deployment.</details>
+  <details><summary>3. The features contain signal; labels are reasonably accurate</summary>A forest cannot create information that is not there. Heavy label noise hurts, although averaging provides some robustness. <b>Check:</b> compare to a trivial baseline (majority class, mean); inspect mislabeled rows.</details>
+  <details><summary>4. No data leakage</summary>Features that secretly contain the answer (e.g. “discharge status” when predicting hospital readmission) give amazing validation scores and useless real-world models. <b>Check:</b> unusually dominant importance for one feature; fit scalers/encoders <i>inside</i> cross-validation folds.</details>
+  <details><summary>4b. Sufficient, representative samples for each class</summary>Rare classes may never reach a leaf in large enough numbers. <b>Check:</b> class counts, per-class recall, stratified splits, <code>class_weight</code>.</details>
+  <details><summary>5. Inputs are numeric (categoricals encoded) and missing values handled</summary>Most libraries require one-hot or ordinal encoding (and imputation) unless they support these natively. High-cardinality one-hot columns dilute the random feature subset.</details>
+  <details><summary>What you do NOT need</summary>✔ no scaling or normalisation ✔ no linearity ✔ no normality ✔ no homoscedasticity ✔ outliers in <i>features</i> are tolerated (splits are rank-based). Outliers in the <i>target</i> still affect regression leaf means.</details>
+
+  <h3>Interactive: the extrapolation limit</h3>
+  <p>Training data follow <math><mi>y</mi><mo>≈</mo><mn>2</mn><mi>x</mi><mo>+</mo><mn>1</mn></math> for <math><mi>x</mi></math> between 0 and 10 only. What does a forest predict for <math><mi>x</mi><mo>&gt;</mo><mn>10</mn></math>?</p>
+  <div class="card">
+    <div class="ctl">
+      <label>Trees B: <b id="exbv">30</b><input type="range" id="exb" min="1" max="100" value="30"></label>
+      <label style="min-width:auto"><span><input type="checkbox" id="exlin"> overlay linear regression</span></label>
+    </div>
+    <canvas id="excv"></canvas>
+    <div class="legend" style="margin-top:6px"><span><i style="background:var(--c0)"></i>training data</span><span><i style="background:var(--c1)"></i>forest prediction</span><span><i style="background:var(--c2)"></i>linear fit</span><span><i style="background:#9aa3b9"></i>true trend</span></div>
+    <p>The forest tracks the data inside [0, 10] and then <b>goes flat</b>: a leaf can only output an average of training targets it has seen. Use a model with an appropriate structure (e.g. linear / hybrid) when extrapolation matters.</p>
+  </div>
+
+  <h3>Validation checklist before you trust a forest</h3>
+  <div class="card">
+    <ul style="list-style:none;padding-left:0" id="checklist"></ul>
+    <p id="chkmsg" style="font-weight:600"></p>
+  </div>
+</section>
+
+<!-- ============ 11 QUIZ & SUMMARY ============ -->
+<section id="s11" data-title="Quiz, Summary &amp; Next Steps">
+  <div class="kicker">Part 12 · Wrap-up</div>
+  <h2>Check your understanding</h2>
+  <div id="quiz"></div>
+  <div class="stats"><div class="stat"><b id="qscore">0 / 6</b><span>Score</span></div></div>
+
+  <h3>Cheat sheet</h3>
+  <div class="card">
+    <table class="tbl" style="text-align:left">
+      <tr><th>Concept</th><th>One-liner</th></tr>
+      <tr><td>Decision tree</td><td>Flowchart of threshold questions learned greedily from data.</td></tr>
+      <tr><td>Gini / Entropy</td><td><math><mi>G</mi><mo>=</mo><mn>1</mn><mo>−</mo><mo>∑</mo><msubsup><mi>p</mi><mi>k</mi><mn>2</mn></msubsup></math> &nbsp;/&nbsp; <math><mi>H</mi><mo>=</mo><mo>−</mo><mo>∑</mo><msub><mi>p</mi><mi>k</mi></msub><msub><mi>log</mi><mn>2</mn></msub><msub><mi>p</mi><mi>k</mi></msub></math>: zero when pure.</td></tr>
+      <tr><td>Best split</td><td>Largest impurity drop: <math><mi>G</mi><mo>(</mo><mi>S</mi><mo>)</mo><mo>−</mo><mo>[</mo><mfrac><msub><mi>n</mi><mi>L</mi></msub><mi>n</mi></mfrac><mi>G</mi><mo>(</mo><msub><mi>S</mi><mi>L</mi></msub><mo>)</mo><mo>+</mo><mfrac><msub><mi>n</mi><mi>R</mi></msub><mi>n</mi></mfrac><mi>G</mi><mo>(</mo><msub><mi>S</mi><mi>R</mi></msub><mo>)</mo><mo>]</mo></math></td></tr>
+      <tr><td>Overfitting</td><td>Deep trees memorise noise → high variance.</td></tr>
+      <tr><td>Bagging</td><td>Train each tree on a bootstrap sample (≈ 63.2% unique rows).</td></tr>
+      <tr><td>Random subspace</td><td>Only <i>m</i> random features per split → decorrelated trees.</td></tr>
+      <tr><td>Forest output</td><td>Majority vote (class) or mean (regression).</td></tr>
+      <tr><td>OOB score</td><td>Validate each row only with trees that never saw it.</td></tr>
+      <tr><td>Limits</td><td>Cannot extrapolate; less interpretable; needs i.i.d. data and no leakage.</td></tr>
+    </table>
+  </div>
+
+  <h3>Reproduce it in Python (scikit-learn)</h3>
+  <pre id="code">from sklearn.datasets import load_iris
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import classification_report
+
+X, y = load_iris(return_X_y=True)
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.3, stratify=y, random_state=0)
+
+rf = RandomForestClassifier(
+    n_estimators=200,      # B: number of trees
+    max_features="sqrt",   # m: features tried per split
+    min_samples_leaf=1,
+    oob_score=True,        # free validation estimate
+    n_jobs=-1, random_state=0,
+).fit(X_tr, y_tr)
+
+print("OOB accuracy :", rf.oob_score_)
+print("Test accuracy:", rf.score(X_te, y_te))
+print(classification_report(y_te, rf.predict(X_te)))
+print("5-fold CV    :", cross_val_score(rf, X, y, cv=5).mean())
+print("Importances  :", rf.feature_importances_)</pre>
+  <button class="btn sec" id="copyCode">Copy code</button>
+  <h3>Where to go next</h3>
+  <ul>
+    <li><b>Extra-Trees</b>: random thresholds as well as random features, even more variance reduction.</li>
+    <li><b>Gradient boosting</b> (XGBoost, LightGBM, CatBoost): trees built <i>sequentially</i>, each correcting the previous errors, which often beats random forests with careful tuning.</li>
+    <li><b>Explainability</b>: partial-dependence plots, SHAP values.</li>
+    <li><b>Practice</b>: tune a forest on a Kaggle tabular dataset using only OOB error, then compare to cross-validation.</li>
+  </ul>
+  <div class="callout key"><b class="t">Remember</b>A single tree is a clever but unstable student. A forest is a committee of such students who each studied a slightly different textbook; their vote is wiser than any individual. 🌳🌳🌳</div>
+  <p style="color:var(--mut);font-size:13px">Data credit: Iris dataset — R. A. Fisher (1936), UCI Machine Learning Repository. “Play Tennis” table — J. R. Quinlan (1986). Moons and student datasets are synthetic.</p>
+</section>
+
+</div>
+<footer class="pager">
+  <button id="prev" class="sec">← Previous</button>
+  <div id="pos"></div>
+  <button id="next">Next →</button>
+</footer>
+</main>
+
+<script>
+/* ===================== utilities ===================== */
+const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const COL=['#3b82f6','#f97316','#10b981'];
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function gauss(r){let u=0;while(!u)u=r();const v=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)}
+function shuffle(a,r){for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function argmax(a){let b=0;for(let i=1;i<a.length;i++)if(a[i]>a[b])b=i;return b}
+function impurity(c,crit){const n=c.reduce((a,b)=>a+b,0);if(!n)return 0;let s=0;if(crit==='entropy'){for(const k of c)if(k){const p=k/n;s-=p*Math.log2(p)}return s}for(const k of c){const p=k/n;s+=p*p}return 1-s}
+function mkCanvas(cv,W,H){const d=window.devicePixelRatio||1;cv.width=W*d;cv.height=H*d;cv.style.width='100%';cv.style.maxWidth=W+'px';cv.style.aspectRatio=W+'/'+H;cv.style.height='auto';const c=cv.getContext('2d');c.setTransform(d,0,0,d,0,0);return c}
+function mix(p){const a=[59,130,246],b=[249,115,22];const w=.45;return 'rgb('+[0,1,2].map(i=>Math.round((a[i]*(1-p)+b[i]*p)*w+255*(1-w))).join(',')+')'}
+function mixN(pr){ // multi-class tint
+  const w=.45,cols=[[59,130,246],[249,115,22],[16,185,129]];return 'rgb('+[0,1,2].map(i=>Math.round(pr.reduce((s,p,k)=>s+p*cols[k][i],0)*w+255*(1-w))).join(',')+')'}
+function plot2D(cv,W,H,dom,o){
+  const ctx=mkCanvas(cv,W,H),bare=o.bare,pl=bare?2:44,pb=bare?2:38,pr=bare?2:8,pt=bare?2:8;
+  const sx=x=>pl+(x-dom.x0)/(dom.x1-dom.x0)*(W-pl-pr),sy=y=>H-pb-(y-dom.y0)/(dom.y1-dom.y0)*(H-pb-pt);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+  if(o.pred){const res=o.res||50;for(let i=0;i<res;i++)for(let j=0;j<res;j++){
+    const x=dom.x0+(i+.5)/res*(dom.x1-dom.x0),y=dom.y0+(j+.5)/res*(dom.y1-dom.y0);
+    const v=o.pred(x,y);ctx.fillStyle=Array.isArray(v)?mixN(v):mix(v);
+    const x1=sx(dom.x0+i/res*(dom.x1-dom.x0)),x2=sx(dom.x0+(i+1)/res*(dom.x1-dom.x0)),y1=sy(dom.y0+j/res*(dom.y1-dom.y0)),y2=sy(dom.y0+(j+1)/res*(dom.y1-dom.y0));
+    ctx.fillRect(x1,y2,x2-x1+.8,y1-y2+.8)}}
+  ctx.strokeStyle='#cbd2e1';ctx.lineWidth=1;ctx.strokeRect(pl,pt,W-pl-pr,H-pt-pb);
+  if(!bare){ctx.fillStyle='#5b6478';ctx.font='12px system-ui';ctx.textAlign='center';
+    for(let i=0;i<=5;i++){const v=dom.x0+(dom.x1-dom.x0)*i/5;ctx.fillText((Math.round(v*10)/10)+'',sx(v),H-pb+15)}
+    ctx.textAlign='right';for(let i=0;i<=5;i++){const v=dom.y0+(dom.y1-dom.y0)*i/5;ctx.fillText((Math.round(v*10)/10)+'',pl-5,sy(v)+4)}
+    ctx.textAlign='center';if(o.xl)ctx.fillText(o.xl,(pl+W-pr)/2,H-6);
+    if(o.yl){ctx.save();ctx.translate(12,(pt+H-pb)/2);ctx.rotate(-Math.PI/2);ctx.fillText(o.yl,0,0);ctx.restore()}}
+  (o.pts||[]).forEach(p=>{ctx.beginPath();ctx.arc(sx(p.x),sy(p.y),bare?2.5:p.r||4.5,0,7);
+    if(p.ring){ctx.strokeStyle=COL[p.c];ctx.lineWidth=2;ctx.stroke()}else{ctx.fillStyle=COL[p.c];ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1;ctx.stroke()}});
+  return {ctx,sx,sy,W,H,pl,pr,pt,pb}
+}
+function lineChart(cv,W,H,o){
+  const ctx=mkCanvas(cv,W,H),pl=50,pb=40,pr=14,pt=14,xs=o.xs,x0=o.xmin??xs[0],x1=o.xmax??xs[xs.length-1],y0=o.ymin,y1=o.ymax;
+  const sx=x=>pl+(x-x0)/(x1-x0)*(W-pl-pr),sy=y=>H-pb-(y-y0)/(y1-y0)*(H-pb-pt);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.font='12px system-ui';ctx.fillStyle='#5b6478';ctx.strokeStyle='#e3e6ef';ctx.lineWidth=1;
+  for(let i=0;i<=4;i++){const v=y0+(y1-y0)*i/4,y=sy(v);ctx.beginPath();ctx.moveTo(pl,y);ctx.lineTo(W-pr,y);ctx.stroke();ctx.textAlign='right';ctx.fillText(v.toFixed(o.yd??2),pl-6,y+4)}
+  ctx.textAlign='center';for(let i=0;i<=5;i++){const v=x0+(x1-x0)*i/5;ctx.fillText(Math.round(v*100)/100+'',sx(v),H-pb+16)}
+  if(o.xl)ctx.fillText(o.xl,(pl+W-pr)/2,H-6);
+  if(o.yl){ctx.save();ctx.translate(12,(pt+H-pb)/2);ctx.rotate(-Math.PI/2);ctx.fillText(o.yl,0,0);ctx.restore()}
+  o.series.forEach(s=>{ctx.beginPath();ctx.strokeStyle=s.color;ctx.lineWidth=2.5;ctx.setLineDash(s.dash||[]);xs.forEach((x,i)=>{const X=sx(x),Y=sy(Math.max(y0,Math.min(y1,s.ys[i])));i?ctx.lineTo(X,Y):ctx.moveTo(X,Y)});ctx.stroke();ctx.setLineDash([])});
+  if(o.marker!=null){ctx.strokeStyle='#4f46e5';ctx.setLineDash([5,4]);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(sx(o.marker),pt);ctx.lineTo(sx(o.marker),H-pb);ctx.stroke();ctx.setLineDash([])}
+  if(o.mark2!=null){ctx.fillStyle='#16a34a';ctx.beginPath();ctx.arc(sx(o.mark2[0]),sy(o.mark2[1]),6,0,7);ctx.fill()}
+  let lx=pl+10;ctx.textAlign='left';o.series.forEach(s=>{if(!s.label)return;ctx.fillStyle=s.color;ctx.fillRect(lx,pt+4,14,4);ctx.fillStyle='#333';ctx.fillText(s.label,lx+19,pt+10);lx+=ctx.measureText(s.label).width+42});
+  return {ctx,sx,sy}
+}
+
+/* ===================== tree & forest engine ===================== */
+function buildTree(X,y,idx,o,r,depth,nC){
+  const counts=new Array(nC).fill(0);idx.forEach(i=>counts[y[i]]++);
+  const n=idx.length,imp=impurity(counts,o.crit),node={counts,n,imp,depth,leaf:true};
+  if(depth>=o.maxDepth||n<2*o.minLeaf||n<2||imp===0)return node;
+  const p=X[0].length;let feats=[...Array(p).keys()];
+  if(depth===0&&o.rootFeats)feats=o.rootFeats.slice();else if(o.maxFeat<p){shuffle(feats,r);feats=feats.slice(0,o.maxFeat)}
+  let best=null;
+  for(const f of feats){
+    const s=idx.slice().sort((a,b)=>X[a][f]-X[b][f]);
+    const L=new Array(nC).fill(0),R=counts.slice();
+    for(let k=0;k<n-1;k++){
+      const c=y[s[k]];L[c]++;R[c]--;
+      const v1=X[s[k]][f],v2=X[s[k+1]][f];if(v1===v2)continue;
+      const nl=k+1,nr=n-nl;if(nl<o.minLeaf||nr<o.minLeaf)continue;
+      const w=(nl*impurity(L,o.crit)+nr*impurity(R,o.crit))/n;
+      if(!best||w<best.w-1e-12)best={f,t:(v1+v2)/2,w}
+    }
+  }
+  if(!best||imp-best.w<=1e-12)return node;
+  const li=[],ri=[];idx.forEach(i=>(X[i][best.f]<=best.t?li:ri).push(i));
+  node.leaf=false;node.f=best.f;node.t=best.t;
+  node.l=buildTree(X,y,li,o,r,depth+1,nC);node.r=buildTree(X,y,ri,o,r,depth+1,nC);
+  node.dec=n*imp-(node.l.n*node.l.imp+node.r.n*node.r.imp);
+  return node
+}
+function leafOf(nd,x){while(!nd.leaf)nd=x[nd.f]<=nd.t?nd.l:nd.r;return nd}
+function treeClass(nd,x){return argmax(leafOf(nd,x).counts)}
+function countLeaves(nd){return nd.leaf?1:countLeaves(nd.l)+countLeaves(nd.r)}
+function treeDepth(nd){return nd.leaf?0:1+Math.max(treeDepth(nd.l),treeDepth(nd.r))}
+function treeRules(nd,names,cls,ind,out){
+  if(nd.leaf){out.push(ind+'→ predict '+cls[argmax(nd.counts)]+'   (samples: ['+nd.counts.join(', ')+'])');return}
+  out.push(ind+'if '+names[nd.f]+' ≤ '+nd.t.toFixed(2)+':');treeRules(nd.l,names,cls,ind+'    ',out);
+  out.push(ind+'else:  # '+names[nd.f]+' > '+nd.t.toFixed(2));treeRules(nd.r,names,cls,ind+'    ',out)}
+function trainForest(X,y,nC,o,B,seed){
+  const r=rng(seed),n=X.length,trees=[];
+  for(let b=0;b<B;b++){const inb=new Uint8Array(n),idx=[];
+    for(let i=0;i<n;i++){const j=Math.floor(r()*n);idx.push(j);inb[j]=1}
+    const root=buildTree(X,y,idx,o,r,0,nC),oob=[];for(let i=0;i<n;i++)if(!inb[i])oob.push(i);
+    trees.push({root,oob})}
+  return {trees,X,y,nC,o}
+}
+function votes(fr,x,B){const v=new Array(fr.nC).fill(0);for(let b=0;b<B;b++)v[treeClass(fr.trees[b].root,x)]++;return v}
+function oobAcc(fr,B){
+  const n=fr.X.length,V=Array.from({length:n},()=>new Array(fr.nC).fill(0));
+  for(let b=0;b<B;b++){const t=fr.trees[b];t.oob.forEach(i=>V[i][treeClass(t.root,fr.X[i])]++)}
+  let ok=0,m=0;for(let i=0;i<n;i++){const s=V[i].reduce((a,c)=>a+c,0);if(s){m++;if(argmax(V[i])===fr.y[i])ok++}}
+  return m?ok/m:NaN}
+function forestAcc(fr,B,X,y){let ok=0;X.forEach((x,i)=>{if(argmax(votes(fr,x,B))===y[i])ok++});return ok/X.length}
+function treeAcc(nd,X,y){let ok=0;X.forEach((x,i)=>{if(treeClass(nd,x)===y[i])ok++});return ok/X.length}
+function treeImp(nd,acc){if(nd.leaf)return;acc[nd.f]+=nd.dec;treeImp(nd.l,acc);treeImp(nd.r,acc)}
+const pct=v=>isNaN(v)?'–':(100*v).toFixed(1)+'%';
+
+/* ===================== data ===================== */
+const PLAY=[['Sunny','Hot','High','Weak','No'],['Sunny','Hot','High','Strong','No'],['Overcast','Hot','High','Weak','Yes'],['Rain','Mild','High','Weak','Yes'],['Rain','Cool','Normal','Weak','Yes'],['Rain','Cool','Normal','Strong','No'],['Overcast','Cool','Normal','Strong','Yes'],['Sunny','Mild','High','Weak','No'],['Sunny','Cool','Normal','Weak','Yes'],['Rain','Mild','Normal','Weak','Yes'],['Sunny','Mild','Normal','Strong','Yes'],['Overcast','Mild','High','Strong','Yes'],['Overcast','Hot','Normal','Weak','Yes'],['Rain','Mild','High','Strong','No']];
+const PF=['Outlook','Temperature','Humidity','Wind'];
+const IRIS=(()=>{const S=[`5.1,3.5,1.4,0.2 4.9,3.0,1.4,0.2 4.7,3.2,1.3,0.2 4.6,3.1,1.5,0.2 5.0,3.6,1.4,0.2 5.4,3.9,1.7,0.4 4.6,3.4,1.4,0.3 5.0,3.4,1.5,0.2 4.4,2.9,1.4,0.2 4.9,3.1,1.5,0.1 5.4,3.7,1.5,0.2 4.8,3.4,1.6,0.2 4.8,3.0,1.4,0.1 4.3,3.0,1.1,0.1 5.8,4.0,1.2,0.2 5.7,4.4,1.5,0.4 5.4,3.9,1.3,0.4 5.1,3.5,1.4,0.3 5.7,3.8,1.7,0.3 5.1,3.8,1.5,0.3 5.4,3.4,1.7,0.2 5.1,3.7,1.5,0.4 4.6,3.6,1.0,0.2 5.1,3.3,1.7,0.5 4.8,3.4,1.9,0.2 5.0,3.0,1.6,0.2 5.0,3.4,1.6,0.4 5.2,3.5,1.5,0.2 5.2,3.4,1.4,0.2 4.7,3.2,1.6,0.2 4.8,3.1,1.6,0.2 5.4,3.4,1.5,0.4 5.2,4.1,1.5,0.1 5.5,4.2,1.4,0.2 4.9,3.1,1.5,0.2 5.0,3.2,1.2,0.2 5.5,3.5,1.3,0.2 4.9,3.6,1.4,0.1 4.4,3.0,1.3,0.2 5.1,3.4,1.5,0.2 5.0,3.5,1.3,0.3 4.5,2.3,1.3,0.3 4.4,3.2,1.3,0.2 5.0,3.5,1.6,0.6 5.1,3.8,1.9,0.4 4.8,3.0,1.4,0.3 5.1,3.8,1.6,0.2 4.6,3.2,1.4,0.2 5.3,3.7,1.5,0.2 5.0,3.3,1.4,0.2`,
+`7.0,3.2,4.7,1.4 6.4,3.2,4.5,1.5 6.9,3.1,4.9,1.5 5.5,2.3,4.0,1.3 6.5,2.8,4.6,1.5 5.7,2.8,4.5,1.3 6.3,3.3,4.7,1.6 4.9,2.4,3.3,1.0 6.6,2.9,4.6,1.3 5.2,2.7,3.9,1.4 5.0,2.0,3.5,1.0 5.9,3.0,4.2,1.5 6.0,2.2,4.0,1.0 6.1,2.9,4.7,1.4 5.6,2.9,3.6,1.3 6.7,3.1,4.4,1.4 5.6,3.0,4.5,1.5 5.8,2.7,4.1,1.0 6.2,2.2,4.5,1.5 5.6,2.5,3.9,1.1 5.9,3.2,4.8,1.8 6.1,2.8,4.0,1.3 6.3,2.5,4.9,1.5 6.1,2.8,4.7,1.2 6.4,2.9,4.3,1.3 6.6,3.0,4.4,1.4 6.8,2.8,4.8,1.4 6.7,3.0,5.0,1.7 6.0,2.9,4.5,1.5 5.7,2.6,3.5,1.0 5.5,2.4,3.8,1.1 5.5,2.4,3.7,1.0 5.8,2.7,3.9,1.2 6.0,2.7,5.1,1.6 5.4,3.0,4.5,1.5 6.0,3.4,4.5,1.6 6.7,3.1,4.7,1.5 6.3,2.3,4.4,1.3 5.6,3.0,4.1,1.3 5.5,2.5,4.0,1.3 5.5,2.6,4.4,1.2 6.1,3.0,4.6,1.4 5.8,2.6,4.0,1.2 5.0,2.3,3.3,1.0 5.6,2.7,4.2,1.3 5.7,3.0,4.2,1.2 5.7,2.9,4.2,1.3 6.2,2.9,4.3,1.3 5.1,2.5,3.0,1.1 5.7,2.8,4.1,1.3`,
+`6.3,3.3,6.0,2.5 5.8,2.7,5.1,1.9 7.1,3.0,5.9,2.1 6.3,2.9,5.6,1.8 6.5,3.0,5.8,2.2 7.6,3.0,6.6,2.1 4.9,2.5,4.5,1.7 7.3,2.9,6.3,1.8 6.7,2.5,5.8,1.8 7.2,3.6,6.1,2.5 6.5,3.2,5.1,2.0 6.4,2.7,5.3,1.9 6.8,3.0,5.5,2.1 5.7,2.5,5.0,2.0 5.8,2.8,5.1,2.4 6.4,3.2,5.3,2.3 6.5,3.0,5.5,1.8 7.7,3.8,6.7,2.2 7.7,2.6,6.9,2.3 6.0,2.2,5.0,1.5 6.9,3.2,5.7,2.3 5.6,2.8,4.9,2.0 7.7,2.8,6.7,2.0 6.3,2.7,4.9,1.8 6.7,3.3,5.7,2.1 7.2,3.2,6.0,1.8 6.2,2.8,4.8,1.8 6.1,3.0,4.9,1.8 6.4,2.8,5.6,2.1 7.2,3.0,5.8,1.6 7.4,2.8,6.1,1.9 7.9,3.8,6.4,2.0 6.4,2.8,5.6,2.2 6.3,2.8,5.1,1.5 6.1,2.6,5.6,1.4 7.7,3.0,6.1,2.3 6.3,3.4,5.6,2.4 6.4,3.1,5.5,1.8 6.0,3.0,4.8,1.8 6.9,3.1,5.4,2.1 6.7,3.1,5.6,2.4 6.9,3.1,5.1,2.3 5.8,2.7,5.1,1.9 6.8,3.2,5.9,2.3 6.7,3.3,5.7,2.5 6.7,3.0,5.2,2.3 6.3,2.5,5.0,1.9 6.5,3.0,5.2,2.0 6.2,3.4,5.4,2.3 5.9,3.0,5.1,1.8`];
+  const X=[],y=[];S.forEach((s,c)=>s.trim().split(/\s+/).forEach(r=>{X.push(r.split(',').map(Number));y.push(c)}));return {X,y}})();
+const IF=['sepal length','sepal width','petal length','petal width'],IC=['setosa','versicolor','virginica'];
+function makeMoons(n,seed,noise){const r=rng(seed),P=[];for(let i=0;i<n;i++){const c=i%2,t=Math.PI*r();let x,y;if(c===0){x=Math.cos(t);y=Math.sin(t)}else{x=1-Math.cos(t);y=.5-Math.sin(t)}P.push({x:x+noise*gauss(r),y:y+noise*gauss(r),c})}return P}
+const MTR=makeMoons(100,7,.3),MTE=makeMoons(200,99,.3);
+const MX=MTR.map(p=>[p.x,p.y]),MY=MTR.map(p=>p.c),MXT=MTE.map(p=>[p.x,p.y]),MYT=MTE.map(p=>p.c);
+const MDOM={x0:-1.7,x1:2.7,y0:-1.2,y1:1.7};
+const STU=(()=>{const r=rng(11),P=[],cl=v=>Math.max(.3,Math.min(9.7,v));for(let i=0;i<22;i++)P.push({x:cl(3.2+1.3*gauss(r)),y:cl(5.6+1.5*gauss(r)),c:0});for(let i=0;i<22;i++)P.push({x:cl(6.6+1.3*gauss(r)),y:cl(7+1.5*gauss(r)),c:1});return P})();
+
+/* ===================== navigation ===================== */
+const secs=$$('section'),nav=$('#nav'),hooks={};let cur=-1;const visited=new Set();
+secs.forEach((s,i)=>{const b=document.createElement('button');b.className='navitem';b.innerHTML='<span class="num">'+i+'</span><span>'+s.dataset.title+'</span>';b.onclick=()=>{go(i);$('#side').classList.remove('open')};nav.appendChild(b);
+  const rm=document.createElement('button');rm.className='btn sec';rm.style.textAlign='left';rm.innerHTML=i+'. '+s.dataset.title;rm.onclick=()=>go(i);if(i>0)$('#roadmap').appendChild(rm)});
+function go(i){i=Math.max(0,Math.min(secs.length-1,i));if(i===cur)return;
+  secs.forEach((s,k)=>s.classList.toggle('active',k===i));cur=i;visited.add(i);
+  $$('.navitem').forEach((b,k)=>{b.classList.toggle('active',k===i);b.classList.toggle('visited',visited.has(k)&&k!==i)});
+  $('#content').scrollTo({top:0,behavior:'instant'});
+  $('#prev').disabled=i===0;$('#next').disabled=i===secs.length-1;
+  $('#next').textContent=i===secs.length-2?'Final section →':'Next →';
+  $('#pos').textContent='Section '+(i+1)+' of '+secs.length;
+  $('#progBar').style.width=((i+1)/secs.length*100)+'%';
+  try{history.replaceState(null,'','#s'+i)}catch(e){/* sandboxed preview: URL hash can't be updated, safe to ignore */}
+  const h=hooks[secs[i].id];if(h)h();}
+$('#prev').onclick=()=>go(cur-1);$('#next').onclick=()=>go(cur+1);
+$('#menuBtn').onclick=()=>$('#side').classList.toggle('open');
+document.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))return;if(e.key==='ArrowRight')go(cur+1);if(e.key==='ArrowLeft')go(cur-1)});
+
+/* ===================== S1: tennis tree ===================== */
+(function(){
+  const svg=$('#ttree'),NS='http://www.w3.org/2000/svg';
+  const N={root:[310,36,'Outlook?'],hum:[130,140,'Humidity?'],ovc:[310,140,'Play: Yes','Y'],wind:[490,140,'Wind?'],a:[60,250,'Play: No','N'],b:[200,250,'Play: Yes','Y'],c:[420,250,'Play: Yes','Y'],d:[560,250,'Play: No','N']};
+  const E=[['root','hum','Sunny','e1'],['root','ovc','Overcast','e2'],['root','wind','Rain','e3'],['hum','a','High','e4'],['hum','b','Normal','e5'],['wind','c','Weak','e6'],['wind','d','Strong','e7']];
+  let h='';E.forEach(([f,t,l,id])=>{const[a,b]=N[f],[c,d]=N[t];h+=`<line class="ed" id="${id}" x1="${a}" y1="${b+18}" x2="${c}" y2="${d-18}"/><text x="${(a+c)/2}" y="${(b+d)/2}" text-anchor="middle" fill="#5b6478" style="paint-order:stroke;stroke:#fff;stroke-width:5px">${l}</text>`});
+  for(const k in N){const[x,y,t,lf]=N[k];h+=`<g class="tn ${lf==='Y'?'leafY':lf==='N'?'leafN':''}" id="n_${k}"><rect x="${x-52}" y="${y-18}" width="104" height="36"/><text x="${x}" y="${y+5}" text-anchor="middle" font-weight="600">${t}</text></g>`}
+  svg.innerHTML=h;
+  $('#ptable').innerHTML='<tr><th>#</th>'+PF.map(f=>'<th>'+f+'</th>').join('')+'<th>Play?</th></tr>'+PLAY.map((r,i)=>`<tr id="pr${i}"><td>${i+1}</td>${r.slice(0,4).map(v=>'<td>'+v+'</td>').join('')}<td><span class="pill ${r[4]==='Yes'?'yes':'no'}">${r[4]}</span></td></tr>`).join('');
+  function upd(){
+    const o=$('#t_out').value,hu=$('#t_hum').value,w=$('#t_wind').value;
+    $$('.tn,.ed').forEach(e=>e.classList.remove('on'));
+    const on=ids=>ids.forEach(i=>{const e=$('#'+i);e&&e.classList.add('on')});
+    let rows,res;
+    if(o==='Overcast'){on(['n_root','e2','n_ovc']);rows=PLAY.map((r,i)=>r[0]==='Overcast'?i:-1);res='Yes'}
+    else if(o==='Sunny'){on(['n_root','e1','n_hum',hu==='High'?'e4':'e5',hu==='High'?'n_a':'n_b']);rows=PLAY.map((r,i)=>r[0]==='Sunny'&&r[2]===hu?i:-1);res=hu==='High'?'No':'Yes'}
+    else{on(['n_root','e3','n_wind',w==='Weak'?'e6':'e7',w==='Weak'?'n_c':'n_d']);rows=PLAY.map((r,i)=>r[0]==='Rain'&&r[3]===w?i:-1);res=w==='Weak'?'Yes':'No'}
+    rows=rows.filter(i=>i>=0);const y=rows.filter(i=>PLAY[i][4]==='Yes').length;
+    PLAY.forEach((_,i)=>$('#pr'+i).classList.toggle('hl',rows.includes(i)));
+    $('#t_verdict').innerHTML=`Prediction: <span class="pill ${res==='Yes'?'yes':'no'}">${res==='Yes'?'Play':'Don\'t play'}</span> &nbsp; <small>${rows.length} training days reached this leaf: ${y} Yes / ${rows.length-y} No</small>`;
+  }
+  ['t_out','t_hum','t_wind'].forEach(i=>$('#'+i).addEventListener('input',upd));upd();
+})();
+
+/* ===================== S2: impurity ===================== */
+(function(){
+  function upd(){
+    const a=+$('#m0').value,b=+$('#m1').value;$('#m0v').textContent=a;$('#m1v').textContent=b;
+    $('#marbles').innerHTML='<span class="marble" style="background:var(--c0)"></span>'.repeat(a)+'<span class="marble" style="background:var(--c1)"></span>'.repeat(b)||'';
+    const n=a+b,p=n?b/n:0;$('#m_p').textContent=n?p.toFixed(2):'–';$('#m_g').textContent=n?impurity([a,b],'gini').toFixed(3):'–';$('#m_h').textContent=n?impurity([a,b],'entropy').toFixed(3):'–';
+    const xs=[];for(let i=0;i<=100;i++)xs.push(i/100);
+    lineChart($('#impcv'),640,260,{xs,ymin:0,ymax:1,xl:'p = fraction of orange',yl:'impurity',marker:n?p:null,series:[{ys:xs.map(p=>impurity([1-p,p],'gini')),color:'#4f46e5',label:'Gini'},{ys:xs.map(p=>impurity([1-p,p],'entropy')),color:'#f97316',label:'Entropy (bits)'}]});
+  }
+  $('#m0').oninput=upd;$('#m1').oninput=upd;upd();
+  // gain calculator
+  let sel=0;const bw=$('#gainBtns');
+  PF.forEach((f,i)=>{const b=document.createElement('button');b.className='btn sec';b.textContent=f;b.onclick=()=>{sel=i;g()};bw.appendChild(b)});
+  function stats(f,crit){const vals=[...new Set(PLAY.map(r=>r[f]))];const tot=[0,0];PLAY.forEach(r=>tot[r[4]==='Yes'?1:0]++);const par=impurity(tot,crit);
+    let w=0;const rows=vals.map(v=>{const c=[0,0];PLAY.forEach(r=>{if(r[f]===v)c[r[4]==='Yes'?1:0]++});const n=c[0]+c[1],im=impurity(c,crit);w+=n/14*im;return{v,c,n,im,wt:n/14}});return{rows,par,w,gain:par-w,tot}}
+  function g(){
+    const crit=$('#gcrit').value,s=stats(sel,crit),nm=crit==='gini'?'G':'H';
+    $$('#gainBtns .btn').forEach((b,i)=>b.classList.toggle('on',i===sel));
+    $('#g_parent').innerHTML=`Whole table: ${s.tot[1]} Yes, ${s.tot[0]} No → <b>${nm}(S) = ${s.par.toFixed(3)}</b>. Splitting on <b>${PF[sel]}</b>:`;
+    $('#gtable').innerHTML=`<tr><th>${PF[sel]}</th><th>n</th><th>No</th><th>Yes</th><th>${nm}(child)</th><th>weight n/14</th><th>weight × ${nm}</th></tr>`+s.rows.map(r=>`<tr><td>${r.v}</td><td>${r.n}</td><td>${r.c[0]}</td><td>${r.c[1]}</td><td>${r.im.toFixed(3)}</td><td>${r.wt.toFixed(3)}</td><td>${(r.wt*r.im).toFixed(3)}</td></tr>`).join('')+`<tr><th colspan="6" style="text-align:right">weighted impurity I</th><th>${s.w.toFixed(3)}</th></tr>`;
+    $('#g_result').innerHTML=`Gain = ${s.par.toFixed(3)} − ${s.w.toFixed(3)} = <span style="color:var(--acc)">${s.gain.toFixed(3)}</span>`;
+    const all=PF.map((f,i)=>({f,gain:stats(i,crit).gain})),mx=Math.max(...all.map(a=>a.gain));
+    $('#gbars').innerHTML=all.map(a=>`<div class="barrow"><span>${a.f}${a.gain===mx?' 🏆':''}</span><div><div class="bar" style="width:${a.gain/mx*100}%;${a.gain===mx?'background:var(--c2)':''}"></div></div><b>${a.gain.toFixed(3)}</b></div>`).join('');
+  }
+  $('#gcrit').oninput=g;g();
+})();
+
+/* ===================== S3: manual split ===================== */
+hooks.s3=(function(){
+  const dom={x0:0,x1:10,y0:0,y1:10};let best=0;
+  function bestFor(key){const s=STU.map(p=>p[key]).sort((a,b)=>a-b);let bb=null;for(let i=0;i<s.length-1;i++){if(s[i]===s[i+1])continue;const t=(s[i]+s[i+1])/2,w=wI(key,t).w;if(!bb||w<bb.w)bb={t,w}}return bb}
+  function wI(key,t){const L=[0,0],R=[0,0];STU.forEach(p=>(p[key]<=t?L:R)[p.c]++);const nl=L[0]+L[1],nr=R[0]+R[1],n=STU.length;return{L,R,w:(nl*impurity(L,'gini')+nr*impurity(R,'gini'))/n}}
+  const gb={x:bestFor('x'),y:bestFor('y')};const gbest=gb.x.w<gb.y.w?'x':'y';const bestGain=.5-Math.min(gb.x.w,gb.y.w);
+  function render(){
+    const key=$('#s3f').value,t=+$('#s3t').value;$('#s3tv').textContent=t.toFixed(1);
+    const {L,R,w}=wI(key,t),gain=.5-w;best=Math.max(best,gain);
+    const pl=plot2D($('#s3cv'),420,380,dom,{xl:'hours studied',yl:'hours slept',pts:STU,pred:(x,y)=>{const c=(key==='x'?x:y)<=t?L:R;const s=c[0]+c[1];return s?c[1]/s:.5},res:40});
+    const c=pl.ctx;c.strokeStyle='#1e2433';c.lineWidth=2.5;c.setLineDash([7,4]);c.beginPath();if(key==='x'){c.moveTo(pl.sx(t),pl.pt);c.lineTo(pl.sx(t),pl.H-pl.pb)}else{c.moveTo(pl.pl,pl.sy(t));c.lineTo(pl.W-pl.pr,pl.sy(t))}c.stroke();c.setLineDash([]);
+    const xs=[],ys=[];for(let v=0;v<=10.001;v+=.1){xs.push(+v.toFixed(1));ys.push(wI(key,v).w)}
+    lineChart($('#s3curve'),420,380,{xs,ymin:0,ymax:.5,xl:'threshold t',yl:'weighted Gini  I',marker:t,mark2:[gb[key].t,gb[key].w],series:[{ys,color:'#4f46e5'}]});
+    $('#s3L').textContent=L[0]+' / '+L[1];$('#s3R').textContent=R[0]+' / '+R[1];$('#s3I').textContent=w.toFixed(3);$('#s3gain').textContent=gain.toFixed(3);
+    $('#s3msg').innerHTML=`Your best gain so far: <b>${best.toFixed(3)}</b> &nbsp;|&nbsp; algorithm's best (any feature): <b style="color:var(--good)">${bestGain.toFixed(3)}</b> on <b>${gbest==='x'?'hours studied':'hours slept'}</b> at t = ${gb[gbest].t.toFixed(2)}. ${gain>=bestGain-1e-9?'🎉 You matched the optimum!':''}`;
+  }
+  $('#s3f').oninput=render;$('#s3t').oninput=render;
+  $('#s3best').onclick=()=>{$('#s3f').value=gbest;$('#s3t').value=gb[gbest].t.toFixed(1);render()};
+  return render})();
+
+/* ===================== S4: overfitting ===================== */
+hooks.s4=(function(){
+  function tree(d,m,c){return buildTree(MX,MY,MX.map((_,i)=>i),{maxDepth:d,minLeaf:m,maxFeat:2,crit:c},rng(1),0,2)}
+  function render(){
+    const d=+$('#s4d').value,m=+$('#s4m').value,c=$('#s4c').value;$('#s4dv').textContent=d;$('#s4mv').textContent=m;
+    const t=tree(d,m,c),tr=treeAcc(t,MX,MY),te=treeAcc(t,MXT,MYT);
+    const pts=MTR.map(p=>({...p}));if($('#s4test').checked)MTE.forEach(p=>pts.push({...p,ring:true,r:3.5}));
+    plot2D($('#s4cv'),420,380,MDOM,{pts,pred:(x,y)=>{const l=leafOf(t,[x,y]);return l.counts[1]/l.n},res:60,xl:'feature 1',yl:'feature 2'});
+    $('#s4tr').textContent=pct(tr);$('#s4te').textContent=pct(te);$('#s4lv').textContent=countLeaves(t);$('#s4dp').textContent=treeDepth(t);
+    const ds=[],a=[],b=[];for(let k=1;k<=15;k++){const tt=tree(k,m,c);ds.push(k);a.push(treeAcc(tt,MX,MY));b.push(treeAcc(tt,MXT,MYT))}
+    lineChart($('#s4curve'),420,380,{xs:ds,ymin:.6,ymax:1,xl:'max depth',yl:'accuracy',marker:d,series:[{ys:a,color:'#3b82f6',label:'train'},{ys:b,color:'#f97316',label:'test'}]});
+    const gap=tr-te;$('#s4msg').innerHTML=gap>.08?'⚠️ <b>Overfitting</b>: train accuracy is much higher than test accuracy ('+(gap*100).toFixed(1)+' points gap).':te<.8?'📉 <b>Underfitting</b>: the tree is too simple to follow the curved boundary.':'✅ Good balance: train and test accuracy are close and high.';
+    const rl=[];if(countLeaves(t)<=24){treeRules(t,['f1','f2'],['class 0','class 1'],'',rl);$('#s4rules').textContent=rl.join('\n')}else $('#s4rules').textContent='('+countLeaves(t)+' leaves — too many rules to print. This is itself a sign of a complicated, over-fitted tree.)';
+  }
+  ['s4d','s4m','s4c','s4test'].forEach(i=>$('#'+i).addEventListener('input',render));return render})();
+
+/* ===================== S5: evaluation ===================== */
+(function(){
+  function upd(){
+    const g=i=>Math.max(0,+$('#'+i).value||0),tp=g('cm_tp'),fp=g('cm_fp'),fn=g('cm_fn'),tn=g('cm_tn'),n=tp+fp+fn+tn;
+    const acc=n?(tp+tn)/n:NaN,pr=tp+fp?tp/(tp+fp):NaN,rc=tp+fn?tp/(tp+fn):NaN,f1=pr+rc?2*pr*rc/(pr+rc):NaN;
+    $('#m_acc').textContent=pct(acc);$('#m_prec').textContent=pct(pr);$('#m_rec').textContent=pct(rc);$('#m_f1').textContent=pct(f1);
+    $('#m_note').innerHTML=acc>.95&&rc<.5?'⚠️ High accuracy but low recall: the model misses most positives. Accuracy is misleading here.':pr<.5&&rc>.7?'The model catches positives but raises many false alarms (low precision).':'Looks reasonable. Check that both precision and recall match what the application needs.';
+  }
+  ['cm_tp','cm_fp','cm_fn','cm_tn'].forEach(i=>$('#'+i).oninput=upd);
+  $$('[data-p]').forEach(b=>b.onclick=()=>{const[a,c,d,e]=b.dataset.p.split(',');$('#cm_tp').value=a;$('#cm_fp').value=c;$('#cm_fn').value=d;$('#cm_tn').value=e;upd()});upd();
+  function folds(){const k=+$('#kf').value;$('#kv').textContent=k;let h='';for(let i=0;i<k;i++){h+='<div class="fold">'+Array.from({length:k},(_,j)=>'<i class="'+(i===j?'t':'')+'"></i>').join('')+'<span style="font-size:12px;width:90px;padding-left:8px;color:var(--mut)">round '+(i+1)+'</span></div>'}
+    $('#folds').innerHTML=h+'<div class="legend"><span><i style="background:var(--c1)"></i>test fold</span><span><i style="background:#d6dbef"></i>training folds</span></div>';
+    $('#kmsg').textContent='Each row is used for testing exactly once and for training '+(k-1)+' times. Cost: the model is trained '+k+' times. k = 5 or 10 is common.'}
+  $('#kf').oninput=folds;folds()})();
+
+/* ===================== S6: forest ===================== */
+(function(){
+  // crowd
+  function C(n,k){let r=0;for(let i=0;i<k;i++)r+=Math.log(n-i)-Math.log(i+1);return r}
+  function maj(p,N){let s=0;for(let k=Math.floor(N/2)+1;k<=N;k++)s+=Math.exp(C(N,k)+k*Math.log(p)+(N-k)*Math.log(1-p));return s}
+  function crowd(){const p=+$('#crpi').value,N=+$('#crni').value;$('#crp').textContent=p.toFixed(2);$('#crn').textContent=N;$('#crres').textContent=pct(maj(p,N));
+    const xs=[];for(let i=1;i<=101;i+=2)xs.push(i);lineChart($('#crcv'),640,240,{xs,ymin:.4,ymax:1,xl:'number of voters N',yl:'P(majority correct)',marker:N,series:[{ys:xs.map(n=>maj(p,n)),color:'#4f46e5',label:'majority vote'},{ys:xs.map(()=>p),color:'#9aa3b9',dash:[5,4],label:'one voter'}]})}
+  $('#crpi').oninput=crowd;$('#crni').oninput=crowd;crowd();
+  // bootstrap
+  const br=rng(2024);let bag=null;
+  function draw(){const n=+$('#bn').value;$('#bnv').textContent=n;const c=new Array(n).fill(0);for(let i=0;i<n;i++)c[Math.floor(br()*n)]++;bag=c;
+    $('#bgrid').innerHTML=c.map((v,i)=>`<span class="cell ${v?'in':'oob'}" title="row ${i+1}">${v||''}</span>`).join('');
+    const u=c.filter(v=>v).length;$('#b_u').textContent=u+' ('+(100*u/n).toFixed(0)+'%)';$('#b_o').textContent=(n-u)+' ('+(100*(n-u)/n).toFixed(0)+'%)'}
+  $('#bdraw').onclick=draw;$('#bn').oninput=()=>{$('#b_avg').textContent='–';draw()};
+  $('#b1000').onclick=()=>{const n=+$('#bn').value;let s=0;for(let t=0;t<1000;t++){const seen=new Set();for(let i=0;i<n;i++)seen.add(Math.floor(br()*n));s+=seen.size/n}$('#b_avg').textContent=(s/10).toFixed(1)+'%  (theory '+(100*(1-Math.pow(1-1/n,n))).toFixed(1)+'%)'};
+  draw();
+  // variance
+  function vr(){const r=+$('#rho').value,B=+$('#rb').value;$('#rhov').textContent=r.toFixed(2);$('#rbv').textContent=B;const f=(r,B)=>r+(1-r)/B;$('#varres').textContent=f(r,B).toFixed(3);
+    const xs=[];for(let i=1;i<=100;i++)xs.push(i);lineChart($('#varcv'),640,250,{xs,ymin:0,ymax:1.05,xl:'number of trees B',yl:'variance of the average',marker:B,series:[{ys:xs.map(b=>f(r,b)),color:'#4f46e5',label:'your ρ'},{ys:xs.map(b=>f(0,b)),color:'#10b981',dash:[5,4],label:'ρ = 0 (independent)'},{ys:xs.map(b=>f(1,b)),color:'#ef4444',dash:[5,4],label:'ρ = 1 (identical trees)'}]})}
+  $('#rho').oninput=vr;$('#rb').oninput=vr;vr();
+})();
+hooks.s6=(function(){
+  const cache={};
+  function getF(d,m){const k=d+'|'+m;if(!cache[k])cache[k]=trainForest(MX,MY,2,{maxDepth:d,minLeaf:1,maxFeat:m,crit:'gini'},100,321);return cache[k]}
+  const th=$('#thumbs');for(let i=0;i<6;i++){const d=document.createElement('div');d.style.textAlign='center';d.innerHTML='<canvas id="th'+i+'"></canvas><small id="tha'+i+'" style="color:var(--mut)"></small>';th.appendChild(d)}
+  function render(){
+    const B=+$('#fb').value,d=+$('#fd').value,m=+$('#fm').value;$('#fbv').textContent=B;$('#fdv').textContent=d;
+    const fr=getF(d,m);
+    for(let i=0;i<6;i++){const t=fr.trees[i].root;plot2D($('#th'+i),120,120,MDOM,{bare:true,pred:(x,y)=>treeClass(t,[x,y]),res:30,pts:MTR});$('#tha'+i).textContent='tree '+(i+1)+': '+pct(treeAcc(t,MXT,MYT))}
+    const one=buildTree(MX,MY,MX.map((_,i)=>i),{maxDepth:d,minLeaf:1,maxFeat:2,crit:'gini'},rng(1),0,2);
+    plot2D($('#f1cv'),380,340,MDOM,{pts:MTR,pred:(x,y)=>treeClass(one,[x,y]),res:60});
+    plot2D($('#f2cv'),380,340,MDOM,{pts:MTR,pred:(x,y)=>votes(fr,[x,y],B)[1]/B,res:60});
+    $('#f_s').textContent=pct(treeAcc(one,MXT,MYT));$('#f_f').textContent=pct(forestAcc(fr,B,MXT,MYT));$('#f_o').textContent=B<3?'(need ≥3 trees)':pct(oobAcc(fr,B));
+  }
+  ['fb','fd','fm'].forEach(i=>$('#'+i).addEventListener('input',render));return render})();
+
+/* ===================== S6b: how a forest is built ===================== */
+hooks.s6b=(function(){
+  const X=IRIS.X,y=IRIS.y,n=150,DEPTH=4,FL=[6.0,2.8,4.9,1.7];
+  let st;
+  function bestPerFeature(idx){
+    const counts=[0,0,0];idx.forEach(i=>counts[y[i]]++);const par=impurity(counts,'gini'),out=[];
+    for(let f=0;f<4;f++){
+      const s=idx.slice().sort((a,b)=>X[a][f]-X[b][f]),L=[0,0,0],R=counts.slice();let best=null;
+      for(let k=0;k<s.length-1;k++){
+        const c=y[s[k]];L[c]++;R[c]--;const v1=X[s[k]][f],v2=X[s[k+1]][f];if(v1===v2)continue;
+        const nl=k+1,nr=s.length-nl,w=(nl*impurity(L,'gini')+nr*impurity(R,'gini'))/s.length;
+        if(!best||w<best.w)best={w,t:(v1+v2)/2}}
+      out.push({gain:par-best.w,t:best.t})}
+    return out}
+  function newTree(){
+    const r=st.r,idx=[],inb=new Uint8Array(n),cnt=new Array(n).fill(0);
+    for(let i=0;i<n;i++){const j=Math.floor(r()*n);idx.push(j);inb[j]=1;cnt[j]++}
+    const oob=[];for(let i=0;i<n;i++)if(!inb[i])oob.push(i);
+    const feats=shuffle([0,1,2,3],r).slice(0,st.m),gains=bestPerFeature(idx);
+    const root=buildTree(X,y,idx,{maxDepth:DEPTH,minLeaf:1,maxFeat:st.m,crit:'gini',rootFeats:feats},r,0,3);
+    st.cur={cnt,inb,oob,feats,gains,root};st.stage=0}
+  function forestOOB(trees){let ok=0,m=0;for(let i=0;i<n;i++){const v=[0,0,0];let s=0;trees.forEach(t=>{if(!t.inb[i]){v[treeClass(t.root,X[i])]++;s++}});if(s){m++;if(argmax(v)===y[i])ok++}}return m?ok/m:NaN}
+  function complete(){st.trees.push(st.cur);st.hist.push(forestOOB(st.trees))}
+  function reset(){st={m:+$('#rfm').value,r:rng(4242),trees:[],cur:null,stage:0,hist:[]};newTree()}
+  function next(){if(st.stage<3){st.stage++;if(st.stage===3)complete()}else newTree();render()}
+  function add10(){if(st.stage<3){st.stage=3;complete()}for(let k=0;k<10;k++){newTree();st.stage=3;complete()}render()}
+  function render(){
+    const c=st.cur,B=st.trees.length;
+    const names=['① Bootstrap sample','② Random features','③ Grow the tree','④ Add to the forest'];
+    $('#rfsteps').innerHTML=names.map((t,i)=>`<span class="pill" style="background:${i===st.stage?'var(--acc)':i<st.stage?'#3f8f6b':'#b3b8d0'};margin:0 6px 6px 0">${t}</span>`).join('');
+    $('#rfhead').innerHTML=`Building tree <b>#${B+(st.stage===3?0:1)}</b> &nbsp;·&nbsp; the forest currently has <b>${B}</b> finished tree${B===1?'':'s'}.`;
+    let h='';
+    if(st.stage===0){
+      const u=c.cnt.filter(v=>v).length;
+      h=`<p><b>Step ①:</b> draw ${n} rows <b>with replacement</b> from the ${n} flowers. A number is how many times that flower was drawn; a grey square was never drawn: it is <b>out-of-bag</b> for this tree. The underline shows the species.</p><div>`+
+        c.cnt.map((v,i)=>`<span class="cell ${v?'in':'oob'}" style="width:22px;height:22px;line-height:20px;font-size:11px;margin:1px;border-bottom:4px solid ${COL[y[i]]}" title="flower ${i+1}: ${IC[y[i]]}">${v||''}</span>`).join('')+
+        `</div><div class="stats"><div class="stat"><b>${u}</b><span>unique flowers in this bag (${(100*u/n).toFixed(0)}%)</span></div><div class="stat"><b>${n-u}</b><span>out-of-bag flowers (${(100*(n-u)/n).toFixed(0)}%)</span></div></div>`;
+    }else if(st.stage===1){
+      const al=new Set(c.feats);let ba=-1,bl=-1;
+      c.gains.forEach((g,f)=>{if(bl<0||g.gain>c.gains[bl].gain)bl=f;if(al.has(f)&&(ba<0||g.gain>c.gains[ba].gain))ba=f});
+      h=`<p><b>Step ②:</b> at the <b>root</b> of this tree, only <b>${st.m}</b> of the 4 features are allowed to compete (drawn at random). Every feature's best possible split is scored by Gini gain on this tree's bag; only the allowed ones can win.</p>
+      <table class="tbl"><tr><th>Feature</th><th>Allowed this time?</th><th>Best split</th><th>Gini gain</th></tr>`+
+      c.gains.map((g,f)=>`<tr class="${f===ba?'hl':''}" style="${al.has(f)?'':'opacity:.45'}"><td>${IF[f]}</td><td>${al.has(f)?'✔ yes':'✗ sits out'}</td><td>${IF[f]} ≤ ${g.t.toFixed(2)}</td><td>${g.gain.toFixed(3)}${f===ba?' 🏆':''}</td></tr>`).join('')+`</table>
+      <p>Root question of this tree: <b>${IF[ba]} ≤ ${c.gains[ba].t.toFixed(2)}?</b> `+(ba!==bl?`With all features allowed (plain bagging) the winner would have been <b>${IF[bl]}</b>, so the random subset forced this tree to be <span style="color:var(--acc);font-weight:700">different</span>.`:`Here the overall best feature happened to be allowed, so it still wins. The same draw is repeated at <i>every</i> node below the root.`)+`</p>`;
+    }else if(st.stage===2){
+      const rl=[];treeRules(c.root,IF,IC,'',rl);let ok=0;c.oob.forEach(i=>{if(treeClass(c.root,X[i])===y[i])ok++});
+      h=`<p><b>Step ③:</b> the tree keeps splitting its bag with a fresh random feature subset at every node (here capped at depth ${DEPTH} to keep the printout short; real forests usually grow deeper).</p>
+      <div class="stats"><div class="stat"><b>${countLeaves(c.root)}</b><span>leaves</span></div><div class="stat"><b>${treeDepth(c.root)}</b><span>depth</span></div><div class="stat"><b>${pct(ok/c.oob.length)}</b><span>accuracy on its own ${c.oob.length} out-of-bag flowers</span></div></div>
+      <details><summary>Show this tree as rules</summary><pre class="rules">${rl.join('\n')}</pre></details>`;
+    }else{
+      const v=[0,0,0];st.trees.forEach(t=>v[treeClass(t.root,FL)]++);
+      h=`<p><b>Step ④:</b> the finished tree joins the forest. Its out-of-bag flowers are used to update the forest's free validation score (each flower is predicted only by trees that never saw it).</p>
+      <div class="stats"><div class="stat"><b>${B}</b><span>trees in the forest</span></div><div class="stat"><b>${B<3?'–':pct(st.hist[B-1])}</b><span>forest OOB accuracy</span></div></div>
+      ${B>=2?'<canvas id="rfchart"></canvas>':'<p style="color:var(--mut)">Add a few more trees to see the OOB accuracy curve.</p>'}
+      <h4 style="margin-top:14px">How do the trees vote on a borderline flower (sepal 6.0×2.8, petal 4.9×1.7 cm)?</h4>
+      ${IC.map((cn,k)=>`<div class="barrow"><span style="color:${COL[k]};font-weight:700">${cn}</span><div><div class="bar" style="width:${v[k]/B*100}%;background:${COL[k]}"></div></div><b>${v[k]}/${B}</b></div>`).join('')}
+      <div>${st.trees.map(t=>`<span class="dot" style="background:${COL[treeClass(t.root,FL)]}"></span>`).join('')}</div>
+      <p>Forest vote: <b style="color:${COL[argmax(v)]}">${IC[argmax(v)]}</b>. Press <b>Next step</b> to build another tree, or <b>Add 10 trees</b>.</p>`;
+    }
+    $('#rfstage').innerHTML=h;
+    $('#rfnext').textContent=st.stage===3?'Build next tree ▶':'Next step ▶';
+    if(st.stage===3&&B>=2){
+      const xs=st.hist.map((_,i)=>i+1),vals=st.hist.map(v=>isNaN(v)?null:v).filter(v=>v!==null),mn=Math.max(0,Math.floor(Math.min(...vals)*20)/20-.05);
+      const first=vals[0];
+      lineChart($('#rfchart'),640,220,{xs,ymin:Math.min(mn,.8),ymax:1,xl:'number of trees in forest',yl:'OOB accuracy',series:[{ys:st.hist.map(v=>isNaN(v)?first:v),color:'#4f46e5'}]});
+    }
+  }
+  $('#rfm').oninput=()=>{$('#rfmv').textContent=$('#rfm').value;reset();render()};
+  $('#rfnext').onclick=next;$('#rfadd').onclick=add10;$('#rfreset').onclick=()=>{reset();render()};
+  reset();render();
+
+  /* root-feature experiment */
+  function rootStats(){
+    const m=+$('#rrm').value;$('#rrmv').textContent=m;const r=rng(11),cnt=[0,0,0,0],T=200;
+    for(let t=0;t<T;t++){const idx=[];for(let i=0;i<n;i++)idx.push(Math.floor(r()*n));
+      const nd=buildTree(X,y,idx,{maxDepth:1,minLeaf:1,maxFeat:m,crit:'gini'},r,0,3);if(!nd.leaf)cnt[nd.f]++}
+    $('#rrbars').innerHTML=IF.map((f,i)=>`<div class="barrow"><span>${f}</span><div><div class="bar" style="width:${cnt[i]/T*100}%"></div></div><b>${cnt[i]}/${T}</b></div>`).join('');
+    const used=cnt.filter(v=>v>0).length;
+    $('#rrmsg').textContent=m===4?`Plain bagging: only ${used} of 4 features ever appear at the root. The trees start alike, so they are correlated.`:`Random subsets of ${m}: ${used} of 4 features appear at the root. The trees start differently, so they are less correlated.`}
+  $('#rrm').oninput=rootStats;rootStats();
+
+  /* stability experiment */
+  let expRun=0;
+  function splitIris(seed){const r=rng(seed),tr=[],te=[];for(let c=0;c<3;c++){const ids=[];for(let i=0;i<150;i++)if(y[i]===c)ids.push(i);shuffle(ids,r);te.push(...ids.slice(0,15));tr.push(...ids.slice(15))}return{tr,te}}
+  function runExp(){
+    const res={single:[],bag:[],rf:[]},base=500+expRun*100,O=m=>({maxDepth:12,minLeaf:1,maxFeat:m,crit:'gini'});
+    for(let s=0;s<30;s++){
+      const{tr,te}=splitIris(base+s),Xtr=tr.map(i=>X[i]),ytr=tr.map(i=>y[i]),Xte=te.map(i=>X[i]),yte=te.map(i=>y[i]);
+      res.single.push(treeAcc(buildTree(Xtr,ytr,Xtr.map((_,i)=>i),O(4),rng(s+1),0,3),Xte,yte));
+      res.bag.push(forestAcc(trainForest(Xtr,ytr,3,O(4),30,base+s+1),30,Xte,yte));
+      res.rf.push(forestAcc(trainForest(Xtr,ytr,3,O(2),30,base+s+2),30,Xte,yte))}
+    const rows=[['Single tree',res.single,'#ef4444'],['Bagging (m = 4)',res.bag,'#3b82f6'],['Random forest (m = 2)',res.rf,'#10b981']];
+    const W=640,H=230,ctx=mkCanvas($('#rexcv'),W,H),pl=150,pr=20,x0=.8,x1=1,sx=v=>pl+(v-x0)/(x1-x0)*(W-pl-pr);
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);ctx.font='12px system-ui';ctx.fillStyle='#5b6478';ctx.strokeStyle='#e3e6ef';ctx.textAlign='center';
+    for(let v=.8;v<=1.0001;v+=.05){ctx.beginPath();ctx.moveTo(sx(v),10);ctx.lineTo(sx(v),H-34);ctx.stroke();ctx.fillText(Math.round(v*100)+'%',sx(v),H-18)}
+    ctx.fillText('test accuracy (one dot per split)',(pl+W-pr)/2,H-3);
+    const jr=rng(3),stats=[];
+    rows.forEach(([nm,a,col],k)=>{const cy=48+k*62;ctx.textAlign='right';ctx.fillStyle='#1e2433';ctx.font='13px system-ui';ctx.fillText(nm,pl-12,cy+4);
+      ctx.globalAlpha=.55;a.forEach(v=>{ctx.beginPath();ctx.arc(sx(Math.max(x0,v)),cy+(jr()-.5)*30,5,0,7);ctx.fillStyle=col;ctx.fill()});ctx.globalAlpha=1;
+      const mean=a.reduce((s,v)=>s+v,0)/a.length,sd=Math.sqrt(a.reduce((s,v)=>s+(v-mean)**2,0)/a.length);
+      ctx.strokeStyle='#111';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(sx(mean),cy-22);ctx.lineTo(sx(mean),cy+22);ctx.stroke();ctx.lineWidth=1;
+      stats.push([nm,mean,sd,Math.min(...a)])});
+    $('#rextab').innerHTML='<tr><th>Model</th><th>Mean accuracy</th><th>Std. deviation across splits</th><th>Worst split</th></tr>'+stats.map(s=>`<tr><td>${s[0]}</td><td>${pct(s[1])}</td><td>${(100*s[2]).toFixed(2)} pts</td><td>${pct(s[3])}</td></tr>`).join('');
+  }
+  $('#rexrun').onclick=()=>{expRun++;runExp()};runExp();
+  return ()=>{}})();
+
+/* ===================== S7: Iris lab ===================== */
+const lab={nT:50,depth:6,mf:2,test:.3,seed:1,fr:null,split:null,xa:2,ya:3,flower:[5.9,2.8,4.3,1.3]};
+(function(){
+  const xa=$('#ixa'),ya=$('#iya');IF.forEach((f,i)=>{xa.add(new Option(f,i));ya.add(new Option(f,i))});xa.value=2;ya.value=3;
+  const rngs=[[4.3,7.9],[2,4.4],[1,6.9],[.1,2.5]];
+  $('#lsliders').innerHTML=IF.map((f,i)=>`<label style="display:block;font-size:14px;color:var(--mut)">${f}: <b id="fv${i}" style="color:var(--ink)"></b><input type="range" class="fs" data-i="${i}" min="${rngs[i][0]}" max="${rngs[i][1]}" step="0.1"></label>`).join('');
+  function setFlower(f){lab.flower=f;$$('.fs').forEach(s=>s.value=f[+s.dataset.i]);flowerUI()}
+  $$('.fs').forEach(s=>s.oninput=()=>{lab.flower[+s.dataset.i]=+s.value;flowerUI()});
+  $$('[data-f]').forEach(b=>b.onclick=()=>setFlower(b.dataset.f.split(',').map(Number)));
+  function split(){const r=rng(lab.seed*7919),tr=[],te=[];for(let c=0;c<3;c++){const ids=[];for(let i=0;i<150;i++)if(IRIS.y[i]===c)ids.push(i);shuffle(ids,r);const nt=Math.round(50*lab.test);te.push(...ids.slice(0,nt));tr.push(...ids.slice(nt))}return{tr,te}}
+  function train(){
+    lab.split=split();const{tr,te}=lab.split;const Xtr=tr.map(i=>IRIS.X[i]),ytr=tr.map(i=>IRIS.y[i]),Xte=te.map(i=>IRIS.X[i]),yte=te.map(i=>IRIS.y[i]);
+    lab.Xtr=Xtr;lab.ytr=ytr;lab.Xte=Xte;lab.yte=yte;
+    lab.o={maxDepth:lab.depth,minLeaf:1,maxFeat:lab.mf,crit:'gini'};
+    lab.fr=trainForest(Xtr,ytr,3,lab.o,lab.nT,lab.seed*101+7);
+    const one=buildTree(Xtr,ytr,Xtr.map((_,i)=>i),{...lab.o,maxFeat:4},rng(5),0,3);
+    $('#l_tr').textContent=pct(forestAcc(lab.fr,lab.nT,Xtr,ytr));$('#l_te').textContent=pct(forestAcc(lab.fr,lab.nT,Xte,yte));
+    $('#l_oob').textContent=lab.nT<3?'(need ≥3 trees)':pct(oobAcc(lab.fr,lab.nT));$('#l_one').textContent=pct(treeAcc(one,Xte,yte));
+    const cm=[[0,0,0],[0,0,0],[0,0,0]];Xte.forEach((x,i)=>cm[yte[i]][argmax(votes(lab.fr,x,lab.nT))]++);
+    $('#lcm').innerHTML='<table class="tbl"><tr><th></th>'+IC.map(c=>'<th>'+c+'</th>').join('')+'</tr>'+cm.map((r,i)=>{const s=r.reduce((a,b)=>a+b,0)||1;return'<tr><th>'+IC[i]+'</th>'+r.map((v,j)=>`<td style="background:${i===j?`rgba(16,185,129,${.12+.7*v/s})`:v?`rgba(220,38,38,${.2+.5*v/s})`:'#fff'};font-weight:700">${v}</td>`).join('')+'</tr>'}).join('')+'</table>';
+    $('#lpr').innerHTML='<table class="tbl"><tr><th></th><th>precision</th><th>recall</th></tr>'+IC.map((c,k)=>{const tp=cm[k][k],fp=cm[0][k]+cm[1][k]+cm[2][k]-tp,fn=cm[k].reduce((a,b)=>a+b,0)-tp;return`<tr><th>${c}</th><td>${pct(tp+fp?tp/(tp+fp):NaN)}</td><td>${pct(tp+fn?tp/(tp+fn):NaN)}</td></tr>`}).join('')+'</table>';
+    scatter();flowerUI();
+  }
+  function scatter(){const a=+xa.value,b=+ya.value;const col=j=>IRIS.X.map(r=>r[j]),mn=j=>Math.min(...col(j))-.2,mx=j=>Math.max(...col(j))+.2;
+    const trs=new Set(lab.split.tr);const pts=IRIS.X.map((r,i)=>({x:r[a],y:r[b],c:IRIS.y[i],ring:!trs.has(i),r:trs.has(i)?4:5}));
+    const p=plot2D($('#isc'),620,380,{x0:mn(a),x1:mx(a),y0:mn(b),y1:mx(b)},{pts,xl:IF[a]+' (cm)',yl:IF[b]+' (cm)'});
+    const f=lab.flower;p.ctx.fillStyle='#111';p.ctx.font='26px system-ui';p.ctx.textAlign='center';p.ctx.fillText('★',p.sx(f[a]),p.sy(f[b])+9)}
+  function flowerUI(){
+    if(!lab.fr)return;IF.forEach((_,i)=>$('#fv'+i).textContent=lab.flower[i].toFixed(1));
+    const v=votes(lab.fr,lab.flower,lab.nT),B=lab.nT;
+    $('#lvotebars').innerHTML=IC.map((c,k)=>`<div class="barrow"><span style="color:${COL[k]};font-weight:700">${c}</span><div><div class="bar" style="width:${v[k]/B*100}%;background:${COL[k]}"></div></div><b>${v[k]}/${B}</b></div>`).join('');
+    $('#ldots').innerHTML=lab.fr.trees.slice(0,B).map(t=>`<span class="dot" style="background:${COL[treeClass(t.root,lab.flower)]}"></span>`).join('');
+    const k=argmax(v);$('#lpred').innerHTML=`Forest prediction: <span style="color:${COL[k]}">Iris ${IC[k]}</span> &nbsp;<small style="font-weight:400">(vote share ${(100*v[k]/B).toFixed(0)}%)</small>`;
+    scatter()}
+  const bind=(id,key,fmt,conv)=>$('#'+id).addEventListener('input',e=>{lab[key]=conv(+e.target.value);$('#'+id+'v').textContent=fmt(+e.target.value);train()});
+  bind('ln','nT',v=>v,v=>v);bind('ld','depth',v=>v,v=>v);bind('lm','mf',v=>v,v=>v);bind('lt','test',v=>v+'%',v=>v/100);
+  $('#lseed').onclick=()=>{lab.seed++;train()};xa.oninput=ya.oninput=()=>scatter();
+  window.labTrain=train;train();setFlower(lab.flower);
+  hooks.s7=()=>{scatter()};
+})();
+
+/* ===================== S8: importance ===================== */
+hooks.s8=(function(){
+  function mdi(){const B=lab.fr.trees.length,acc=[0,0,0,0];lab.fr.trees.forEach(t=>{const a=[0,0,0,0];treeImp(t.root,a);const s=a.reduce((x,y)=>x+y,0)||1;a.forEach((v,i)=>acc[i]+=v/s/B)});return acc}
+  function bars(el,vals,col){const mx=Math.max(...vals.map(Math.abs),1e-9);$(el).innerHTML=IF.map((f,i)=>`<div class="barrow"><span>${f}</span><div><div class="bar" style="width:${Math.max(0,vals[i])/mx*100}%;background:${col}"></div></div><b>${vals[i].toFixed(3)}</b></div>`).join('')}
+  function perm(){const fr=lab.fr,B=fr.trees.length,base=forestAcc(fr,B,lab.Xte,lab.yte),r=rng(77),out=[];
+    for(let f=0;f<4;f++){let d=0;for(let rep=0;rep<10;rep++){const col=lab.Xte.map(x=>x[f]);shuffle(col,r);const Xp=lab.Xte.map((x,i)=>{const c=x.slice();c[f]=col[i];return c});d+=base-forestAcc(fr,B,Xp,lab.yte)}out.push(d/10)}
+    bars('#perm',out,'#f97316')}
+  function oob(seedAdd){
+    const o={...lab.o},B=150,fr=trainForest(lab.Xtr,lab.ytr,3,o,B,lab.seed*31+(seedAdd||0)),n=lab.Xtr.length,V=Array.from({length:n},()=>[0,0,0]),T=lab.Xte.map(()=>[0,0,0]),xs=[],oe=[],te=[];
+    for(let b=0;b<B;b++){const t=fr.trees[b];t.oob.forEach(i=>V[i][treeClass(t.root,lab.Xtr[i])]++);lab.Xte.forEach((x,j)=>T[j][treeClass(t.root,x)]++);
+      let w=0,m=0;V.forEach((v,i)=>{if(v[0]+v[1]+v[2]){m++;if(argmax(v)!==lab.ytr[i])w++}});
+      let tw=0;T.forEach((v,j)=>{if(argmax(v)!==lab.yte[j])tw++});
+      xs.push(b+1);oe.push(m>=n*.5?w/m:NaN);te.push(tw/lab.Xte.length)}
+    const f=a=>{let l=a.find(v=>!isNaN(v));return a.map(v=>isNaN(v)?l:v)};
+    lineChart($('#oobcv'),640,280,{xs,ymin:0,ymax:.25,yd:2,xl:'number of trees',yl:'error rate',series:[{ys:f(oe),color:'#4f46e5',label:'OOB error'},{ys:te,color:'#f97316',label:'test error'}]})}
+  let k=0;$('#permBtn').onclick=perm;$('#oobBtn').onclick=()=>oob(++k*13);
+  return ()=>{bars('#mdi',mdi(),'#4f46e5');$('#perm').innerHTML='<p style="color:var(--mut)">Press the button.</p>';oob(0)}})();
+
+/* ===================== S10: extrapolation + checklist ===================== */
+hooks.s10=(function(){
+  const r=rng(5),EX=[];for(let i=0;i<40;i++){const x=10*r();EX.push({x,y:2*x+1+1.5*gauss(r),c:0})}
+  function regTree(P,ml,md,d){d=d||0;const n=P.length,m=P.reduce((a,p)=>a+p.y,0)/n,nd={m,leaf:true};if(d>=md||n<2*ml)return nd;
+    const s=P.slice().sort((a,b)=>a.x-b.x),st=s.reduce((a,p)=>a+p.y,0),st2=s.reduce((a,p)=>a+p.y*p.y,0);let sl=0,sl2=0,best=null;
+    for(let k=0;k<n-1;k++){sl+=s[k].y;sl2+=s[k].y*s[k].y;if(s[k].x===s[k+1].x)continue;const nl=k+1,nr=n-nl;if(nl<ml||nr<ml)continue;const sr=st-sl,sr2=st2-sl2,sse=(sl2-sl*sl/nl)+(sr2-sr*sr/nr);if(!best||sse<best.sse)best={sse,t:(s[k].x+s[k+1].x)/2,k}}
+    if(!best)return nd;nd.leaf=false;nd.t=best.t;nd.l=regTree(s.slice(0,best.k+1),ml,md,d+1);nd.r=regTree(s.slice(best.k+1),ml,md,d+1);return nd}
+  const rp=(nd,x)=>{while(!nd.leaf)nd=x<=nd.t?nd.l:nd.r;return nd.m};
+  const rr=rng(9),trees=[];for(let b=0;b<100;b++){const bs=[];for(let i=0;i<EX.length;i++)bs.push(EX[Math.floor(rr()*EX.length)]);trees.push(regTree(bs,3,10))}
+  const mx=EX.reduce((a,p)=>a+p.x,0)/EX.length,my=EX.reduce((a,p)=>a+p.y,0)/EX.length;let sxy=0,sxx=0;EX.forEach(p=>{sxy+=(p.x-mx)*(p.y-my);sxx+=(p.x-mx)**2});const sl=sxy/sxx,ic=my-sl*mx;
+  function render(){const B=+$('#exb').value;$('#exbv').textContent=B;const dom={x0:0,x1:16,y0:-2,y1:36};
+    const p=plot2D($('#excv'),640,340,dom,{pts:EX,xl:'x',yl:'y'}),c=p.ctx,xs=[];for(let x=0;x<=16.001;x+=.1)xs.push(x);
+    const line=(f,col,w,dash)=>{c.beginPath();c.strokeStyle=col;c.lineWidth=w;c.setLineDash(dash||[]);xs.forEach((x,i)=>{const X=p.sx(x),Y=p.sy(f(x));i?c.lineTo(X,Y):c.moveTo(X,Y)});c.stroke();c.setLineDash([])};
+    line(x=>2*x+1,'#9aa3b9',2,[6,5]);if($('#exlin').checked)line(x=>sl*x+ic,'#10b981',2.5);
+    line(x=>{let s=0;for(let b=0;b<B;b++)s+=rp(trees[b],x);return s/B},'#f97316',3);
+    c.strokeStyle='#ef4444';c.setLineDash([4,4]);c.beginPath();c.moveTo(p.sx(10),p.pt);c.lineTo(p.sx(10),p.H-p.pb);c.stroke();c.setLineDash([]);c.fillStyle='#ef4444';c.textAlign='left';c.fillText('end of training range',p.sx(10)+5,p.pt+14);
+    EX.forEach(q=>{c.beginPath();c.arc(p.sx(q.x),p.sy(q.y),4,0,7);c.fillStyle=COL[0];c.fill()})}
+  $('#exb').oninput=render;$('#exlin').oninput=render;
+  const items=['Rows are independent (grouped / time-aware split used if not)','Test data never used for fitting or tuning (no leakage)','Compared to a trivial baseline (majority class, mean)','Reported precision / recall / F1, not only accuracy (if classes are imbalanced)','Checked OOB score and cross-validation agree','Looked at permutation importance, not only MDI','Checked behaviour on out-of-range inputs (no extrapolation!)','Plan to monitor for data drift after deployment'];
+  $('#checklist').innerHTML=items.map((t,i)=>`<li><label style="display:flex;gap:10px;align-items:flex-start;padding:4px 0"><input type="checkbox" class="chk" style="margin-top:6px"> <span>${t}</span></label></li>`).join('');
+  const cu=()=>{const n=$$('.chk:checked').length;$('#chkmsg').textContent=n+' / '+items.length+' checks done'+(n===items.length?' — ready to ship! 🚀':'')};$$('.chk').forEach(c=>c.oninput=cu);cu();
+  return render})();
+
+/* ===================== S11: quiz ===================== */
+(function(){
+  const Q=[
+   {q:'When choosing a split, a decision tree tries to…',o:['maximise the weighted impurity of the children','minimise the weighted impurity of the children','make the left child as large as possible','split on the feature with the largest numeric values'],a:1,w:'The best split gives the largest impurity drop, i.e. the lowest weighted child impurity.'},
+   {q:'About what fraction of unique training rows appears in one bootstrap sample (large n)?',o:['50%','63.2%','80%','100%'],a:1,w:'1 − (1 − 1/n)ⁿ → 1 − e⁻¹ ≈ 0.632. The other ≈ 36.8% are out-of-bag.'},
+   {q:'Why does a random forest consider only a random subset of features at each split?',o:['To speed up prediction only','To make trees less correlated, so averaging reduces variance more','To remove unimportant features permanently','Because trees cannot handle many features'],a:1,w:'Var = ρσ² + (1−ρ)σ²/B: lowering ρ (correlation between trees) lowers the floor that adding trees cannot go below.'},
+   {q:'A single deep tree: train accuracy 100%, test accuracy 78%. This indicates…',o:['underfitting / high bias','overfitting / high variance','a perfectly tuned model','data leakage is impossible'],a:1,w:'A large train–test gap signals overfitting. A forest or a depth / min-leaf limit typically helps.'},
+   {q:'Do you need to standardise (z-score) features before a random forest?',o:['Yes, otherwise splits are biased','Yes, but only the target','No: splits depend only on the ordering of values','Only when using entropy'],a:2,w:'Thresholds compare ordered values, so monotonic rescaling does not change the learned splits.'},
+   {q:'A regression forest is trained with x only between 0 and 10. For x = 20 it will most likely predict…',o:['a value continuing the trend','a value close to its predictions near x = 10 (flat)','NaN','a random value'],a:1,w:'Leaves output averages of seen targets, so predictions saturate outside the training range.'}];
+  let score=0,done=0;
+  $('#quiz').innerHTML=Q.map((x,i)=>`<div class="card" data-q="${i}"><b>Q${i+1}. ${x.q}</b>${x.o.map((t,j)=>`<button class="qopt" data-j="${j}">${t}</button>`).join('')}<div class="why"></div></div>`).join('');
+  $$('.qopt').forEach(b=>b.onclick=()=>{const card=b.closest('.card');if(card.dataset.done)return;card.dataset.done=1;const q=Q[+card.dataset.q],j=+b.dataset.j;
+    $$('.qopt',card).forEach((o,k)=>{if(k===q.a)o.classList.add('right')});if(j!==q.a)b.classList.add('wrong');else score++;done++;
+    const w=$('.why',card);w.style.display='block';w.innerHTML=(j===q.a?'✅ Correct. ':'❌ Not quite. ')+q.w;$('#qscore').textContent=score+' / '+Q.length})
+  $('#copyCode').onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText($('#code').textContent).then(()=>{$('#copyCode').textContent='Copied ✓'},()=>{})}
+})();
+
+/* ===================== start ===================== */
+let start=NaN;try{start=parseInt((location.hash||'').replace('#s',''))}catch(e){}go(isNaN(start)?0:start);
+</script>
+</body>
+</html>

@@ -5,5 +5,7 @@
   "excalidraw-extras",
   "obsidian-latex-suite",
   "obsidian-charts",
-  "obsidian-git"
+  "obsidian-git",
+  "jupyter-viewer",
+  "local-html-view"
 ]
