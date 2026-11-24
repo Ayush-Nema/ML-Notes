@@ -32,17 +32,92 @@
             }
           },
           {
+            "id": "6880c29666834f16",
+            "type": "leaf",
+            "state": {
+              "type": "jupyter-viewer",
+              "state": {
+                "file": "Classical ML/Artifacts/Decision_Trees_Classification_and_Regression.ipynb"
+              },
+              "icon": "lucide-file",
+              "title": "Decision_Trees_Classification_and_Regression"
+            }
+          },
+          {
+            "id": "ac6bd3d26657cbb0",
+            "type": "leaf",
+            "state": {
+              "type": "local-html-view",
+              "state": {
+                "file": "Classical ML/Artifacts/decision_tree_regression.html"
+              },
+              "icon": "globe",
+              "title": "decision_tree_regression"
+            }
+          },
+          {
+            "id": "4b86e40c3fe3f446",
+            "type": "leaf",
+            "state": {
+              "type": "jupyter-viewer",
+              "state": {
+                "file": "Foundations of ML/Artifacts/model-validation-2.ipynb"
+              },
+              "icon": "lucide-file",
+              "title": "model-validation-2"
+            }
+          },
+          {
             "id": "cb8377ef2729e3b1",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "Classical ML/Random Forest.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "Random Forest"
+            }
+          },
+          {
+            "id": "451746f76bea7d61",
+            "type": "leaf",
+            "state": {
+              "type": "local-html-view",
+              "state": {
+                "file": "Classical ML/Artifacts/random_forest1.html"
+              },
+              "icon": "globe",
+              "title": "random_forest1"
+            }
+          },
+          {
+            "id": "67aca04ff545843a",
+            "type": "leaf",
+            "state": {
+              "type": "local-html-view",
+              "state": {
+                "file": "Classical ML/Artifacts/random_forest2.html"
+              },
+              "icon": "globe",
+              "title": "random_forest2"
+            }
+          },
+          {
+            "id": "af012e150d1ffd95",
+            "type": "leaf",
+            "state": {
+              "type": "jupyter-viewer",
+              "state": {
+                "file": "Classical ML/Artifacts/Random_Forest.ipynb"
+              },
+              "icon": "lucide-file",
+              "title": "Random_Forest"
             }
           }
-        ],
-        "currentTab": 2
+        ]
       }
     ],
     "direction": "vertical"
@@ -230,19 +305,20 @@
       "table-editor-obsidian:Advanced Tables Toolbar": false
     }
   },
-  "active": "cb8377ef2729e3b1",
+  "active": "99df4c4c16aadb09",
   "lastOpenFiles": [
+    "Classical ML/Artifacts/decision-trees-1.html",
+    "Classical ML/Artifacts/Random_Forest.ipynb",
+    "Classical ML/Artifacts/decision_tree_regression.html",
+    "Classical ML/Random Forest.md",
     "Classical ML/Artifacts/Decision_trees.html",
-    "Classical ML/Untitled.md",
-    "Classical ML/Artifacts/logistic_regression_lab.html",
-    "Classical ML/Artifacts/random_forest1.html",
-    "Classical ML/Artifacts/random_forest2.html",
-    "Classical ML/Artifacts/logistic_regression_lab2.html",
-    "Foundations of ML/Artifacts/hyperparameter-tuning.html",
-    "Foundations of ML/Artifacts/regularization.html",
     "Classical ML/Artifacts/Decision_Trees_Classification_and_Regression.ipynb",
-    "Understanding data/Artifacts/outlier detection/Outlier_detection_and_treatment.ipynb",
-    "Understanding data/Artifacts/outlier detection/01_outliers_live_class.ipynb",
+    "Classical ML/Artifacts/random_forest2.html",
+    "Classical ML/Artifacts/random_forest1.html",
+    "Foundations of ML/Artifacts/model-validation-2.ipynb",
+    "Foundations of ML/Artifacts/model-validation-1.ipynb",
+    "Foundations of ML/Artifacts/model-validation1.ipynb",
+    "Foundations of ML/Artifacts/model-validation.html",
     "Understanding data/Drawing 2026-10-22 19.21.45.excalidraw.md",
     "Classical ML/Decision Tree.md",
     "Statistics - overview/Artifacts/Conditional Probability and Bayes theorem.md",

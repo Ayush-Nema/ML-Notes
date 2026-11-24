@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decision Tree Regression Explorer</title>
+<style>
+:root{
+  --bg:#fafaf8; --panel:#ffffff; --text:#1f2328; --muted:#6b7280; --border:#dcdcd6;
+  --accent:#d9480f; --blue:#2563eb; --line:#e8e8e2; --point:#2563eb; --test:#9ca3af;
+  --r1:rgba(37,99,235,.07); --r2:rgba(217,72,15,.07);
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#16181c; --panel:#1e2126; --text:#e6e6e3; --muted:#9aa0a6; --border:#343840;
+  --accent:#ff8a4c; --blue:#6ea0ff; --line:#2b2f36; --point:#6ea0ff; --test:#6b7280;
+  --r1:rgba(110,160,255,.09); --r2:rgba(255,138,76,.09);}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:1200px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 2px}
+.sub{color:var(--muted);margin:0 0 14px}
+.controls{display:flex;flex-wrap:wrap;gap:12px 20px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;align-items:flex-end}
+.ctl{display:flex;flex-direction:column;gap:3px;min-width:140px}
+.ctl label{font-size:12px;color:var(--muted)}
+.ctl label b{color:var(--text);font-weight:600}
+select,button{font:inherit;padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text)}
+button{cursor:pointer}
+button:hover{border-color:var(--accent)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px}
+.card h2{font-size:13px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600}
+canvas{width:100%;display:block;border-radius:6px;cursor:crosshair;touch-action:manipulation}
+.stats{display:flex;flex-wrap:wrap;gap:8px 22px;margin-top:10px}
+.stat{min-width:90px}.stat span{display:block;font-size:11px;color:var(--muted)}.stat b{font-size:17px}
+.readout{margin-top:8px;color:var(--muted);min-height:20px}
+.readout b{color:var(--text)}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
+svg text{font:11px system-ui,sans-serif;fill:var(--text)}
+.node rect{fill:var(--panel);stroke:var(--border);stroke-width:1.2}
+.node.leaf rect{fill:var(--bg)}
+.node.active rect{stroke:var(--accent);stroke-width:2.2}
+.node.sel rect{fill:var(--r2)}
+.node.split{cursor:pointer}
+.edge{stroke:var(--border);stroke-width:1.3;fill:none}
+.edge.active{stroke:var(--accent);stroke-width:2.2}
+.elabel{fill:var(--muted)!important;font-size:10px}
+.muted{fill:var(--muted)!important}
+.explain{font-size:13px;color:var(--muted);margin:0 0 8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Decision Tree Regression Explorer</h1>
+  <p class="sub">A regression tree splits the x-axis into regions and predicts the mean of y in each one. Change the settings and watch the fit, tree and error change.</p>
+
+  <div class="controls">
+    <div class="ctl"><label>Dataset</label>
+      <select id="dataset">
+        <option value="sine">Sine wave</option>
+        <option value="step">Step function</option>
+        <option value="linear">Linear trend</option>
+        <option value="quad">Parabola</option>
+      </select></div>
+    <div class="ctl"><label>Noise <b id="noiseV"></b></label><input type="range" id="noise" min="0" max="2" step="0.05" value="0.6"></div>
+    <div class="ctl"><label>Points <b id="nV"></b></label><input type="range" id="npts" min="10" max="200" step="5" value="60"></div>
+    <div class="ctl"><label>Max depth <b id="depthV"></b></label><input type="range" id="depth" min="0" max="10" step="1" value="3"></div>
+    <div class="ctl"><label>Min samples per leaf <b id="leafV"></b></label><input type="range" id="minleaf" min="1" max="30" step="1" value="3"></div>
+    <div class="ctl" style="min-width:auto"><label>&nbsp;</label><div style="display:flex;gap:6px"><button id="resample">New sample</button><button id="clear">Clear points</button></div></div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Fit</h2>
+      <canvas id="chart"></canvas>
+      <div class="readout" id="readout">Hover the chart to see the prediction and the path through the tree.</div>
+      <div class="stats">
+        <div class="stat"><span>Leaves</span><b id="sLeaves">–</b></div>
+        <div class="stat"><span>Train MSE</span><b id="sTrain">–</b></div>
+        <div class="stat"><span>Test MSE (held-out)</span><b id="sTest">–</b></div>
+      </div>
+      <div class="hint">Click empty space to add a point; click an existing point to remove it. Gray dots are held-out test data: when test MSE rises while train MSE falls, the tree is overfitting.</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+      <div class="card">
+        <h2>Tree</h2>
+        <div id="tree"></div>
+        <div class="hint">Click a split node to see how its threshold was chosen.</div>
+      </div>
+      <div class="card">
+        <h2>Split search <span id="selLabel" style="text-transform:none;letter-spacing:0"></span></h2>
+        <p class="explain">For every possible threshold, the tree adds up the squared error of both sides around their own means. It picks the lowest.</p>
+        <div id="sse"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+const X0=0,X1=10,Y0=-4,Y1=4;
+const $=id=>document.getElementById(id);
+const el={dataset:$('dataset'),noise:$('noise'),npts:$('npts'),depth:$('depth'),minleaf:$('minleaf')};
+const canvas=$('chart'),ctx=canvas.getContext('2d');
+let seed=1,pts=[],test=[],custom=false,root=null,selected=null,hoverX=null,nodes=[];
+
+function rng(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const fns={
+  sine:x=>2.2*Math.sin(x*1.3),
+  step:x=>x<3?-2:x<6.2?1.6:-0.8,
+  linear:x=>0.7*(x-5),
+  quad:x=>0.26*(x-5)*(x-5)-2.2
+};
+function gen(n,r){
+  const f=fns[el.dataset.value],s=+el.noise.value,out=[];
+  for(let i=0;i<n;i++){
+    const x=X0+(X1-X0)*r();
+    const g=Math.sqrt(-2*Math.log(1-r()))*Math.cos(2*Math.PI*r());
+    out.push({x,y:Math.max(Y0+.1,Math.min(Y1-.1,f(x)+s*g))});
+  }
+  return out;
+}
+function resample(){
+  const r=rng(seed++*7919);
+  pts=gen(+el.npts.value,r);
+  test=gen(200,rng(12345+seed));
+  custom=false;
+}
+
+function build(p,depth,lo,hi,maxD,minL){
+  const n=p.length;let s=0,s2=0;
+  for(const q of p){s+=q.y;s2+=q.y*q.y}
+  const mean=n?s/n:0,sse=s2-(n?s*s/n:0);
+  const node={n,mean,sse:Math.max(0,sse),depth,lo,hi,leaf:true,id:nodes.length};
+  nodes.push(node);
+  if(depth>=maxD||n<2*minL||node.sse<1e-9)return node;
+  let ls=0,ls2=0,best=null;const cands=[];
+  for(let i=1;i<n;i++){
+    ls+=p[i-1].y;ls2+=p[i-1].y*p[i-1].y;
+    if(i<minL||n-i<minL||p[i-1].x===p[i].x)continue;
+    const rs=s-ls,rs2=s2-ls2;
+    const tot=(ls2-ls*ls/i)+(rs2-rs*rs/(n-i));
+    const c={thr:(p[i-1].x+p[i].x)/2,sse:tot,i};
+    cands.push(c);
+    if(!best||tot<best.sse)best=c;
+  }
+  if(!best||best.sse>=node.sse-1e-9)return node;
+  node.leaf=false;node.thr=best.thr;node.cands=cands;node.best=best;
+  node.left=build(p.slice(0,best.i),depth+1,lo,best.thr,maxD,minL);
+  node.right=build(p.slice(best.i),depth+1,best.thr,hi,maxD,minL);
+  return node;
+}
+function predict(x){let n=root;while(!n.leaf)n=x<=n.thr?n.left:n.right;return n.mean}
+function path(x){const a=[];let n=root;a.push(n);while(!n.leaf){n=x<=n.thr?n.left:n.right;a.push(n)}return a}
+function leaves(n,a=[]){if(n.leaf)a.push(n);else{leaves(n.left,a);leaves(n.right,a)}return a}
+function mse(d){if(!d.length)return NaN;let s=0;for(const q of d){const e=q.y-predict(q.x);s+=e*e}return s/d.length}
+
+function refit(){
+  nodes=[];
+  const sorted=pts.slice().sort((a,b)=>a.x-b.x);
+  root=build(sorted,0,X0,X1,+el.depth.value,+el.minleaf.value);
+  if(!selected||!nodes[selected.id]||nodes[selected.id].leaf)selected=null;
+  if(!selected&&!root.leaf)selected=root;
+  else if(selected)selected=nodes.find(n=>!n.leaf&&n.depth===selected.depth&&Math.abs(n.lo-selected.lo)<1e-9&&Math.abs(n.hi-selected.hi)<1e-9)||(root.leaf?null:root);
+  $('noiseV').textContent=(+el.noise.value).toFixed(2);
+  $('nV').textContent=pts.length;
+  $('depthV').textContent=el.depth.value;
+  $('leafV').textContent=el.minleaf.value;
+  const L=leaves(root);
+  $('sLeaves').textContent=L.length;
+  $('sTrain').textContent=pts.length?mse(pts).toFixed(3):'–';
+  $('sTest').textContent=custom?'n/a (edited)':mse(test).toFixed(3);
+  draw();drawTree();drawSSE();
+}
+
+/* ---------- chart ---------- */
+let CW=0,CH=0;
+const M={l:38,r:10,t:10,b:26};
+function size(){
+  const dpr=window.devicePixelRatio||1,w=canvas.clientWidth,h=Math.round(w*0.62);
+  canvas.width=w*dpr;canvas.height=h*dpr;canvas.style.height=h+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);CW=w;CH=h;
+}
+const sx=x=>M.l+(x-X0)/(X1-X0)*(CW-M.l-M.r);
+const sy=y=>M.t+(Y1-y)/(Y1-Y0)*(CH-M.t-M.b);
+const ix=px=>X0+(px-M.l)/(CW-M.l-M.r)*(X1-X0);
+const iy=py=>Y1-(py-M.t)/(CH-M.t-M.b)*(Y1-Y0);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+function draw(){
+  if(!root)return;
+  ctx.clearRect(0,0,CW,CH);
+  const text=css('--text'),muted=css('--muted'),line=css('--line'),acc=css('--accent'),pc=css('--point'),tc=css('--test');
+  // regions
+  const L=leaves(root);
+  L.forEach((l,i)=>{ctx.fillStyle=i%2?css('--r1'):css('--r2');ctx.fillRect(sx(l.lo),M.t,sx(l.hi)-sx(l.lo),CH-M.t-M.b)});
+  // grid + axes
+  ctx.strokeStyle=line;ctx.lineWidth=1;ctx.fillStyle=muted;ctx.font='11px system-ui';
+  ctx.textAlign='right';ctx.textBaseline='middle';
+  for(let y=Y0;y<=Y1;y+=2){ctx.beginPath();ctx.moveTo(M.l,sy(y));ctx.lineTo(CW-M.r,sy(y));ctx.stroke();ctx.fillText(y,M.l-6,sy(y))}
+  ctx.textAlign='center';ctx.textBaseline='top';
+  for(let x=0;x<=10;x+=2){ctx.fillText(x,sx(x),CH-M.b+6)}
+  // true function
+  ctx.strokeStyle=muted;ctx.setLineDash([2,4]);ctx.lineWidth=1.2;ctx.beginPath();
+  const f=fns[el.dataset.value];
+  for(let px=M.l;px<=CW-M.r;px+=2){const x=ix(px);px===M.l?ctx.moveTo(px,sy(f(x))):ctx.lineTo(px,sy(f(x)))}
+  if(!custom)ctx.stroke();ctx.setLineDash([]);
+  // test points
+  if(!custom){ctx.fillStyle=tc;ctx.globalAlpha=.35;for(const q of test){ctx.beginPath();ctx.arc(sx(q.x),sy(q.y),2.2,0,7);ctx.fill()}ctx.globalAlpha=1}
+  // split lines
+  ctx.setLineDash([5,4]);ctx.lineWidth=1.2;
+  (function sp(n){if(n.leaf)return;ctx.strokeStyle=acc;ctx.globalAlpha=Math.max(.25,1-n.depth*.18);
+    ctx.beginPath();ctx.moveTo(sx(n.thr),M.t);ctx.lineTo(sx(n.thr),CH-M.b);ctx.stroke();ctx.globalAlpha=1;sp(n.left);sp(n.right)})(root);
+  ctx.setLineDash([]);
+  // prediction (step)
+  ctx.strokeStyle=acc;ctx.lineWidth=2.8;ctx.lineJoin='round';ctx.beginPath();
+  L.forEach((l,i)=>{const y=sy(l.mean);if(i===0)ctx.moveTo(sx(l.lo),y);else ctx.lineTo(sx(l.lo),y);ctx.lineTo(sx(l.hi),y)});
+  ctx.stroke();
+  // points
+  ctx.fillStyle=pc;for(const q of pts){ctx.beginPath();ctx.arc(sx(q.x),sy(q.y),3.4,0,7);ctx.fill()}
+  // hover
+  if(hoverX!==null){
+    const hl=path(hoverX).slice(-1)[0];
+    ctx.strokeStyle=text;ctx.lineWidth=1;ctx.globalAlpha=.5;ctx.beginPath();ctx.moveTo(sx(hoverX),M.t);ctx.lineTo(sx(hoverX),CH-M.b);ctx.stroke();ctx.globalAlpha=1;
+    ctx.fillStyle=acc;ctx.beginPath();ctx.arc(sx(hoverX),sy(hl.mean),5,0,7);ctx.fill();
+    ctx.strokeStyle=css('--panel');ctx.lineWidth=2;ctx.stroke();
+  }
+  // legend
+  ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle=muted;
+  ctx.fillText('— prediction   ┆ splits'+(custom?'':'   ··· true function'),M.l+8,M.t+10);
+}
+
+canvas.addEventListener('mousemove',e=>{
+  const r=canvas.getBoundingClientRect(),px=e.clientX-r.left;
+  if(px<M.l||px>CW-M.r){hoverX=null;$('readout').textContent='Hover the chart to see the prediction and the path through the tree.';draw();drawTree();return}
+  hoverX=ix(px);
+  const p=path(hoverX),leaf=p[p.length-1];
+  $('readout').innerHTML='x = <b>'+hoverX.toFixed(2)+'</b> → prediction <b>'+leaf.mean.toFixed(3)+'</b> (mean of '+leaf.n+' points in ['+leaf.lo.toFixed(2)+', '+leaf.hi.toFixed(2)+'])';
+  draw();drawTree();
+});
+canvas.addEventListener('mouseleave',()=>{hoverX=null;draw();drawTree()});
+canvas.addEventListener('click',e=>{
+  const r=canvas.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top;
+  if(px<M.l||px>CW-M.r||py<M.t||py>CH-M.b)return;
+  let k=-1,bd=100;
+  pts.forEach((q,i)=>{const d=(sx(q.x)-px)**2+(sy(q.y)-py)**2;if(d<bd){bd=d;k=i}});
+  if(k>=0)pts.splice(k,1);else pts.push({x:ix(px),y:iy(py)});
+  custom=true;el.npts.value=Math.max(10,Math.min(200,pts.length));
+  refit();
+});
+
+/* ---------- tree diagram ---------- */
+function drawTree(){
+  const L=leaves(root),NW=74,NH=34,GX=10,GY=34;
+  const maxD=Math.max(...L.map(l=>l.depth));
+  const W=Math.max(L.length*(NW+GX),NW+GX),H=(maxD+1)*(NH+GY)-GY+6;
+  L.forEach((l,i)=>l.cx=i*(NW+GX)+(NW+GX)/2);
+  (function pos(n){if(n.leaf)return;pos(n.left);pos(n.right);n.cx=(n.left.cx+n.right.cx)/2})(root);
+  const act=new Set(hoverX!==null?path(hoverX).map(n=>n.id):[]);
+  let s='<svg viewBox="0 0 '+W+' '+H+'" width="100%" style="max-height:420px">';
+  (function edges(n){if(n.leaf)return;
+    [[n.left,'≤'],[n.right,'>']].forEach(([c,t])=>{
+      const y1=n.depth*(NH+GY)+NH+2,y2=c.depth*(NH+GY)+2;
+      s+='<path class="edge'+(act.has(n.id)&&act.has(c.id)?' active':'')+'" d="M'+n.cx+' '+y1+' C'+n.cx+' '+(y1+GY/2)+' '+c.cx+' '+(y2-GY/2)+' '+c.cx+' '+y2+'"/>';
+    });edges(n.left);edges(n.right)})(root);
+  nodes.forEach(n=>{
+    if(n.cx===undefined)return;
+    const x=n.cx-NW/2,y=n.depth*(NH+GY)+2;
+    s+='<g class="node '+(n.leaf?'leaf':'split')+(act.has(n.id)?' active':'')+(selected&&selected.id===n.id?' sel':'')+'" data-id="'+n.id+'">'
+      +'<rect x="'+x+'" y="'+y+'" width="'+NW+'" height="'+NH+'" rx="6"/>';
+    if(n.leaf)s+='<text x="'+n.cx+'" y="'+(y+15)+'" text-anchor="middle" style="font-weight:600">ŷ = '+n.mean.toFixed(2)+'</text><text class="muted" x="'+n.cx+'" y="'+(y+28)+'" text-anchor="middle">n = '+n.n+'</text>';
+    else s+='<text x="'+n.cx+'" y="'+(y+15)+'" text-anchor="middle" style="font-weight:600">x ≤ '+n.thr.toFixed(2)+'</text><text class="muted" x="'+n.cx+'" y="'+(y+28)+'" text-anchor="middle">n = '+n.n+'</text>';
+    s+='</g>';
+  });
+  $('tree').innerHTML=s+'</svg>';
+}
+$('tree').addEventListener('click',e=>{
+  const g=e.target.closest('.node.split');if(!g)return;
+  selected=nodes[+g.dataset.id];drawTree();drawSSE();
+});
+
+/* ---------- SSE curve for selected split ---------- */
+function drawSSE(){
+  const box=$('sse');
+  if(!selected||selected.leaf){box.innerHTML='<div class="hint">The tree has no splits at this depth. Increase max depth.</div>';$('selLabel').textContent='';return}
+  const n=selected,c=n.cands,W=320,H=130,l=36,r=8,t=8,b=22;
+  const xs=c.map(q=>q.thr),ys=c.map(q=>q.sse);
+  const ymin=Math.min(...ys),ymax=Math.max(...ys,n.sse),yr=(ymax-ymin)||1;
+  const X=v=>l+(v-n.lo)/(n.hi-n.lo)*(W-l-r),Y=v=>t+(1-(v-ymin)/yr)*(H-t-b);
+  let d='';c.forEach((q,i)=>d+=(i?'L':'M')+X(q.thr).toFixed(1)+' '+Y(q.sse).toFixed(1));
+  let s='<svg viewBox="0 0 '+W+' '+H+'" width="100%">'
+   +'<line x1="'+l+'" y1="'+(H-b)+'" x2="'+(W-r)+'" y2="'+(H-b)+'" stroke="var(--border)"/>'
+   +'<line x1="'+l+'" y1="'+t+'" x2="'+l+'" y2="'+(H-b)+'" stroke="var(--border)"/>'
+   +'<path d="'+d+'" fill="none" stroke="var(--blue)" stroke-width="1.8"/>'
+   +'<line x1="'+X(n.thr)+'" y1="'+t+'" x2="'+X(n.thr)+'" y2="'+(H-b)+'" stroke="var(--accent)" stroke-dasharray="4 3"/>'
+   +'<circle cx="'+X(n.thr)+'" cy="'+Y(n.best.sse)+'" r="4.5" fill="var(--accent)"/>'
+   +'<text x="'+(W/2)+'" y="'+(H-5)+'" text-anchor="middle" class="muted">candidate threshold (x)</text>'
+   +'<text x="'+(l-4)+'" y="'+(t+8)+'" text-anchor="end" class="muted">'+ymax.toFixed(1)+'</text>'
+   +'<text x="'+(l-4)+'" y="'+(H-b)+'" text-anchor="end" class="muted">'+ymin.toFixed(1)+'</text>'
+   +'<text x="'+l+'" y="'+(H-b+11)+'" text-anchor="middle" class="muted">'+n.lo.toFixed(1)+'</text>'
+   +'<text x="'+(W-r)+'" y="'+(H-b+11)+'" text-anchor="end" class="muted">'+n.hi.toFixed(1)+'</text></svg>'
+   +'<div class="hint">Error before split: <b>'+n.sse.toFixed(2)+'</b> → after best split at x = <b>'+n.thr.toFixed(2)+'</b>: <b>'+n.best.sse.toFixed(2)+'</b> (reduction '+(n.sse-n.best.sse).toFixed(2)+'). Curve is the summed squared error of the two sides.</div>';
+  box.innerHTML=s;
+  $('selLabel').textContent='· node x ≤ '+n.thr.toFixed(2)+' (depth '+n.depth+')';
+}
+
+/* ---------- wiring ---------- */
+['noise','npts','dataset'].forEach(k=>el[k].addEventListener('input',()=>{resample();refit()}));
+['depth','minleaf'].forEach(k=>el[k].addEventListener('input',refit));
+$('resample').addEventListener('click',()=>{resample();refit()});
+$('clear').addEventListener('click',()=>{pts=[];custom=true;if(!pts.length){root=null}
+  nodes=[];root=build([],0,X0,X1,0,1);selected=null;
+  $('nV').textContent=0;$('sLeaves').textContent=1;$('sTrain').textContent='–';$('sTest').textContent='n/a (edited)';
+  draw();drawTree();drawSSE();});
+window.addEventListener('resize',()=>{size();draw()});
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change',()=>{draw();});
+size();resample();refit();
+})();
+</script>
+</body>
+</html>
